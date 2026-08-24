@@ -1,0 +1,4 @@
+# Optional NVIDIA CUDA acceleration for primitive-composed JSON generation.
+# The [ctk] extra supplies the redistributable CUDA runtime/compiler pieces;
+# users still need a compatible NVIDIA display driver.
+cupy-cuda12x[ctk]>=14.1,<15

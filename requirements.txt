@@ -1,0 +1,25 @@
+psutil>=5.9
+
+# Font/mesh generation (tools/gen_modelbin.py, tools/gen_fontpack.py,
+# forza_writer/primitive_fit.py) — already hard dependencies, previously
+# undeclared here.
+fontTools>=4.0
+mapbox_earcut>=1.0
+numpy>=1.24
+Pillow>=10.0
+shapely>=2.0
+uharfbuzz>=0.52
+
+# Optional NVIDIA acceleration. Install with:
+#   pip install "cupy-cuda12x[ctk]>=14.1"
+# CPU generation remains available when this extra is absent.
+
+# Optional AMD/Intel/NVIDIA acceleration via DirectML — EXPERIMENTAL, unverified
+# on real DirectML hardware (see docs/DIRECTML_ACCELERATION.md). Install with:
+#   pip install torch torch-directml
+# CPU generation remains available when this extra is absent.
+
+# Optional (diagnostics suite): enables event-driven filesystem watching.
+# If absent, the filesystem watcher falls back to polling automatically, so
+# this is not required. Install with: pip install watchdog
+# watchdog>=3.0

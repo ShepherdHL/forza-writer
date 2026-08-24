@@ -1,0 +1,379 @@
+{
+  "format": "fh6_typecode_json_export_report_v1",
+  "created_utc": "2026-06-23T19:49:06Z",
+  "pid": 20108,
+  "group": "0x24bef1e5340",
+  "table": "0x24bee6a65e0",
+  "requested_count": 12,
+  "editable_group_check": {
+    "passed": true,
+    "metadata": {
+      "group": "0x24bef1e5340",
+      "count_u16_0x5a": 12,
+      "count_u32_0x58": 814920,
+      "table_begin_0x78": "0x24bee6a65e0",
+      "table_end_0x80": "0x24bee6a6640",
+      "table_capacity_0x88": "0x24bee6a6640",
+      "vector_count": 12,
+      "capacity_count": 12
+    },
+    "warnings": []
+  },
+  "validation_warnings": [],
+  "flattened_export": {
+    "flattened": false,
+    "top_level_count": 12,
+    "group_count": 0,
+    "max_depth": 0,
+    "invalid_entries": 0
+  },
+  "fm_resource_normalization": {
+    "game": "fh6",
+    "normalized_shape_count": 0
+  },
+  "preferred_layer_read_size": "0x140",
+  "fallback_layer_read_size": "0xc0",
+  "minimum_decode_size": "0x7c",
+  "exported_shape_count": 12,
+  "read_layer_count": 12,
+  "failure_count": 0,
+  "summary": {
+    "content_hash_sha256": "fcca5cb5931d575ba7c801261702b74b468cba36498a5aa10f96796bef41fe81",
+    "type_counts": {
+      "1050481": 3,
+      "1050500": 1,
+      "1050492": 1,
+      "1050494": 1,
+      "1050485": 1,
+      "1050489": 1,
+      "1050490": 1,
+      "1050496": 1,
+      "1050477": 1,
+      "1050488": 1
+    },
+    "color_counts": {
+      "255 255 255 255": 12
+    },
+    "mask_layer_count": 0,
+    "read_size_counts": {
+      "320": 12
+    },
+    "resource_ptr_0xa8_counts": {
+      "0x24a370f3c30": 3,
+      "0x24a37bc6a80": 1,
+      "0x24a37bc7110": 1,
+      "0x24a37bc68a0": 1,
+      "0x24a37bc66c0": 1,
+      "0x24a37bc6c30": 1,
+      "0x24a37bc6ba0": 1,
+      "0x24a37bc7020": 1,
+      "0x24a37bc71d0": 1,
+      "0x24a37bc5e20": 1
+    },
+    "uniform_layer_template": false
+  },
+  "output_json": "C:\\Projects\\Forza Painter\\KFPS-3.0.12-bundled\\KFPS-3.0.12\\KloudysFH6Painter\\runtime\\universal-import\\export-current-group-12-20260623-144738\\fh6-current-group-12-20260623-144738.json",
+  "layers": [
+    {
+      "index": 0,
+      "layer": 1,
+      "ptr": "0x24bee794210",
+      "ok": true,
+      "type_code": 1050481,
+      "type_word": 1905,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        -620.0,
+        -123.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a370f3c30"
+    },
+    {
+      "index": 1,
+      "layer": 2,
+      "ptr": "0x24beeb88830",
+      "ok": true,
+      "type_code": 1050500,
+      "type_word": 1924,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        -922.0302124023438,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc6a80"
+    },
+    {
+      "index": 2,
+      "layer": 3,
+      "ptr": "0x24beeb91680",
+      "ok": true,
+      "type_code": 1050492,
+      "type_word": 1916,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        -720.1346435546875,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc7110"
+    },
+    {
+      "index": 3,
+      "layer": 4,
+      "ptr": "0x24beed32910",
+      "ok": true,
+      "type_code": 1050481,
+      "type_word": 1905,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        -354.5,
+        -125.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a370f3c30"
+    },
+    {
+      "index": 4,
+      "layer": 5,
+      "ptr": "0x24beed32de0",
+      "ok": true,
+      "type_code": 1050494,
+      "type_word": 1918,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        -316.34344482421875,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc68a0"
+    },
+    {
+      "index": 5,
+      "layer": 6,
+      "ptr": "0x24beed32ff0",
+      "ok": true,
+      "type_code": 1050485,
+      "type_word": 1909,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        -114.44780731201172,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc66c0"
+    },
+    {
+      "index": 6,
+      "layer": 7,
+      "ptr": "0x24beed33200",
+      "ok": true,
+      "type_code": 1050489,
+      "type_word": 1913,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        87.44780731201172,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc6c30"
+    },
+    {
+      "index": 7,
+      "layer": 8,
+      "ptr": "0x24beed33780",
+      "ok": true,
+      "type_code": 1050481,
+      "type_word": 1905,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        -80.0,
+        -125.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a370f3c30"
+    },
+    {
+      "index": 8,
+      "layer": 9,
+      "ptr": "0x24beed338e0",
+      "ok": true,
+      "type_code": 1050490,
+      "type_word": 1914,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        491.2389831542969,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc6ba0"
+    },
+    {
+      "index": 9,
+      "layer": 10,
+      "ptr": "0x24beed325a0",
+      "ok": true,
+      "type_code": 1050496,
+      "type_word": 1920,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        693.1346435546875,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc7020"
+    },
+    {
+      "index": 10,
+      "layer": 11,
+      "ptr": "0x24beed330a0",
+      "ok": true,
+      "type_code": 1050477,
+      "type_word": 1901,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        895.0302124023438,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc71d0"
+    },
+    {
+      "index": 11,
+      "layer": 12,
+      "ptr": "0x24beed31e10",
+      "ok": true,
+      "type_code": 1050488,
+      "type_word": 1912,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false,
+      "data": [
+        1096.92578125,
+        268.0,
+        2.1822164058685303,
+        2.1822164058685303,
+        0.0,
+        0.0
+      ],
+      "read_size": 320,
+      "resource_ptr_0xa8": "0x24a37bc5e20"
+    }
+  ],
+  "failures": []
+}

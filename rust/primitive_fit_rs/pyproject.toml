@@ -1,0 +1,12 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "primitive_fit_rs"
+version = "0.1.0"
+requires-python = ">=3.9"
+description = "Optional Rust CPU kernel for forza_writer.primitive_fit candidate scoring. See docs/RUST_CPU_ACCELERATION.md."
+
+[tool.maturin]
+module-name = "primitive_fit_rs"

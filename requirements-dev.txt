@@ -1,0 +1,6 @@
+# Build-time-only dependencies. Not required to run Forza Writer -- the
+# optional Rust CPU-acceleration extension (rust/primitive_fit_rs) falls
+# back to the pure-Python implementation when it isn't built/installed.
+# See docs/RUST_CPU_ACCELERATION.md.
+
+maturin>=1.5,<2.0

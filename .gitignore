@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+logs/
+*.modelbin
+.venv/
+.pytest_cache/
+.test-tmp/
+.codex-pytest-*/
+/out*.json
+/.mockup_preview.html
+/data/modelbin/
+/data/fontpacks/
+/data/advgen/
+/data/dgen/
+/data/direct/
+/data/image/
+/user-assets/
+
+# Rust CPU-acceleration extension build artifacts (see
+# docs/RUST_CPU_ACCELERATION.md) -- Cargo.toml/pyproject.toml/src/Cargo.lock
+# are checked in, the build output isn't.
+rust/*/target/
