@@ -4,12 +4,12 @@ renderable character in the font's cmap, sorted into Uppercase/Lowercase/
 Letters/Numbers/Punctuation/Symbols subfolders, plus a manifest.json cataloging every
 glyph (and every skipped one, with why).
 
-Each glyph can be generated as a custom vector mesh (.modelbin — requires a
+Each glyph can be generated as a custom vector mesh (.modelbin, requires a
 catalog hijack + Vinyls.zip injection to actually use in-game, see README.md),
 a primitive-composition JSON built via forza-writer's own vector-outline
 fitter (works in-game today, no hijack needed), or a primitive-composition
 JSON via the legacy raster-trace generator (a faithful port of the original
-text-vinyl generator shipped in bvzray's forza-painter-fh6 v1.9.5 — see
+text-vinyl generator shipped in bvzray's forza-painter-fh6 v1.9.5, see
 forza_writer/legacy_primitive_fit.py).
 
 Usage:
@@ -18,11 +18,11 @@ Usage:
     python tools/gen_fontpack.py --font-file font.ttf --prefix MYFONT --output json_legacy --out-dir data/fontpacks
 
 --output modelbin (default) requires a reference modelbin (default:
-user-assets/S_01.modelbin) — see README.md. --output json/json_legacy need no
+user-assets/S_01.modelbin), see README.md. --output json/json_legacy need no
 reference file at all.
 
 With no scoping flags, every renderable character in the font's cmap is
-generated — the long-standing default, and still fine for a small Latin
+generated: the long-standing default, and still fine for a small Latin
 font. For a CJK font that can mean thousands of Han ideographs in one run;
 --chars/--script/--category/--all-han restrict the batch the same way the
 GUI's Generator tab does:
@@ -52,6 +52,7 @@ from forza_writer.charset import CATEGORY_ORDER, charset_from_font, is_han_char 
 from forza_writer.export import save as save_json, to_json  # noqa: E402
 from forza_writer.legacy_primitive_fit import fit_glyph_legacy  # noqa: E402
 from forza_writer.primitive_fit import fit_glyph_with_strategy  # noqa: E402
+from forza_writer.high_contrast import seed_for_char  # noqa: E402
 from forza_writer.generation_policy import (  # noqa: E402
     DEFAULT_POLICY, GenerationPolicy, GenerationStats, policy_to_dict)
 from forza_writer.glyph_quality import assess_glyph, save_diff_overlay  # noqa: E402
@@ -84,7 +85,7 @@ def pack_dir_for(out_dir: Path, prefix: str, output: str, curve_segments: int,
                   resolved_backend: str) -> Path:
     """Where this exact generation profile's pack lives: one folder per font
     (`prefix`), with each profile (output format x backend x curve
-    smoothness) nested inside it — so a CPU and a CUDA run of the same font
+    smoothness) nested inside it, so a CPU and a CUDA run of the same font
     sit together instead of scattered as flat siblings under `out_dir`."""
     return Path(out_dir) / prefix / generation_profile_id(output, curve_segments, resolved_backend)
 
@@ -94,8 +95,8 @@ def glyph_filename(prefix: str, char: str, ext: str = "modelbin") -> str:
 
     Plain ASCII letters/digits use gen_modelbin's existing char_filename
     convention (readable, with a _lc marker disambiguating case). Anything
-    else — punctuation and symbols can include characters that are illegal
-    in Windows filenames (/, \\, :, *, ?, ", <, >, |) — is named by its
+    else (punctuation and symbols can include characters that are illegal
+    in Windows filenames: /, \\, :, *, ?, ", <, >, |) is named by its
     Unicode codepoint instead, which is always filesystem-safe.
     """
     if char.isascii() and char.isalnum():
@@ -116,61 +117,64 @@ def build_fontpack(font_path: Path, out_dir: Path, prefix: str,
                     compute_backend: str = "auto",
                     policy: GenerationPolicy | None = None,
                     source_font_path: Path | None = None,
-                    variation: dict | None = None) -> dict:
+                    variation: dict | None = None,
+                    color_mode: str = "solid",
+                    solid_color: tuple[int, int, int, int] = (255, 255, 255, 255),
+                    high_contrast_seed: int | None = None) -> dict:
     """Generate a categorized fontpack. Returns the manifest dict (also
-    written below `out_dir` — the pack directory is `<out_dir>/<prefix>/
+    written below `out_dir`; the pack directory is `<out_dir>/<prefix>/
     <output-backend-smoothness>`, see `pack_dir_for`, so CPU/CUDA and
     Curve Smoothness runs of the same font nest together instead of
     overwriting one another or scattering as flat siblings). Per-glyph,
     per-output-mode failures are caught and recorded rather than aborting
-    the batch — a modelbin failure doesn't block that glyph's json output
+    the batch: a modelbin failure doesn't block that glyph's json output
     or vice versa.
 
-    `allow_stencil` (the `--output json`/`json_legacy` paths only —
+    `allow_stencil` (the `--output json`/`json_legacy` paths only;
     `json_legacy` never uses stencil regardless, it has no mask concept at
     all) controls whether `fit_glyph_with_strategy` is allowed to pick the
     stencil strategy for a rectilinear glyph. Stencil wins automatically
-    whenever it needs fewer shapes than direct fill — verified real (not a
-    routing bug): the Minecraft Standard Galactic Alphabet's 'X' needs 14
+    whenever it needs fewer shapes than direct fill. This is expected, not
+    a routing bug: the Minecraft Standard Galactic Alphabet's 'X' needs 14
     shapes direct vs. 10 stencil, 'Z' needs 12 vs. 7. Since stencil relies
     on FH6 mask-layer semantics that haven't been confirmed against a live
     session yet (see RESEARCH.md), `allow_stencil=False` forces direct fill
     everywhere, trading some shape-count savings for avoiding masks
-    entirely — this is what the GUI's "Allow layer masks" checkbox does.
+    entirely. This is what the GUI's "Allow layer masks" checkbox does.
     This is the *default* mask mode for every glyph; `mask_overrides`
     overrides it per glyph.
 
     `mask_overrides`, if given, maps individual characters to a
-    `primitive_fit.MaskMode` string (`"auto"` / `"force"` / `"never"`) —
+    `primitive_fit.MaskMode` string (`"auto"` / `"force"` / `"never"`):
     the GUI's Advanced Mode per-glyph choice. A character not present in
     the dict falls back to `allow_stencil`'s default (`"auto"` if True,
     `"never"` if False). `"force"` works even on curved glyphs (see
-    `primitive_fit.fit_placements`'s `mask_mode="force"` docs) — something
+    `primitive_fit.fit_placements`'s `mask_mode="force"` docs), something
     `allow_stencil` alone could never do. `--output json` only, same as
     `allow_stencil`.
 
     `manual_assignments`, if given, maps individual characters to the path
     of an already-made `.json` glyph file (e.g. exported one-by-one from
     KFPS) whose shapes are copied verbatim instead of running auto-fit at
-    all — the Configurator tab's per-glyph "assign a file" choice. Takes
+    all: the Configurator tab's per-glyph "assign a file" choice. Takes
     precedence over `mask_overrides`/`allow_stencil` for that character
     (auto-fit never runs for it), and is recorded with `strategy="manual"`.
-    `--output json` only, same as `mask_overrides` — a warning is logged
+    `--output json` only, same as `mask_overrides`. A warning is logged
     once (not per glyph) if assignments are given for any other output
     mode, since a manual file is a JSON shape list, not a mesh.
 
     `chars`, if given, restricts generation to that subset of the font's
-    cmap (e.g. a GUI's "Uppercase only" checkbox) — characters not in the
+    cmap (e.g. a GUI's "Uppercase only" checkbox). Characters not in the
     set are simply omitted from their category, not counted as skipped
     (`skipped` stays reserved for "the font has this glyph but it has no
     visible geometry", an unrelated concept from "the user didn't ask for
     this one").
 
     `should_stop`, if given, is checked before starting each glyph (never
-    mid-glyph, so a stop never leaves a half-written file) — returning True
+    mid-glyph, so a stop never leaves a half-written file). Returning True
     halts the batch early. The manifest is still written, reflecting exactly
     what completed before stopping ("halt", as opposed to a caller discarding
-    the partial pack itself, which this function has no opinion on — that's
+    the partial pack itself, which this function has no opinion on; that's
     the caller's call to make, e.g. by deleting `manifest["files_written"]`
     after the fact for an "abort").
 
@@ -178,6 +182,17 @@ def build_fontpack(font_path: Path, out_dir: Path, prefix: str,
     after each glyph's entry is finalized (success or failure), so a caller
     can render a live preview without re-reading anything from disk.
 
+    `color_mode`/`solid_color`/`high_contrast_seed` only affect `--output
+    json`'s primitive-composed shapes (there's no per-shape concept on the
+    `modelbin` mesh path). `color_mode="solid"` (the default) colors every
+    shape `solid_color` (plain white if not given, matching this
+    function's own longstanding hardcoded default). `color_mode=
+    "high_contrast"` instead gives each glyph's individual shapes their own
+    color from `forza_writer.high_contrast`'s curated palette, deterministic
+    per `high_contrast_seed` -- see that module and `primitive_fit.
+    placements_to_shapes` for how. Recorded into the manifest either way,
+    so a pack always says which mode (and, for high_contrast, which seed)
+    produced it.
     """
     if output not in OUTPUT_MODES:
         raise ValueError(f"output must be one of {OUTPUT_MODES}, got {output!r}")
@@ -234,6 +249,8 @@ def build_fontpack(font_path: Path, out_dir: Path, prefix: str,
             "device": backend.device,
             "detail": backend.detail,
         },
+        "color_mode": color_mode,
+        "color_seed": high_contrast_seed if color_mode == "high_contrast" else None,
         "categories": {},
         "skipped": [
             {"char": char, "codepoint": f"U+{ord(char):04X}", "reason": reason}
@@ -294,10 +311,14 @@ def build_fontpack(font_path: Path, out_dir: Path, prefix: str,
                         default_mode = "auto" if allow_stencil else "never"
                         mode = (mask_overrides or {}).get(char, default_mode)
                         glyph_stats = GenerationStats()
+                        glyph_seed = (seed_for_char(high_contrast_seed, char)
+                                      if color_mode == "high_contrast" and high_contrast_seed is not None
+                                      else None)
                         shapes, strategy = fit_glyph_with_strategy(
                             char, font_path, curve_segments, mask_mode=mode,
                             compute_backend=backend.resolved, policy=policy,
-                            stats=glyph_stats)
+                            stats=glyph_stats, solid_color=solid_color,
+                            high_contrast_seed=glyph_seed)
                     else:
                         shapes, strategy = fit_glyph_legacy(char, font_path)
                     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -350,7 +371,7 @@ def build_fontpack(font_path: Path, out_dir: Path, prefix: str,
         log("  --- halted early by request ---")
 
     # Both json strategies ("json" and "json_legacy") share the "json"
-    # summary key — callers (the GUI's log-line formatting, in particular)
+    # summary key: callers (the GUI's log-line formatting, in particular)
     # only care that *some* json artifact was generated, not which
     # strategy produced it.
     summary_mode = "json" if output in ("json", "json_legacy") else "modelbin"
@@ -371,7 +392,7 @@ def build_fontpack(font_path: Path, out_dir: Path, prefix: str,
     if stencil_used:
         # Mask-layer behavior (stencil mode's cutouts) is implemented per
         # forza-painter-fh6's convention but hasn't been confirmed against a
-        # live FH6 session in this project yet — see RESEARCH.md. Flag it so
+        # live FH6 session in this project yet (see RESEARCH.md). Flag it so
         # nobody mistakes "generated" for "verified in-game".
         manifest["experimental"] = ("this pack includes stencil-mode glyphs (mask-layer cutouts); "
                                      "mask rendering hasn't been verified against a live FH6 session yet")

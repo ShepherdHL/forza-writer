@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 import tkinter as tk
-from tkinter import colorchooser, filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 
 from PIL import ImageTk
 
@@ -31,6 +31,7 @@ from forza_writer.fabric_project import save as save_project, to_fabric_project 
 from forza_writer.layout import layout_forza_text  # noqa: E402
 from forza_writer.shapes import char_to_resource  # noqa: E402
 
+from ..color_picker_widget import ColorPickerWidget  # noqa: E402
 from ..state import PREVIEW_SIZE  # noqa: E402
 
 
@@ -82,11 +83,29 @@ class ForzaFontTextTabMixin:
         self.forza_text_widget = tk.Text(text_frame, height=6, wrap='word')
         self.forza_text_widget.pack(fill='x', **gui_theme.ROW_PAD)
         self._register_independent_scroll(self.forza_text_widget)
+        forza_actions_row, self.forza_clear_btn, self.forza_select_all_btn = (
+            self._build_text_box_actions_row(text_frame, self.forza_text_widget))
+        forza_actions_row.pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
 
         settings_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('2. Font & Layout'))
         settings_frame.pack(fill='x', **gui_theme.SECTION_PAD)
+
+        # This note sits above the Font/Height row rather than below it
+        # (the pattern used elsewhere in the app): the Forza Font combobox
+        # has 11 long entries, by far the tallest dropdown in the app, and
+        # its open popup covered this exact explanation when it was placed
+        # underneath — not a wrapping bug, just an unusually tall dropdown
+        # sitting right on top of the one row that explained it. Reading
+        # it before picking a font is also the more useful order anyway.
+        ttk.Label(
+            settings_frame,
+            text='All 11 fonts support the exact same characters. Switching fonts changes '
+                 'letterform style only. It never adds character support.',
+            style='Hint.TLabel', wraplength=gui_theme.WRAP_WIDE, justify='left',
+        ).pack(fill='x', **gui_theme.ROW_PAD_TOP)
+
         row1 = ttk.Frame(settings_frame)
-        row1.pack(fill='x', **gui_theme.ROW_PAD)
+        row1.pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
         ttk.Label(row1, text='Forza Font:').pack(side='left')
         self.forza_font_var = tk.IntVar(value=1)
         font_choices = list(range(1, 12))
@@ -102,21 +121,17 @@ class ForzaFontTextTabMixin:
         ttk.Spinbox(row1, from_=10.0, to=5000.0, increment=10.0, width=7,
                     textvariable=self.forza_height_var).pack(side='left', padx=(4, 0))
 
-        ttk.Label(
-            settings_frame,
-            text='All 11 fonts support the exact same characters. Switching fonts changes '
-                 'letterform style only. It never adds character support.',
-            style='Hint.TLabel', wraplength=gui_theme.WRAP_WIDE, justify='left',
-        ).pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
-
-        color_row = ttk.Frame(settings_frame)
-        color_row.pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
-        ttk.Label(color_row, text='Color:').pack(side='left')
-        self.forza_text_color = (255, 255, 255, 255)
-        self.forza_text_color_swatch = tk.Label(
-            color_row, text='  ', bg='#ffffff', relief='sunken', width=3)
-        self.forza_text_color_swatch.pack(side='left', padx=(4, 4))
-        ttk.Button(color_row, text='Choose...', command=self._pick_forza_text_color).pack(side='left')
+        # Its own top-level section, not nested inside Font & Layout -- every
+        # page with a Color control gives it this same standing: a distinct,
+        # consistently-labeled section of its own, always in the left-hand
+        # controls column on a page with a left/right split.
+        color_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('3. Color'))
+        color_frame.pack(fill='x', **gui_theme.SECTION_PAD)
+        self.forza_text_color_picker = ColorPickerWidget(
+            color_frame, settings_key='color_forza_font_text', on_change=self._on_forza_text_color_change,
+            title='')
+        self.forza_text_color_picker.pack(fill='x', padx=6, pady=6)
+        self.forza_text_color = self.forza_text_color_picker.color
 
         action_row = ttk.Frame(content)
         action_row.pack(fill='x', **gui_theme.SECTION_PAD)
@@ -159,15 +174,8 @@ class ForzaFontTextTabMixin:
     def _forza_current_font(self) -> int:
         return max(1, min(11, self.forza_font_var.get()))
 
-    def _pick_forza_text_color(self):
-        _rgb, hex_color = colorchooser.askcolor(color='#%02x%02x%02x' % self.forza_text_color[:3])
-        if hex_color is None:
-            return
-        r = int(hex_color[1:3], 16)
-        g = int(hex_color[3:5], 16)
-        b = int(hex_color[5:7], 16)
-        self.forza_text_color = (r, g, b, 255)
-        self.forza_text_color_swatch.configure(bg=hex_color)
+    def _on_forza_text_color_change(self, rgba: tuple):
+        self.forza_text_color = rgba
 
     def _forza_text_run_preview(self):
         text = self.forza_text_widget.get('1.0', 'end-1c')

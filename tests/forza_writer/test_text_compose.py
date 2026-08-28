@@ -42,7 +42,7 @@ def test_glyph_bbox_center_differs_for_short_vs_tall_glyph(small_pack):
     # This is exactly the discrepancy compose_text's baseline correction
     # exists to cancel out: per-glyph bbox centering (what normalize_to_128
     # does at generation time) centres a short glyph like '.' at a very
-    # different raw-font Y than a tall glyph like 'M' — naively placing
+    # different raw-font Y than a tall glyph like 'M'. Naively placing
     # both glyphs' already-normalized shapes on the same line (each
     # centred on its own bbox) would misalign their baselines. Both should
     # in fact sit on the same raw-font baseline (y=0).
@@ -58,8 +58,8 @@ def test_glyph_bbox_center_differs_for_short_vs_tall_glyph(small_pack):
     period_min_y = min(p[1] for c in period_contours for p in c)
     m_min_y = min(p[1] for c in m_contours for p in c)
     # Both glyphs sit flush on the font's baseline (raw y=0) despite their
-    # very different heights/centres — confirming baseline correction (not
-    # bbox-centre correction) is what compose_text needs to apply.
+    # very different heights/centres: this is why baseline correction
+    # (not bbox-centre correction) is what compose_text needs to apply.
     assert period_min_y == 0
     assert m_min_y == 0
 
@@ -180,7 +180,7 @@ def test_invalid_align_raises(small_pack):
 def test_stencil_glyph_shapes_stay_contiguous_per_character(tmp_path):
     # Synthetic pack (no font dependency) with one normal glyph and one
     # stencil-strategy glyph (background square + mask cutout) placed
-    # adjacent — mask layers only punch through shapes *below* them in the
+    # adjacent. Mask layers only punch through shapes *below* them in the
     # same layer stack, so cross-glyph mask bleed would require shapes from
     # different glyphs to interleave. compose_text must never do that.
     pack_dir = tmp_path / "SYN"
@@ -219,10 +219,10 @@ def test_stencil_glyph_shapes_stay_contiguous_per_character(tmp_path):
 
 @requires_font
 def test_default_style_reproduces_unstyled_output_exactly(small_pack):
-    # style=None (the pre-styling default) must be byte-identical to a
-    # no-op TextStyle() and to not passing size_scale/line_spacing at all —
-    # this is the regression guard for every caller (Direct Generator's
-    # compose_shaped_lines included) that doesn't opt into styling.
+    # style=None (the no-styling default) must be byte-identical to a no-op
+    # TextStyle() and to omitting size_scale/line_spacing entirely. Every
+    # caller that doesn't opt into styling, including Direct Generator's
+    # compose_shaped_lines, depends on this exact equivalence.
     unstyled, warnings_unstyled = compose_text("A B\nAB", small_pack)
     explicit_noop, warnings_noop = compose_text("A B\nAB", small_pack, style=TextStyle())
     assert unstyled == explicit_noop
@@ -299,13 +299,13 @@ def test_solid_fill_recolors_non_mask_shapes_but_not_mask_shapes(tmp_path):
     assert len(non_mask) == 2
     assert len(mask) == 1
     assert all(s["color"] == [255, 0, 0, 255] for s in non_mask)
-    assert mask[0]["color"] == [0, 0, 0, 255]  # untouched — still the original cutout color
+    assert mask[0]["color"] == [0, 0, 0, 255]  # untouched: still the original cutout color
 
 
 def test_two_lines_get_two_independent_fills(tmp_path):
-    # Same synthetic-pack pattern as above, two lines this time — confirms
-    # fills are looked up per line (style.fill_for_line), not applied
-    # document-wide like the old single-TextStyle-color model.
+    # Same synthetic-pack pattern as above, two lines this time: confirms
+    # fills are looked up per line (style.fill_for_line) rather than
+    # applied uniformly across the whole document.
     if not AMARILLO_FONT.exists():
         pytest.skip("test font not present on this machine")
 

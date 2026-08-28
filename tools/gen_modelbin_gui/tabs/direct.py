@@ -55,6 +55,7 @@ from forza_writer import manufacturer_colors  # noqa: E402
 from forza_writer.variable_fonts import (  # noqa: E402
     VariableFontInfo, inspect_variable_font, instantiate_font, variation_slug)
 
+from ..color_picker_widget import ColorPickerWidget  # noqa: E402
 from ..state import (  # noqa: E402
     FONT_EXTENSIONS, FONTS_DIR_SYSTEM, GRID_MAX_TILES, GRID_TILE_GAP, GRID_TILE_SIZE,
     ICON_PATH, LIVE_PREVIEW_SIZE, COMPOSE_PREVIEW_SIZE, OUTPUT_MODE_LABELS, PREVIEW_SIZE,
@@ -63,6 +64,8 @@ from ..state import (  # noqa: E402
 
 
 class DirectTabMixin:
+    def _on_direct_color_change(self, rgba: tuple):
+        self.direct_color = rgba
     def _build_direct_page(self):
         page = ttk.Frame(self.page_container)
         self._pages['direct'] = page
@@ -99,6 +102,9 @@ class DirectTabMixin:
         self.direct_text_widget = tk.Text(text_frame, height=5, wrap='word')
         self.direct_text_widget.pack(fill='x', **gui_theme.ROW_PAD)
         self._register_independent_scroll(self.direct_text_widget)
+        actions_row, self.direct_clear_btn, self.direct_select_all_btn = (
+            self._build_text_box_actions_row(text_frame, self.direct_text_widget))
+        actions_row.pack(fill='x', **gui_theme.ROW_PAD)
         sample_row, self.direct_sample_script_var = self._build_sample_text_row(
             text_frame, self.direct_text_widget)
         sample_row.pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
@@ -171,6 +177,14 @@ class DirectTabMixin:
         self.direct_image_threshold_var = tk.StringVar(value='auto')
         ttk.Entry(image_options, width=6, textvariable=self.direct_image_threshold_var).pack(
             side='left', padx=(4, 0))
+
+        color_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('4. Color'))
+        color_frame.pack(fill='x', **gui_theme.SECTION_PAD)
+        self.direct_color_picker = ColorPickerWidget(
+            color_frame, settings_key='color_direct', on_change=self._on_direct_color_change,
+            title='')
+        self.direct_color_picker.pack(fill='x', padx=6, pady=6)
+        self.direct_color = self.direct_color_picker.color
 
         action_row = ttk.Frame(content)
         action_row.pack(fill='x', **gui_theme.SECTION_PAD)
@@ -282,6 +296,7 @@ class DirectTabMixin:
                 'polarity': self.direct_image_polarity_var.get(),
                 'threshold': threshold,
             }
+        options['solid_color'] = self.direct_color
 
         def worker():
             try:

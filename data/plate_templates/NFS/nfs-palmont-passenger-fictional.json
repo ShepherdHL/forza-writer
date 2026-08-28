@@ -1,0 +1,129 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "nfs-palmont-passenger-fictional",
+  "display_name_key": "plates.template.nfs_palmont_passenger_fictional",
+  "country": "NFS",
+  "jurisdiction": "Palmont",
+  "era": "fictional",
+  "plate_type": "passenger",
+  "width_mm": 304.8,
+  "height_mm": 152.4,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Modeled on a shared plate template used across the Need for Speed series: an italic city/region banner across the top, large bold plate text, and a bottom colored sticker strip with a month-year stamp. Reference for this template's layout and text came from screenshots the Forza Writer user supplied directly (in-game/in-editor captures), not from any file, image, or asset extracted or downloaded from the game itself or an official tool. The recurring registration text 'ND4SPD' (read as 'need for speed') is a franchise in-joke that shows up across several games' example plates, not something unique to this city. Banner/sticker colors are approximated by eye from the supplied screenshots (compressed, low-resolution source images), not color-picked from an authoritative source. The series also draws a small corner build number and rotated vertical 'NFS' side text on most of these plates -- both omitted here, since PlateField has no rotation support yet; this template only reproduces the non-rotated elements. No italic/script font is bundled, so the banner's italic look is not reproduced -- same placeholder Latin fontpack as every field on every template.",
+    "contributors": [],
+    "reference_urls": [
+      "https://nfs.fandom.com/wiki/Licence_Plate"
+    ],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      248,
+      246,
+      238,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": {
+    "decoration_id": "border",
+    "kind": "border",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      180,
+      175,
+      160,
+      255
+    ],
+    "asset_ref": null,
+    "editable": true
+  },
+  "fields": [
+    {
+      "field_id": "city_banner",
+      "label_key": "plates.field.city_banner",
+      "role": "jurisdiction_text",
+      "x_mm": 15.0,
+      "y_mm": 8.0,
+      "width_mm": 274.8,
+      "height_mm": 26.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.5,
+      "tracking": 1.0,
+      "line_spacing": 1.0,
+      "default_text": "City Of Palmont",
+      "color": [
+        95,
+        40,
+        35,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 15.0,
+      "y_mm": 42.0,
+      "width_mm": 274.8,
+      "height_mm": 64.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.54,
+      "tracking": 3.0,
+      "line_spacing": 1.0,
+      "default_text": "CARBON",
+      "color": [
+        25,
+        25,
+        30,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": true
+    }
+  ],
+  "decorations": [
+    {
+      "decoration_id": "date_sticker",
+      "kind": "sticker",
+      "x_mm": 104.0,
+      "y_mm": 118.0,
+      "width_mm": 96.8,
+      "height_mm": 24.0,
+      "color": [
+        70,
+        110,
+        190,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    }
+  ],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

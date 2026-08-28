@@ -83,7 +83,7 @@ def test_picker_updates_color_without_rebuilding_line_editor(gui):
     row_widgets = tuple(gui.compose_line_rows_container.winfo_children())
     swatch = gui._compose_swatch_widgets[(0, 0)]
 
-    gui._set_compose_current_color((12, 34, 56, 255), record_recent=False)
+    gui._set_compose_current_color((12, 34, 56, 255))
 
     assert tuple(gui.compose_line_rows_container.winfo_children()) == row_widgets
     assert gui._compose_swatch_widgets[(0, 0)] is swatch
@@ -91,15 +91,25 @@ def test_picker_updates_color_without_rebuilding_line_editor(gui):
     assert gui._compose_line_fills[0]['colors'][0] == (12, 34, 56, 255)
 
 
-def test_picker_drag_records_only_final_color(gui):
-    gui._compose_recent_colors.clear()
+def test_picker_set_color_writes_through_to_line_fill_and_readouts(gui):
+    """Composer drives the shared ColorPickerWidget in external mode: picking
+    a color through the widget (as a drag gesture would) must land in the
+    editing line's fill data via the on_change callback, same as before the
+    picker itself moved into color_picker_widget.py."""
+    gui.compose_color_picker.set_color((30, 40, 50, 255), record_recent=False)
 
-    gui._set_compose_current_color((10, 20, 30, 255), record_recent=False)
-    gui._set_compose_current_color((20, 30, 40, 255), record_recent=False)
-    gui._set_compose_current_color((30, 40, 50, 255), record_recent=False)
+    assert gui._compose_line_fills[0]['colors'][0] == (30, 40, 50, 255)
+    assert gui.compose_color_picker._forza_var.get() != ''
 
-    assert gui._compose_recent_colors == []
-    gui._commit_compose_picker_recent()
-    assert gui._compose_recent_colors == [(30, 40, 50, 255)]
+
+def test_compose_text_clear_and_select_all_buttons(gui):
+    gui.compose_text_widget.insert('1.0', 'Some text')
+
+    gui.compose_select_all_btn.invoke()
+    assert tuple(str(i) for i in gui.compose_text_widget.tag_ranges('sel')) == (
+        gui.compose_text_widget.index('1.0'), gui.compose_text_widget.index('1.0 lineend'))
+
+    gui.compose_clear_btn.invoke()
+    assert gui.compose_text_widget.get('1.0', 'end-1c') == ''
 
 

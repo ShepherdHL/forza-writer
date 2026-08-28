@@ -74,7 +74,7 @@ def test_selected_chars_unions_alphabet_groups_across_different_scripts(gui):
 
 
 def test_alphabet_checkbox_stays_checked_when_its_script_tab_is_not_visible(gui):
-    # "Additive, not exclusive" — checking a box for one script and then
+    # "Additive, not exclusive": checking a box for one script and then
     # switching the script filter elsewhere must not clear it, and it
     # must still count toward generation even though it's no longer the
     # visible group.
@@ -176,7 +176,7 @@ def test_load_all_fonts_populates_fonts_and_re_enables_button(gui):
 
 
 def test_load_all_fonts_ignores_stale_scan_result(gui):
-    # A second click while a scan is in flight must supersede the first —
+    # A second click while a scan is in flight must supersede the first:
     # simulate the first scan's result arriving after the second started.
     existing_fonts = dict(gui.fonts)
     gui._font_scan_generation = 5
@@ -202,8 +202,8 @@ def test_loading_fonts_triggers_script_classification(gui):
 
 
 def test_rescanning_fonts_does_not_redetect_scripts_for_already_known_fonts(gui, monkeypatch):
-    # Script detection opens and parses every font file — real per-file
-    # work — so a "Rescan Fonts" click that finds the same fonts again
+    # Script detection opens and parses every font file (real per-file
+    # work), so a "Rescan Fonts" click that finds the same fonts again
     # must not reopen/reclassify ones already known from the first scan.
     import gen_modelbin_gui as mod
     _load_all_fonts_and_wait(gui)
@@ -319,7 +319,7 @@ def test_browse_font_on_machine_cancelled_leaves_selection_unchanged(gui, monkey
 
 def test_font_view_toggle_swaps_widgets_without_raising(gui):
     # winfo_manager() checks geometry-manager registration (pack/grid'd or
-    # not), which is what "currently swapped into the layout" means here —
+    # not), which is what "currently swapped into the layout" means here.
     # winfo_ismapped() would also work (the fixture's alpha=0 Toplevel is
     # still mapped, just invisible) but manager registration is the more
     # direct thing this test actually wants to assert.
@@ -346,9 +346,9 @@ def test_font_grid_populates_tiles(gui):
         gui._poll_queue()
         gui.root.update()
         time.sleep(0.05)
-    # Not asserting tiles > 0 unconditionally — "Arial" may not be installed
-    # on every machine — just that populating doesn't raise and status text
-    # is set sensibly either way.
+    # Not asserting tiles > 0 unconditionally, since "Arial" may not be
+    # installed on every machine: just that populating doesn't raise and
+    # status text is set sensibly either way.
     assert isinstance(gui.grid_status_var.get(), str)
 
 
@@ -363,12 +363,12 @@ def test_font_grid_empty_space_uses_the_recessed_theme_surface(gui):
 
 def test_font_grid_column_count_grows_and_shrinks_with_window_width(gui):
     # The responsive column count (see GeneratorGUI._grid_columns_for_width)
-    # replaced a hard-coded GRID_COLUMNS=3 that left most of a wide window
-    # empty beside a narrow 3-column strip. This exercises that reflow
-    # directly with synthetic tiles instead of real rendered font previews
-    # (the column math doesn't care what image a tile shows), so it doesn't
-    # depend on any specific font file being present on the machine, unlike
-    # test_font_grid_populates_tiles above.
+    # must lay out more columns in a wider window rather than leaving the
+    # extra width empty beside a narrow fixed-width strip. This exercises
+    # that reflow directly with synthetic tiles instead of real rendered
+    # font previews (the column math doesn't care what image a tile shows),
+    # so it doesn't depend on any specific font file being present on the
+    # machine, unlike test_font_grid_populates_tiles above.
     from PIL import Image
     import gen_modelbin_gui as mod
 
@@ -417,11 +417,10 @@ def test_font_grid_column_count_grows_and_shrinks_with_window_width(gui):
 
 
 def test_reference_modelbin_field_always_enabled(gui):
-    # Settings' path fields are persistent config, not per-run-conditional
-    # — unlike the old single-page layout, selecting a non-modelbin output
-    # mode no longer disables the reference-modelbin entry (it lives on a
-    # different tab now and you might want to fix/save it regardless of
-    # what's currently selected on Generator).
+    # Settings' path fields are persistent config, not per-run-conditional:
+    # selecting a non-modelbin output mode must not disable the
+    # reference-modelbin entry. It lives on its own tab, and you might want
+    # to fix or save it regardless of what's currently selected on Generator.
     for mode in ("json", "modelbin", "json_legacy"):
         gui.output_var.set(mode)
         gui._on_output_mode_changed()
@@ -538,9 +537,10 @@ def test_preview_json_file_shows_shape_and_mask_counts(gui, tmp_path):
 
 @requires_assets
 def test_preview_valid_modelbin_shows_structurally_valid_in_success_style(gui, tmp_path):
-    # Regression test for wiring validate_modelbin() into the preview panel
-    # (see RESEARCH.md's malformed-mesh-buffer bug): a real, correctly
-    # generated glyph should read as structurally valid, styled Success.
+    # The preview panel runs validate_modelbin() (see RESEARCH.md for the
+    # malformed-mesh-buffer failure mode this guards against): a real,
+    # correctly generated glyph should read as structurally valid, styled
+    # Success.
     from gen_modelbin import generate_glyph
 
     out_path = tmp_path / "A.modelbin"
@@ -557,10 +557,10 @@ def test_preview_valid_modelbin_shows_structurally_valid_in_success_style(gui, t
 @requires_assets
 def test_preview_corrupted_modelbin_shows_invalid_in_danger_style(gui, tmp_path):
     # Same as above, but with an out-of-bounds index injected into the
-    # index buffer after generation — the exact failure mode validate_modelbin
+    # index buffer after generation: the exact failure mode validate_modelbin
     # exists to catch (a structurally-parseable file whose index buffer
-    # references vertices past the end of a vertex buffer). The old,
-    # position-only preview render can't tell this file apart from a good
+    # references vertices past the end of a vertex buffer). A preview that
+    # only checks vertex positions can't tell this file apart from a good
     # one; the validator is what should catch it.
     import struct
 
@@ -657,5 +657,61 @@ def test_opening_glyph_overrides_tracks_the_authoritative_generator_font(gui):
 
     assert gui.configurator_font_var.get() == 'generator_font.ttf'
     assert gui._current_tab == 'generator'
+
+
+# -- embedded color picker + High Contrast mode -----------------------------
+
+def test_generator_has_its_own_embedded_color_picker(gui):
+    from gen_modelbin_gui.color_picker_widget import ColorPickerWidget
+    assert isinstance(gui.generator_color_picker, ColorPickerWidget)
+
+
+def test_generator_color_mode_toggle_shows_the_right_controls(gui):
+    gui.generator_color_mode_var.set('solid')
+    gui._on_generator_color_mode_changed()
+    gui.root.update_idletasks()
+    assert gui.generator_color_picker_frame.winfo_ismapped()
+    assert not gui.generator_hc_frame.winfo_ismapped()
+
+    gui.generator_color_mode_var.set('high_contrast')
+    gui._on_generator_color_mode_changed()
+    gui.root.update_idletasks()
+    assert gui.generator_hc_frame.winfo_ismapped()
+    assert not gui.generator_color_picker_frame.winfo_ismapped()
+
+
+def test_randomize_seed_changes_the_seed_value(gui):
+    gui.generator_hc_seed_var.set(0)
+    gui._randomize_generator_seed()
+    # Astronomically unlikely to land back on 0 from a 31-bit range; a
+    # flaky failure here would mean the RNG itself is broken, not this test.
+    assert gui.generator_hc_seed_var.get() != 0
+
+
+def test_start_batch_forwards_solid_color_by_default(gui, monkeypatch):
+    captured = {}
+    monkeypatch.setattr(gui, '_start_generation', lambda **kwargs: captured.update(kwargs) or True)
+    gui.selected_font = None  # skips the variable-font confirmation prompt
+    gui.generator_color_mode_var.set('solid')
+    gui.generator_color = (12, 34, 56, 255)
+
+    gui._start_batch()
+
+    assert captured['color_mode'] == 'solid'
+    assert captured['solid_color'] == (12, 34, 56, 255)
+    assert captured['high_contrast_seed'] is None
+
+
+def test_start_batch_forwards_high_contrast_mode_and_seed(gui, monkeypatch):
+    captured = {}
+    monkeypatch.setattr(gui, '_start_generation', lambda **kwargs: captured.update(kwargs) or True)
+    gui.selected_font = None
+    gui.generator_color_mode_var.set('high_contrast')
+    gui.generator_hc_seed_var.set(4242)
+
+    gui._start_batch()
+
+    assert captured['color_mode'] == 'high_contrast'
+    assert captured['high_contrast_seed'] == 4242
 
 

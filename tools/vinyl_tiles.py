@@ -1,6 +1,6 @@
 """Render one vinyl-shape tile for the Generator tab's shape picker.
 
-The whole tile — background, border, silhouette, caption, preferred badge —
+The whole tile (background, border, silhouette, caption, preferred badge)
 is drawn as a single PIL image rather than assembled from Tk widgets. Tk's
 canvas has no rounded rectangle and no way to tint a bitmap, so building the
 tile here keeps the three states visually distinct and, more usefully, makes
@@ -29,7 +29,7 @@ THUMB = 46
 BADGE_R = 8          # preferred-star badge radius
 BADGE_INSET = 13     # badge centre, in from the tile's top-right corner
 
-# The three states a shape can be in. "preferred" implies allowed — the policy
+# The three states a shape can be in. "preferred" implies allowed: the policy
 # rejects preferring a disabled shape, so there is no fourth combination.
 STATES = ("off", "on", "preferred")
 

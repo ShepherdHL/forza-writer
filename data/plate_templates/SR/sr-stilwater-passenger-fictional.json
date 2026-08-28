@@ -1,0 +1,154 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "sr-stilwater-passenger-fictional",
+  "display_name_key": "plates.template.sr_stilwater_passenger_fictional",
+  "country": "SR",
+  "jurisdiction": "Stilwater",
+  "era": "fictional",
+  "plate_type": "passenger",
+  "width_mm": 304.8,
+  "height_mm": 152.4,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Modeled directly on a clean reference plate image the Forza Writer user supplied (Saints Row 2's Stilwater plate): 'STILWATER' as a green header banner, a blue divider beneath it, a yellow corner sticker, a bold blue two-group registration number (e.g. '180 174', no letter prefix on the plate itself -- an earlier web-research pass had guessed an 'SW' prefix from vehicle-naming conventions, which this reference image does not support), and 'America's Hometown' as a gray tagline along the bottom. The real plate's divider is a wavy double line and it has a faint city-skyline watermark behind the registration number; both are simplified here -- the divider as a plain SEPARATOR bar and the skyline watermark omitted entirely, since the schema has no raster-image/watermark decoration kind. No script/serif font is bundled, so the header's serif look and the tagline's italic look aren't reproduced -- same placeholder Latin fontpack as every field on every template.",
+    "contributors": [],
+    "reference_urls": [],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": null,
+  "fields": [
+    {
+      "field_id": "city_banner",
+      "label_key": "plates.field.city_banner",
+      "role": "jurisdiction_text",
+      "x_mm": 15.0,
+      "y_mm": 6.0,
+      "width_mm": 250.0,
+      "height_mm": 24.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.5,
+      "tracking": 2.0,
+      "line_spacing": 1.0,
+      "default_text": "STILWATER",
+      "color": [
+        45,
+        105,
+        75,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 15.0,
+      "y_mm": 44.0,
+      "width_mm": 274.8,
+      "height_mm": 62.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.62,
+      "tracking": 3.0,
+      "line_spacing": 1.0,
+      "default_text": "180 174",
+      "color": [
+        35,
+        55,
+        150,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": true
+    },
+    {
+      "field_id": "tagline",
+      "label_key": "plates.field.tagline",
+      "role": "decorative_text",
+      "x_mm": 15.0,
+      "y_mm": 124.0,
+      "width_mm": 274.8,
+      "height_mm": 16.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.4,
+      "tracking": 1.0,
+      "line_spacing": 1.0,
+      "default_text": "America's Hometown",
+      "color": [
+        110,
+        108,
+        98,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [
+    {
+      "decoration_id": "divider",
+      "kind": "separator",
+      "x_mm": 15.0,
+      "y_mm": 32.0,
+      "width_mm": 250.0,
+      "height_mm": 3.0,
+      "color": [
+        60,
+        100,
+        160,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    },
+    {
+      "decoration_id": "sticker",
+      "kind": "sticker",
+      "x_mm": 270.0,
+      "y_mm": 6.0,
+      "width_mm": 22.0,
+      "height_mm": 18.0,
+      "color": [
+        220,
+        190,
+        40,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    }
+  ],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

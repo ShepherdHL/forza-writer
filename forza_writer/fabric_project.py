@@ -2,13 +2,13 @@
 (`.fabric-project.json`). General-purpose: takes any shape-dict list in the
 format `forza_writer.layout` already produces
 (`{"type", "type_word", "data", "color"}`), not coupled to any particular
-generator — usable for primitive-fit output today, and for hijacked
+generator: usable for primitive-fit output today, and for hijacked
 custom-mesh shape references later.
 
 Schema confirmed against two real KFPS project files, not reverse-engineered
 from docs alone: a hand-made `AmarilloUSAF_FontPack.fabric-project.json`
 (top-level structure, editor_source_overlay) and a KFPS-generated project
-under `runtime/fabric-editor/projects/` (the grouping convention — flat
+under `runtime/fabric-editor/projects/` (the grouping convention: flat
 per-shape `editor_group_id`/`editor_group_name` fields, no separate group
 registry). See KFPS's `docs/FABRIC_EDITOR_MANUAL.md` for behavior notes,
 especially "Reference Image" and "Editor Groups" (both editor-only, never
@@ -29,8 +29,8 @@ from forza_writer.shapes import shape_word_to_resource
 FORMAT = "kloudy_fabric_editor_project_v1"
 
 # Matches the defaults observed in a real hand-made project file's
-# editor_guides block — an empty-but-complete guides object, since we have
-# no actual guide data to contribute.
+# editor_guides block: an empty-but-complete guides object, since this
+# module has no actual guide data to contribute.
 _DEFAULT_EDITOR_GUIDES = {
     "version": 1,
     "gridEnabled": False,
@@ -99,12 +99,12 @@ def to_fabric_project(shapes: list[dict], name: str,
     `groups`: list of `(group_name, shape_indices)`, where `shape_indices`
     index into `shapes`. Shapes not covered by any group get
     `editor_group_id`/`editor_group_name` = None. Group ids are synthesized
-    locally — they don't need to match KFPS's own generator, just be unique
+    locally; they don't need to match KFPS's own generator, just be unique
     and structurally consistent within this project.
 
     `source_overlay`, if given, is embedded verbatim as `editor_source_overlay`
-    (build one with `forza_writer.reference_svg`). Omitted entirely if None —
-    a fabric project doesn't require a reference image.
+    (build one with `forza_writer.reference_svg`). Omitted entirely if None,
+    since a fabric project doesn't require a reference image.
     """
     index_to_group: dict[int, tuple[str, str]] = {}
     if groups:

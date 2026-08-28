@@ -146,7 +146,7 @@ def _quarter_circle_mask() -> np.ndarray:
 
 
 def _circle_border_mask(thickness_ratio: float = 0.28) -> np.ndarray:
-    """A ring (annulus) — its own legitimate solid silhouette, not merely an
+    """A ring (annulus): its own legitimate solid silhouette, not merely an
     outline of the filled Circle. Valuable for hole-bearing letterforms
     (O, the counter of A/D/etc.) that a solid disk can't approximate well."""
     img = _new_canvas()
@@ -222,7 +222,7 @@ def _up_arrow_mask() -> np.ndarray:
 def _shield_mask() -> np.ndarray:
     """Hand-approximated: flat top, curved-ish sides tapering to a point at
     the bottom. Eyeballed against the shape's usual silhouette, not sourced
-    from a real asset — flag as approximate if it ever needs to match the
+    from a real asset; flag as approximate if it ever needs to match the
     in-game shape precisely."""
     img = _new_canvas()
     m = MASK_RESOLUTION * 0.1

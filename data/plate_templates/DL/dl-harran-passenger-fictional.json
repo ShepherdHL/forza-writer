@@ -1,0 +1,95 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "dl-harran-passenger-fictional",
+  "display_name_key": "plates.template.dl_harran_passenger_fictional",
+  "country": "DL",
+  "jurisdiction": null,
+  "era": "fictional",
+  "plate_type": "passenger",
+  "width_mm": 520.0,
+  "height_mm": 110.0,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Reference for this template's layout and text came from screenshots the Forza Writer user supplied directly (in-game/in-editor captures), not from any file, image, or asset extracted or downloaded from the game itself or an official tool. Only one Dying Light plate has been supplied so far (on the rear of an armored van), so unlike templates backed by multiple examples, nothing here about format consistency is corroborated -- this is a single data point, treated honestly as one. Sized 520x110mm (the real EU standard, matching Mirror's Edge's own reasoning above) since the plate's proportions in the screenshot read as European/Nordic, not American -- an explicit judgment call, not a confirmed in-game measurement. Two text elements are visible: 'HAR' (read as short for Harran, the game's setting) in an amber/orange tone on the left, and 'HHM 155 M' in a lighter grey on the right, against a dark charcoal background -- unlike Mirror's Edge, 'HAR' is rendered here as ordinary text (JURISDICTION_TEXT), not a solid colored band, since it reads as actual characters in the screenshot rather than a color block. The exact spacing/punctuation between '155' and 'M' is a best-effort reading of a blurry, angled shot, not a confident transcription -- treat the plain space used here as one reasonable guess among others. No format validation is applied for the same reason: one example plate isn't enough to assert a real pattern. Vehicle type (an armored security van) doesn't clearly imply a distinct in-universe plate category, so plate_type defaults to passenger rather than guessing a commercial/security designation with no supporting evidence. A dark charcoal background is a best-effort read of the screenshot's lighting, not a confirmed base color.",
+    "contributors": [],
+    "reference_urls": [],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      32,
+      30,
+      28,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": null,
+  "fields": [
+    {
+      "field_id": "jurisdiction_header",
+      "label_key": "plates.field.jurisdiction_header",
+      "role": "jurisdiction_text",
+      "x_mm": 20.0,
+      "y_mm": 28.0,
+      "width_mm": 90.0,
+      "height_mm": 54.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.53,
+      "tracking": 2.0,
+      "line_spacing": 1.0,
+      "default_text": "HAR",
+      "color": [
+        216,
+        148,
+        42,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 128.0,
+      "y_mm": 24.0,
+      "width_mm": 372.0,
+      "height_mm": 62.0,
+      "alignment": "left",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.56,
+      "tracking": 3.0,
+      "line_spacing": 1.0,
+      "default_text": "HHM 155 M",
+      "color": [
+        222,
+        222,
+        216,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": true
+    }
+  ],
+  "decorations": [],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

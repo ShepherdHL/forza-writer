@@ -10,7 +10,7 @@ all: FH6 already ships native shape resources for each letter of each Forza
 Font (see forza_writer/shapes.py's char_to_resource, and
 forza_writer/layout.py's layout_forza_text, which this reuses the same
 PIXEL_ART_SQUARE_SIZE scale-fit math from). The output is a real,
-already-correct starting point — open it in Kloudy's Fabric Editor and
+already-correct starting point: open it in Kloudy's Fabric Editor and
 fine-tune individual glyphs (recolor, resize, replace with custom shapes)
 rather than drawing an entire alphabet from a blank cell.
 
@@ -20,7 +20,7 @@ left out of the project and recorded as skipped in the manifest, same
 convention as gen_fontpack.py's "skipped" list.
 
 Each glyph is placed in its own Editor Group, so the output already
-satisfies import_glyph_template.py's grouping requirement — a baseline
+satisfies import_glyph_template.py's grouping requirement: a baseline
 project can go straight through that importer unmodified, before or after
 any hand-editing.
 

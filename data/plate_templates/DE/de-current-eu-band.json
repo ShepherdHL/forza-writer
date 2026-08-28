@@ -1,0 +1,139 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "de-current-eu-band",
+  "display_name_key": "plates.template.de_current_eu_band",
+  "country": "DE",
+  "jurisdiction": null,
+  "era": "current",
+  "plate_type": "passenger",
+  "width_mm": 520.0,
+  "height_mm": 110.0,
+  "accuracy_status": "reference_based",
+  "provenance": {
+    "source_notes": "520mm x 110mm single-line dimensions and the mandatory blue EU band (gold-star circle over a white 'D') are consistent with DIN 74069 as reported in secondary sources -- not independently cross-checked against the paywalled DIN text itself. Registration lettering is approximated with a bundled sans-serif, NOT FE-Schrift (Fälschungserschwerende Schrift) -- no confirmed open license exists for circulating digitizations of that font, so none is bundled; a purpose-built plate font, generated into a fontpack the same way any other font is, is the recommended long-term fix. The district-code/letter/digit format and the two inspection-sticker decorations are modeled structurally; the ~400-entry district-code lookup table itself is not yet built (tracked as a follow-up in docs/PLATE_TEMPLATE_SCHEMA.md), so the registration field's validation checks length/pattern only, not real district-code membership.",
+    "contributors": [],
+    "reference_urls": [],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 45.0,
+    "y_mm": 0.0,
+    "width_mm": 475.0,
+    "height_mm": 110.0,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": {
+    "decoration_id": "border",
+    "kind": "border",
+    "x_mm": 45.0,
+    "y_mm": 0.0,
+    "width_mm": 475.0,
+    "height_mm": 110.0,
+    "color": [
+      20,
+      20,
+      20,
+      255
+    ],
+    "asset_ref": null,
+    "editable": true
+  },
+  "fields": [
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 60.0,
+      "y_mm": 16.0,
+      "width_mm": 370.0,
+      "height_mm": 75.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.61,
+      "tracking": 8.0,
+      "line_spacing": 1.0,
+      "default_text": "B MW 1234",
+      "color": [
+        20,
+        20,
+        20,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.de.format_hint",
+        "min_length": 5,
+        "max_length": 11,
+        "allowed_pattern": "[A-Z]{1,3} [A-Z]{1,2} [0-9]{1,4}",
+        "excluded_chars": [],
+        "custom_rule_id": null
+      },
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [
+    {
+      "decoration_id": "eu_band",
+      "kind": "jurisdiction_mark",
+      "x_mm": 0.0,
+      "y_mm": 0.0,
+      "width_mm": 45.0,
+      "height_mm": 110.0,
+      "color": [
+        0,
+        51,
+        153,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    },
+    {
+      "decoration_id": "hu_sticker",
+      "kind": "sticker",
+      "x_mm": 460.0,
+      "y_mm": 5.0,
+      "width_mm": 18.0,
+      "height_mm": 18.0,
+      "color": [
+        230,
+        160,
+        30,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    },
+    {
+      "decoration_id": "zulassung_sticker",
+      "kind": "sticker",
+      "x_mm": 460.0,
+      "y_mm": 87.0,
+      "width_mm": 18.0,
+      "height_mm": 18.0,
+      "color": [
+        200,
+        200,
+        200,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    }
+  ],
+  "tags": [
+    "vanity-available"
+  ]
+}

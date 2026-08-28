@@ -3,8 +3,8 @@ browser (dafont/Windows-font-picker style: "see what it looks like", not
 just "read its name").
 
 Rendering an arbitrary installed font can fail for all sorts of reasons
-(corrupt file, unsupported table format, a name PIL's rasterizer chokes on)
-— that must never crash the grid, just degrade to a plain-text placeholder
+(corrupt file, unsupported table format, a name PIL's rasterizer chokes on),
+and that must never crash the grid, just degrade to a plain-text placeholder
 tile for that one font.
 """
 
@@ -39,7 +39,7 @@ def render_font_name(font_path: Path, display_name: str, size: tuple[int, int] =
                       bg: str = "#101317", fg: str = "#e8e8e6") -> Image.Image:
     """Render `display_name` set in the font at `font_path`. Falls back to a
     plain placeholder tile (default font, muted text) if the font can't be
-    rendered at all — never raises."""
+    rendered at all: never raises."""
     key = (str(font_path), display_name, size, bg, fg)
     if key in _cache:
         return _cache[key]

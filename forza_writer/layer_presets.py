@@ -19,10 +19,9 @@ RGBA = tuple[int, int, int, int]
 WHITE: RGBA = (255, 255, 255, 255)
 BLACK: RGBA = (0, 0, 0, 255)
 
-# The reference multicolor nested-text image's gradient (spec sections 21 and
-# 25) -- an example default only; every preset's colors are overridable, per
-# "presets may include example colors but should not permanently hard-code a
-# specific palette."
+# The reference multicolor nested-text image's gradient, used only as an
+# example default: every preset's colors are overridable, and presets must
+# never permanently hard-code a specific palette.
 _DEFAULT_GRADIENT: tuple[RGBA, ...] = (
     (42, 221, 216, 255), (50, 168, 234, 255), (57, 131, 237, 255), (70, 79, 240, 255),
 )
@@ -66,7 +65,7 @@ def preset_single_outline(amount: float = 12.0, outline_color: RGBA = BLACK, fil
 def preset_concentric_inline(step: float = 8.0, count: int = 4, colors: tuple[RGBA, ...] | None = None) -> LayerStack:
     """Layer 1: Original, Layer 2: Inset `step`, Layer 3: Inset `2*step`,
     ... -- the construction behind the reference multicolor nested-text
-    look (spec section 3/25)."""
+    look."""
     palette = _gradient(count, colors)
     layers = [EffectLayer(id=new_layer_id(), name="Original", operation=LayerOperation.ORIGINAL, color=palette[0])]
     for i in range(1, count):

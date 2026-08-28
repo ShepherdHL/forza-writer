@@ -1,0 +1,41 @@
+{
+  "format": "forza_writer_plate_blank_v1",
+  "template_id": "halo-reach-barcode-fictional",
+  "decoration_signature": "62bc119da52b599a",
+  "shapes": [
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        0.0,
+        0.0,
+        2.372021,
+        1.18601,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        158,
+        154,
+        142,
+        255
+      ],
+      "mask": false
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "bg",
+      "kind": "background",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        0
+      ],
+      "editable": false,
+      "deletable": true
+    }
+  ],
+  "warnings": []
+}

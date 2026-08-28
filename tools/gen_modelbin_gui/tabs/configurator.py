@@ -72,7 +72,7 @@ class ConfiguratorTabMixin:
     _CONFIGURATOR_INSERT_CHUNK = 150
 
     def _build_configurator_workspace(self, parent):
-        """Build the former Configurator as a lazy Generator sub-workspace."""
+        """Build the per-glyph overrides workspace as a lazy, collapsible sub-section of Generator."""
         self.configurator_font_var = tk.StringVar()
         self._configurator_workspace_open = False
 
@@ -192,8 +192,8 @@ class ConfiguratorTabMixin:
     def _configurator_char_list(self) -> list[tuple[str, str]]:
         """Every glyph the Configurator font actually has. Unlike
         Generator's character checkboxes, Configurator doesn't restrict
-        what gets generated — it reviews/overrides the font's whole glyph
-        set; restricting output stays Generator's job."""
+        what gets generated: it reviews and overrides the font's whole
+        glyph set, and restricting output stays Generator's job."""
         if self._configurator_font is None:
             return []
         categorized, _skipped = gen_modelbin_gui.charset_from_font(self._configurator_font)
@@ -253,17 +253,16 @@ class ConfiguratorTabMixin:
                                            segments: int, start: int = 0) -> None:
         """Insert glyph rows in `_CONFIGURATOR_INSERT_CHUNK`-sized batches via
         `root.after` rather than one synchronous loop (see the class-level
-        comment on that constant for why). Bails out via the same
-        generation-check pattern `_apply_configurator_scan_result` already
-        uses if a newer rescan supersedes this one mid-batch — a stale rescan
-        must not keep inserting rows into a tree a fresher one already
-        cleared.
+        comment on that constant for why). Uses the same generation-check
+        pattern as `_apply_configurator_scan_result` to bail out if a newer
+        rescan supersedes this one mid-batch: a stale rescan must not keep
+        inserting rows into a tree a fresher one already cleared.
 
         The background fitting pass only starts once every row exists (see
         the call to `_start_configurator_scan_worker` below): its results
         arrive keyed by character and get applied via
-        `configurator_tree.exists(char)` — a fit result racing ahead of that
-        character's own row being inserted would just be silently dropped.
+        `configurator_tree.exists(char)`, so a fit result racing ahead of
+        that character's own row being inserted is silently dropped.
         """
         if generation != self._configurator_scan_generation:
             return
@@ -290,7 +289,7 @@ class ConfiguratorTabMixin:
                     return
                 entry = self._configurator_overrides.get(char)
                 if entry and entry['mode'] == 'manual':
-                    # Manually-assigned glyphs skip auto-fit entirely —
+                    # Manually-assigned glyphs skip auto-fit entirely:
                     # there's no strategy/eligibility to probe for them.
                     info = {'manual': True}
                 else:
@@ -326,8 +325,8 @@ class ConfiguratorTabMixin:
         self.configurator_mode_var.set(entry['mode'])
         self._refresh_configurator_detail(char)
     def _on_configurator_mode_changed(self):
-        # The three radios only ever set auto/force/never — "manual" is
-        # reached exclusively through _configurator_assign_file below, but
+        # The three radios only ever set auto/force/never. "manual" is
+        # reached exclusively through _configurator_assign_file below, so
         # picking a radio here while a manual glyph is selected correctly
         # drops that assignment in favor of auto-fit.
         char = self._configurator_selected_char
@@ -350,7 +349,7 @@ class ConfiguratorTabMixin:
         if not chosen:
             return
         self._configurator_overrides[char] = {'mode': 'manual', 'file': chosen}
-        self.configurator_mode_var.set('manual')  # no radio has this value — correctly shows none selected
+        self.configurator_mode_var.set('manual')  # no radio has this value, so none show selected
         self._update_configurator_row(char)
         self._save_configurator_overrides()
         self._refresh_configurator_detail(char)
@@ -489,11 +488,11 @@ class ConfiguratorTabMixin:
             self.configurator_mode_var.set('auto')
             self._refresh_configurator_detail(self._configurator_selected_char)
     def _configurator_force_all_rectilinear(self):
-        # Cheap — every rectilinear glyph's can_force_mask is already known
+        # Cheap: every rectilinear glyph's can_force_mask is already known
         # from the bulk scan (rectilinear eligibility never needs the
         # curved search), so this never triggers the expensive per-glyph
         # check the way forcing a curved glyph individually would. Manual
-        # glyphs are left untouched — forcing a mask on them would silently
+        # glyphs are left untouched: forcing a mask on them would silently
         # discard the file assignment, which isn't what "force mask on all
         # eligible" should do.
         changed = 0

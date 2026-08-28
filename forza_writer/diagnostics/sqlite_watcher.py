@@ -6,14 +6,14 @@ FH6 validates its catalog from an in-process SQLite database. There is no safe,
 supported way to intercept another process's *internal* SQL statements from the
 outside, so this watcher does not claim to. It does two strictly read-only jobs:
 
-1. **State polling** — opens the catalog read-only and snapshots the
+1. **State polling**: opens the catalog read-only and snapshots the
    ``Livery_VinylsDecals`` table (row count, id extent, count within the known
    101-3840 range, and the exact rows for a set of *focus ids* such as 4001).
    Between snapshots it emits inserts/deletes/updates and focus-id transitions.
    A focus id that is out of range and later disappears is reported with
-   ``outcome="rejected"`` — the fingerprint of FH6 dropping a test insert.
+   ``outcome="rejected"``, the fingerprint of FH6 dropping a test insert.
 
-2. **Query tracing (opt-in, our connection only)** — ``install_trace`` logs
+2. **Query tracing (opt-in, our connection only)**: ``install_trace`` logs
    statements executed on a connection *we* drive; it cannot see FH6's internal
    statements.
 

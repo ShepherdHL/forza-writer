@@ -54,6 +54,7 @@ from forza_writer import manufacturer_colors  # noqa: E402
 from forza_writer.variable_fonts import (  # noqa: E402
     VariableFontInfo, inspect_variable_font, instantiate_font, variation_slug)
 
+from ..color_picker_widget import ColorPickerWidget  # noqa: E402
 from ..state import (  # noqa: E402
     FONT_EXTENSIONS, FONTS_DIR_SYSTEM, GRID_MAX_TILES, GRID_TILE_GAP, GRID_TILE_SIZE,
     ICON_PATH, LIVE_PREVIEW_SIZE, COMPOSE_PREVIEW_SIZE, OUTPUT_MODE_LABELS, PREVIEW_SIZE,
@@ -62,6 +63,8 @@ from ..state import (  # noqa: E402
 
 
 class AdvancedTabMixin:
+    def _on_advanced_color_change(self, rgba: tuple):
+        self.advanced_color = rgba
     def _build_advanced_page(self):
         page = ttk.Frame(self.page_container)
         self._pages['advanced'] = page
@@ -150,7 +153,15 @@ class AdvancedTabMixin:
                   wraplength=gui_theme.WRAP_WIDE, justify='left').pack(
                       fill='x', padx=6, pady=(0, 6))
 
-        run_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('5. Generation'))
+        color_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('5. Color'))
+        color_frame.pack(fill='x', **gui_theme.SECTION_PAD)
+        self.advanced_color_picker = ColorPickerWidget(
+            color_frame, settings_key='color_advanced', on_change=self._on_advanced_color_change,
+            title='')
+        self.advanced_color_picker.pack(fill='x', padx=6, pady=6)
+        self.advanced_color = self.advanced_color_picker.color
+
+        run_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('6. Generation'))
         run_frame.pack(fill='x', **gui_theme.SECTION_PAD)
         ttk.Label(
             run_frame,
@@ -345,7 +356,8 @@ class AdvancedTabMixin:
             prefix=sanitize_prefix(self.prefix_var.get()), output=output, reference=reference,
             segments=max(1, int(self.segments_var.get())), chars=chars,
             allow_stencil=self.allow_stencil_var.get(), source_label='Advanced Generator',
-            variation=self._advanced_variation())
+            variation=self._advanced_variation(),
+            color_mode='solid', solid_color=self.advanced_color)
     def _open_advanced_instance_overrides(self):
         if self._advanced_font is None or not self._advanced_info.is_variable:
             self._log('Choose a variable font first.', tag='warn')

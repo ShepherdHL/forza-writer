@@ -1,0 +1,72 @@
+{
+  "format": "forza_writer_plate_blank_v1",
+  "template_id": "sr-steelport-passenger-fictional",
+  "decoration_signature": "23b36fa6d5c029e1",
+  "shapes": [
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        0.0,
+        0.0,
+        2.372021,
+        1.18601,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        150,
+        150,
+        150,
+        255
+      ],
+      "mask": false
+    },
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        0.0,
+        0.0,
+        2.372021,
+        1.18601,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "border",
+      "kind": "border",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        0
+      ],
+      "editable": true,
+      "deletable": true
+    },
+    {
+      "node_id": "bg",
+      "kind": "background",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        1
+      ],
+      "editable": false,
+      "deletable": true
+    }
+  ],
+  "warnings": []
+}

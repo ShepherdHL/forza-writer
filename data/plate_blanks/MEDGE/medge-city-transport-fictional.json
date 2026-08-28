@@ -1,0 +1,72 @@
+{
+  "format": "forza_writer_plate_blank_v1",
+  "template_id": "medge-city-transport-fictional",
+  "decoration_signature": "e799ac8989a89a22",
+  "shapes": [
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        0.0,
+        0.0,
+        2.372021,
+        1.18601,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        224,
+        222,
+        214,
+        255
+      ],
+      "mask": false
+    },
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        -143.4,
+        0.0,
+        0.14008,
+        1.18601,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        35,
+        85,
+        165,
+        255
+      ],
+      "mask": false
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "bg",
+      "kind": "background",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        0
+      ],
+      "editable": false,
+      "deletable": true
+    },
+    {
+      "node_id": "left_band",
+      "kind": "decoration",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        1
+      ],
+      "editable": true,
+      "deletable": true
+    }
+  ],
+  "warnings": []
+}

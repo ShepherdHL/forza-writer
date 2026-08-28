@@ -5,7 +5,7 @@ letterforms) for hand-drawing a fontpack in Kloudy's Fabric Editor.
 
 Open the exported project, draw each glyph inside its labeled cell using the
 Fabric Editor's normal shape tools, and group every glyph's shapes together
-(Editor Groups) before exporting again — grouping is what lets
+(Editor Groups) before exporting again. Grouping is what lets
 import_glyph_template.py identify which glyph is which. Ungrouped or
 stray shapes can't be attributed to a cell reliably and will be skipped on
 import.
@@ -16,7 +16,7 @@ Usage:
     python tools/gen_glyph_template.py --prefix MY-KATAKANA --charset katakana
     python tools/gen_glyph_template.py --prefix MODEL-PLASTIC-TRACE --font-file "PPModelPlastic-Medium.otf"
 
---font-file requires a font you actually hold a license for — it embeds
+--font-file requires a font you actually hold a license for: it embeds
 that exact font file into the reference overlay so KFPS renders its real
 letterforms as a tracing guide (no artwork sourced from anywhere else).
 Without it, cells are labeled but empty, same as before.
@@ -37,7 +37,7 @@ DEFAULT_OUT_DIR = Path("data/fontpacks")
 
 # name -> (script, group_label) for forza_writer.alphabets.groups_for_script,
 # or None for the hand-picked Basic Latin set. Add more scripts/groups here
-# as templates for them are needed — every entry gets the same grid/guide
+# as templates for them are needed. Every entry gets the same grid/guide
 # machinery for free, only the source character list differs.
 CHARSETS = {
     "basic-latin": None,

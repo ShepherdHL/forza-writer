@@ -97,6 +97,7 @@ def test_advanced_generation_passes_one_explicit_instance_to_worker(gui, tmp_pat
                 gui.symbols_var, gui.private_var):
         var.set(False)
     gui.custom_var.set('中')
+    gui.advanced_color = (11, 22, 33, 255)
     calls = []
     monkeypatch.setattr(gui, '_start_generation', lambda **kwargs: calls.append(kwargs) or True)
 
@@ -107,5 +108,14 @@ def test_advanced_generation_passes_one_explicit_instance_to_worker(gui, tmp_pat
     assert calls[0]['chars'] == {'中'}
     assert calls[0]['variation']['named_instance'] == 'Regular'
     assert calls[0]['variation']['coordinates'] == {'wght': 400.0}
+    # Advanced Generator always generates solid -- no High Contrast option
+    # of its own, only Main Generator's does.
+    assert calls[0]['color_mode'] == 'solid'
+    assert calls[0]['solid_color'] == (11, 22, 33, 255)
+
+
+def test_advanced_has_its_own_embedded_color_picker(gui):
+    from gen_modelbin_gui.color_picker_widget import ColorPickerWidget
+    assert isinstance(gui.advanced_color_picker, ColorPickerWidget)
 
 

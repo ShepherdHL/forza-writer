@@ -10,7 +10,7 @@ Usage:
 
 Requires a reference modelbin (default: user-assets/S_01.modelbin) to copy the
 material/mesh/layout chunks from. This file is an extracted FH6 game asset
-and is not included in this repo — see README.md for how to obtain it.
+and is not included in this repo, see README.md for how to obtain it.
 """
 import argparse
 import struct
@@ -51,7 +51,7 @@ def char_filename(prefix: str, char: str) -> str:
     Windows filesystems are case-insensitive, so PREFIX_A and PREFIX_a would
     collide as files. Lowercase letters get an explicit `_lc` marker to keep
     every glyph's file distinct regardless of prefix. (The shape catalog
-    itself is case-sensitive — only the on-disk name needs disambiguation.)
+    itself is case-sensitive; only the on-disk name needs disambiguation.)
     """
     if char.isalpha() and char.islower():
         return f"{prefix}_{char}_lc.modelbin"
@@ -60,25 +60,24 @@ def char_filename(prefix: str, char: str) -> str:
 
 # Per-thread cache of (TTFont, cmap) keyed by resolved font path. A full
 # fontpack/composition run calls glyph_in_font()/extract_contours() once per
-# character — up to a few hundred times for a large charset — and each of
-# those was independently doing `TTFont(path)` + `font.getBestCmap()` from
-# scratch. Opening the file itself is cheap (~0.5ms), but getBestCmap() is
-# not — it merges/decodes the font's cmap subtables and measured ~5-19ms on
-# real installed fonts, so re-deriving it on every single glyph turned a
-# ~100-glyph run into roughly a second of pure repeated work reconstructing
-# the exact same mapping. Caching the opened font per path eliminates that:
-# confirmed via timing to cut a 94-glyph pass from ~960ms to ~17ms with
-# identical output (the cmap and glyph outlines are static for the file's
-# lifetime, so there's nothing to invalidate mid-run).
+# character, up to a few hundred times for a large charset. Opening the font
+# file itself is cheap (~0.5ms), but getBestCmap() is not: it merges/decodes
+# the font's cmap subtables and takes ~5-19ms on real installed fonts, so
+# without caching, re-deriving it on every single glyph turns a ~100-glyph
+# run into roughly a second of pure repeated work reconstructing the exact
+# same mapping. Caching the opened font per path avoids that, cutting a
+# measured 94-glyph pass from ~960ms to ~17ms with identical output (the
+# cmap and glyph outlines are static for the file's lifetime, so there's
+# nothing to invalidate mid-run).
 #
 # threading.local() rather than a shared module-level dict: this app runs
 # generation/scanning on their own freshly-spawned background threads, and
-# fontTools' TTFont does lazy, state-mutating table parsing on first access
-# — sharing one mutable TTFont across threads without a lock would be a real
+# fontTools' TTFont does lazy, state-mutating table parsing on first access,
+# so sharing one mutable TTFont across threads without a lock would be a real
 # race. Thread-local sidesteps that entirely (each thread gets its own
 # TTFont instances, so there's nothing to lock) while still eliminating the
 # redundant work within any single loop, which is where the actual cost
-# was. Each new Thread() this app spawns starts with an empty cache, so
+# is. Each new Thread() this app spawns starts with an empty cache, so
 # there's no cross-run staleness or unbounded growth to manage either.
 _font_cache_local = threading.local()
 
@@ -235,9 +234,9 @@ def glyph_bbox_and_scale(contours) -> tuple[float, float, float]:
     glyph's own raw bounding box: `scale` maps `max(width, height)` to 200
     units (±100), `(center_x, center_y)` is the raw bbox center it
     recenters onto (0, 0). Split out so callers that need to *reverse* a
-    single glyph's independent normalization — e.g.
+    single glyph's independent normalization, e.g.
     `forza_writer/text_compose.py`, which re-expresses each glyph on a
-    shared font-wide scale/baseline instead of its own bbox — can recover
+    shared font-wide scale/baseline instead of its own bbox, can recover
     exactly the transform that was actually applied, rather than
     re-deriving (and risking drifting from) the same bbox math twice.
     """
@@ -292,7 +291,7 @@ def _point_in_polygon(x: float, y: float, poly) -> bool:
 def group_contours_by_nesting(contours_norm):
     """Partition glyph contours into earcut-ready `(outer_index,
     [hole_indices])` islands via a geometric containment tree, rather than
-    assuming contour 0 is always the outer boundary — that assumption
+    assuming contour 0 is always the outer boundary: that assumption
     silently mis-triangulates any glyph whose first-drawn contour isn't its
     largest one, which decorative/display fonts hit often (disjoint accent
     marks, dots, swash flourishes listed before the main letterform). See
@@ -310,7 +309,7 @@ def group_contours_by_nesting(contours_norm):
     even-depth contour becomes its own island's outer ring (a disjoint
     component, or a filled "island" nested two-or-more holes deep); every
     odd-depth contour becomes a hole belonging to its immediate parent's
-    island — this is what correctly separates "this hole has an unrelated
+    island. This is what correctly separates "this hole has an unrelated
     filled shape nested inside it" (that shape gets its own earcut() call)
     from "this hole is just a hole" (single-level nesting, one call).
     """
@@ -342,7 +341,7 @@ def triangulate(contours_norm):
     One earcut() call per disjoint island (`group_contours_by_nesting`),
     since earcut's own outer-ring-plus-holes-list API can't express
     disjoint components (e.g. a letter's main stroke plus a separate
-    decorative accent mark) in a single call — the results are merged with
+    decorative accent mark) in a single call. The results are merged with
     vertex-index offsets applied per island.
 
     Returns (vertices_xy, triangles): vertices_xy is a flat list of (x, y)
@@ -515,10 +514,9 @@ def build_modelbin(char: str, font_path: Path, reference_modelbin: Path, curve_s
 
     top_chunks, _ = parse_grub(ref, 0)
 
-    # The nested Grub (Modl container) — located at top-level 'Grub' chunk
-    # In S_01 the structure is flat (all chunks at top level), but check
-    # Actually from our parse the chunks were: Skel, MatI, Mesh, IndB, VLay, VerB, VerB, Modl
-    # We need Skel, MatI, Mesh, VLay, Modl verbatim; we regenerate IndB and first VerB
+    # S_01's Grub chunk layout is flat (all chunks at top level): Skel, MatI,
+    # Mesh, IndB, VLay, VerB, VerB, Modl. Skel, MatI, Mesh, VLay, and Modl are
+    # copied verbatim; IndB and the first VerB are regenerated below.
 
     # Extract verbatim chunks from reference
     def get_chunk(tag):
@@ -533,9 +531,9 @@ def build_modelbin(char: str, font_path: Path, reference_modelbin: Path, curve_s
     vlay_data = get_chunk('VLay')
     modl_data = get_chunk('Modl')
 
-    # Second VerB (the larger one with full vertex attribs) — copy verbatim
-    # In our parse there were two VerB entries; we need to find both
-    # Re-parse to get all chunks (including duplicates)
+    # Second VerB (the larger one with full vertex attribs): copy verbatim.
+    # parse_grub's dict is keyed by tag, so it only keeps one of the two VerB
+    # entries; walk the chunk table directly to recover both, in order.
     all_chunks = []
     pos = 20
     chunk_count = struct.unpack_from('<I', ref, 16)[0]
@@ -650,7 +648,7 @@ def build_modelbin(char: str, font_path: Path, reference_modelbin: Path, curve_s
 
 def _parse_chunk_table(data: bytes) -> list[tuple[str, int, int]]:
     """Walk a Grub chunk table, returning [(tag, abs_offset, size), ...] in
-    file order. Raises ValueError on a truncated/malformed table — callers
+    file order. Raises ValueError on a truncated/malformed table; callers
     that want a (bool, message) result instead should catch that (see
     validate_modelbin); callers that just want the chunks (read_mesh_triangles)
     can let it propagate."""
@@ -720,7 +718,7 @@ def validate_modelbin(path: Path) -> tuple[bool, str]:
 
 
 def read_mesh_triangles(path: Path) -> tuple[list[tuple[float, float]], list[tuple[int, int, int]]]:
-    """Read a flat 2D triangle mesh back out of a vinyl .modelbin — the
+    """Read a flat 2D triangle mesh back out of a vinyl .modelbin. This is the
     inverse of pack_verB/pack_indB. Returns (vertices_xy, triangles) in the
     same +-128 space build_modelbin works in (position stream is SNORM16,
     inverted here via `1/COORD_SCALE`). Used by tools/file_preview.py for a
@@ -735,7 +733,7 @@ def read_mesh_triangles(path: Path) -> tuple[list[tuple[float, float]], list[tup
         raise ValueError("missing VerB/IndB chunks")
 
     # First VerB is always the position-only stream (stride 8: x:i16, y:i16,
-    # z=0, w=0 — see pack_verB); the second, if present, is the fuller
+    # z=0, w=0, see pack_verB); the second, if present, is the fuller
     # attribute stream this preview has no use for.
     v_count, _v_bytes, v_stride, _flags, _fmt = parse_buffer_header(data, verb_offsets[0])
     vertices = []

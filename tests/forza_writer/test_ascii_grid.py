@@ -34,21 +34,20 @@ def test_supported_chars_matches_char_to_resource():
 
 def test_supported_chars_identical_across_fonts():
     # char_to_resource only changes which family a char comes from, never
-    # which chars are supported — coverage must not vary by font number.
+    # which chars are supported: coverage must not vary by font number.
     assert supported_chars(font=1) == supported_chars(font=11)
 
 
 def test_supported_chars_includes_digits_and_upper_symbols():
-    # Corrected against the KFPS glyph-mismatch report (see shapes.py) —
-    # these were unsupported before that fix.
+    # These must be supported per the KFPS glyph-mismatch report (see shapes.py).
     supported = supported_chars(font=1)
     for char in "0123456789!?&":
         assert char in supported
 
 
 def test_supported_chars_excludes_common_ascii_art_punctuation():
-    # Documents the remaining coverage gap rather than asserting a wishlist —
-    # if these ever become supported, this test should be updated alongside
+    # Documents the current coverage gap rather than asserting a wishlist.
+    # If these ever become supported, update this test alongside
     # ascii_grid.py's module docstring.
     supported = supported_chars(font=1)
     for char in ".,'`\"~-_<>*|(){}[]\\=":
@@ -68,7 +67,7 @@ def test_scan_unsupported_reports_locations():
 
 def test_layout_ascii_grid_cell_advance_is_constant_regardless_of_glyph():
     # The whole point of a grid import (vs. layout_forza_text's variable
-    # advance) is that every column lines up — verify blank, supported, and
+    # advance) is that every column lines up: verify blank, supported, and
     # unsupported cells all consume exactly one cell width.
     rows = normalize_block("A B.")
     shapes = layout_ascii_grid(rows, font=1, cell_width=10.0, cell_height=10.0)

@@ -1,11 +1,11 @@
 """
 Package a fontpack's generated glyphs into a single KFPS Fabric Editor
-project (`.fabric-project.json`) — one glyph per named group, arranged in
+project (`.fabric-project.json`), one glyph per named group, arranged in
 the same category-then-row grid as the reference SVG image so the two line
 up as a tracing aid.
 
 Only glyphs with a `json` artifact (the primitive-composition path) have a
-shape list to pull from today — `.modelbin` glyphs have no importable shape
+shape list to pull from today. `.modelbin` glyphs have no importable shape
 list until the catalog-hijack story in RESEARCH.md is resolved, so a
 fontpack must have been generated with `--output json` or `--output both`.
 
@@ -23,8 +23,8 @@ from forza_writer.fabric_project import save as save_project, to_fabric_project 
 from forza_writer.reference_svg import build_reference_svg, chunk_rows  # noqa: E402
 
 CHARS_PER_ROW = 10
-# Real FH6 editor units a single glyph's bounding box occupies once placed —
-# must match forza_writer.primitive_fit.fit_glyph's own glyph_size default,
+# Real FH6 editor units a single glyph's bounding box occupies once placed.
+# Must match forza_writer.primitive_fit.fit_glyph's own glyph_size default,
 # since that's the space each glyph's shapes were already generated in.
 GLYPH_SIZE = 300.0
 CELL_PADDING = 1.3  # grid cell = GLYPH_SIZE * CELL_PADDING, leaves a gap between glyphs
@@ -94,7 +94,7 @@ def build_fabric_project(fontpack_dir: Path, name: str | None = None,
         log(f"  {len(missing)} glyph(s) skipped (no json artifact): {''.join(missing)}")
 
     # Configurator-built packs (tools/gen_modelbin_gui.py) may have no
-    # associated font at all — font_file is optional there, so the
+    # associated font at all: font_file is optional there, so the
     # reference-SVG overlay below just gets skipped rather than raising.
     font_path = Path(manifest["font_file"]) if manifest.get("font_file") else None
     overlay = None
@@ -103,7 +103,7 @@ def build_fabric_project(fontpack_dir: Path, name: str | None = None,
         # Scale the reference image so its own pixel span matches the shape
         # grid's editor-unit span, keeping the two visually aligned even
         # though they're built in different native units (SVG px vs FH6
-        # editor units). This is an approximate alignment, not pixel-exact —
+        # editor units). This is an approximate alignment, not pixel-exact:
         # per-glyph SVG text advance is proportional while the shape grid
         # uses fixed-size cells, so treat it as a tracing aid, not a ruler.
         grid_width = chars_per_row * GLYPH_SIZE * CELL_PADDING
@@ -139,7 +139,7 @@ def build_fabric_project(fontpack_dir: Path, name: str | None = None,
     # (e.g. "AMARILLO-USAF_S8_368") so two exports of the same font at
     # different settings don't silently overwrite each other and the count
     # is visible without opening the file. Only known once every glyph's
-    # shapes are actually in hand, i.e. right here — not earlier.
+    # shapes are actually in hand, i.e. at this point, not earlier.
     curve_segments = manifest.get("curve_segments", 8)
     project["suggested_name"] = f"{manifest['prefix']}_S{curve_segments}_{len(all_shapes)}"
     log(f"--- {len(all_shapes)} shapes across {len(groups)} glyph groups "

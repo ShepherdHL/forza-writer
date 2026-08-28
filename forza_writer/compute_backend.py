@@ -61,7 +61,7 @@ def directml_info() -> BackendInfo:
 
     Experimental: never selected by 'auto'. Unlike the CUDA path, this has
     not been run against real DirectML hardware (see
-    docs/DIRECTML_ACCELERATION.md) — it must be chosen explicitly, and the
+    docs/DIRECTML_ACCELERATION.md), so it must be chosen explicitly, and the
     GUI shows a disclaimer before every generation run that uses it.
     """
     try:
@@ -235,7 +235,7 @@ def cuda_scorer(resolution: int) -> CudaCandidateScorer:
 
 
 class DirectMLCandidateScorer:
-    """Persistent per-resolution DirectML scorer — same interface and same
+    """Persistent per-resolution DirectML scorer with the same interface and
     reward/overshoot math as CudaCandidateScorer, expressed as batched torch
     tensor ops instead of a raw kernel (DirectML has no RawKernel equivalent).
 

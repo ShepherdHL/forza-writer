@@ -14,9 +14,9 @@ from conftest import (  # noqa: E402
     _wait_for_configurator_scan, _wait_for_font_scripts, _wait_for_worker, _write_loose_glyph_json)
 
 def test_outputs_pack_and_glyph_listboxes_have_their_own_scrollbars(gui):
-    # These had no scrollbar at all before — a pack/glyph list longer than
-    # the visible area was reachable only by the listbox's own (invisible)
-    # native wheel scrolling, with no visual cue more content existed.
+    # A pack/glyph list longer than the visible area needs a visible
+    # scrollbar; relying on the listbox's own native wheel scrolling gives
+    # no visual cue that more content exists.
     for listbox in (gui.outputs_pack_listbox, gui.outputs_glyph_listbox):
         siblings = listbox.master.winfo_children()
         scrollbars = [w for w in siblings if isinstance(w, ttk.Scrollbar)]
@@ -51,7 +51,7 @@ def test_outputs_selecting_pack_lists_glyphs_by_category(gui):
     gui.outputs_pack_listbox.selection_set(0)
     gui._on_outputs_pack_selected()
     assert gui.outputs_glyph_listbox.size() > 0
-    # One level deeper than the font folder itself — packs nest as
+    # One level deeper than the font folder itself: packs nest as
     # <font>/<profile>/manifest.json (see pack_dir_for).
     assert gui._outputs_current_pack_dir.parent == AMARILLO_FONTPACK
 

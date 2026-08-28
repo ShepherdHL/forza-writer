@@ -21,10 +21,25 @@ Two file kinds, two renderers:
 Both follow tools/font_preview.py's established discipline: pure PIL logic,
 no Tkinter, and never raise — a bad file gets a placeholder tile with a
 message instead of crashing the caller.
+
+Native Forza font letterforms (`forza_writer.shapes.char_to_resource`'s
+`Upper_Letters_N`/`Lower_Letters_N` families): this repo has no local mesh
+data for these, but KFPS -- a separate, sibling local application -- ships
+a per-glyph raster (`Resources/Vinyls/{family}/{index}.png`) alongside its
+own vertex mesh for the identical purpose. `kfps_vinyls_dir` locates that
+folder from the user's configured KFPS.exe path; `render_json_preview`/
+`render_composed_preview` composite the real glyph raster in place of a
+plain box whenever a caller passes it a `vinyls_dir`. No plain vertex-mesh
+rasterizer was built for this -- the raw meshes in the sibling install
+turned out to have inconsistent per-glyph winding/orientation (confirmed:
+some letters render mirrored, others correct, with no single fix), while
+the shipped PNG rasters are trivially correct since KFPS already rendered
+them right.
 """
 
 from __future__ import annotations
 
+import functools
 import json
 import sys
 from pathlib import Path
@@ -37,6 +52,36 @@ DEFAULT_SIZE = (400, 400)
 DEFAULT_BG = "#101317"
 DEFAULT_FG = "#e8e8e6"
 MARGIN_FRACTION = 0.08  # keep a small border so shapes don't touch the edge
+
+_LETTER_FAMILY_PREFIXES = ("Upper_Letters_", "Lower_Letters_")
+
+
+def _is_letter_family(family: str) -> bool:
+    return family.startswith(_LETTER_FAMILY_PREFIXES)
+
+
+def kfps_vinyls_dir(kfps_executable: str) -> Path | None:
+    """The sibling KFPS install's per-glyph raster folder, given the user's
+    configured KFPS.exe path (Settings tab), or None if unset or that
+    folder doesn't exist (KFPS not installed there, or an older/different
+    KFPS layout) -- callers treat None the same as "no letterform data
+    available" and fall back to plain boxes, never raise."""
+    if not kfps_executable:
+        return None
+    vinyls = Path(kfps_executable).resolve().parent / "tools" / "fabric-editor" / "Resources" / "Vinyls"
+    return vinyls if vinyls.is_dir() else None
+
+
+@functools.lru_cache(maxsize=512)
+def _load_glyph_png(vinyls_dir: str, family: str, index: int) -> Image.Image | None:
+    """One glyph's raster, or None if missing/unreadable. Cached across
+    calls -- a plate's live preview reloads on every debounced keystroke,
+    and the same handful of glyphs (font x character) repeat constantly."""
+    path = Path(vinyls_dir) / family / f"{index}.png"
+    try:
+        return Image.open(path).convert("RGBA")
+    except Exception:
+        return None
 
 
 def _placeholder(size: tuple[int, int], message: str, bg: str, fg: str) -> Image.Image:
@@ -67,25 +112,42 @@ def _placeholder(size: tuple[int, int], message: str, bg: str, fg: str) -> Image
     return img
 
 
-def _paint_shapes(shapes: list[dict], resolution: int, glyph_size: float, bg: str):
+def _paint_shapes(shapes: list[dict], resolution: int, glyph_size: float, bg: str,
+                   vinyls_dir: Path | None = None):
     """Shared rasterization loop for render_json_preview/render_composed_preview:
     paint each shape bottom-to-top, erasing back to background wherever a
     `mask: true` shape covers — the same "actual look" semantics both
     renderers need, just parameterized on `glyph_size` (the real-unit span
     the ±COORD_RANGE canvas represents) since composed text spans far more
-    than a single glyph's own box."""
+    than a single glyph's own box.
+
+    A shape whose `type_word` resolves to a native Forza font letterform
+    (`Upper_Letters_N`/`Lower_Letters_N`) is deferred out of the numpy loop
+    above and composited afterward from `vinyls_dir`'s real glyph raster,
+    tinted to the shape's own color via its alpha channel -- numpy has no
+    cheap arbitrary-raster paste, so this second pass goes through PIL
+    directly. Falls back to the exact same plain box the numpy loop would
+    have drawn (same size/position) when `vinyls_dir` is None or that
+    particular glyph's raster is missing, so nothing silently disappears."""
     import numpy as np
 
     from forza_writer.primitive_fit import render_candidate, shape_to_render_params
     from forza_writer.primitive_shapes import PRIMITIVE_CATALOG
+    from forza_writer.shapes import shape_word_to_resource
 
     canvas = np.zeros((resolution, resolution, 3), dtype=np.uint8)
     bg_rgb = tuple(int(bg[i:i + 2], 16) for i in (1, 3, 5))
     canvas[:, :] = bg_rgb
 
+    letter_shapes = []
     for shape in shapes:
         shape_id, cx, cy, sx, sy, rot, skew_x = shape_to_render_params(
             shape, resolution, glyph_size)
+        resource = shape_word_to_resource(shape["type_word"])
+        if resource is not None and _is_letter_family(resource[0]):
+            color = shape.get("color", [255, 255, 255, 255])[:3]
+            letter_shapes.append((resource, cx, cy, sx, sy, rot, color))
+            continue
         if shape_id is None:
             continue
         primitive = PRIMITIVE_CATALOG[shape_id]
@@ -99,17 +161,41 @@ def _paint_shapes(shapes: list[dict], resolution: int, glyph_size: float, bg: st
             color = shape.get("color", [255, 255, 255, 255])[:3]
             canvas[covered] = color
 
+    if letter_shapes:
+        pil_img = Image.fromarray(canvas, "RGB").convert("RGBA")
+        for (family, index), cx, cy, sx, sy, rot, color in letter_shapes:
+            w = max(1, round(sx * resolution))
+            h = max(1, round(sy * resolution))
+            glyph = _load_glyph_png(str(vinyls_dir), family, index) if vinyls_dir else None
+            if glyph is None:
+                # Same plain box the numpy loop above would have drawn --
+                # composited onto pil_img, not the numpy `canvas` array,
+                # since that array is discarded below in favor of pil_img.
+                box = Image.new("RGBA", (w, h), tuple(color) + (255,))
+                pil_img.alpha_composite(box, (round(cx - w / 2), round(cy - h / 2)))
+                continue
+            resized = glyph.resize((w, h), Image.LANCZOS)
+            if rot:
+                resized = resized.rotate(rot, expand=True, resample=Image.BICUBIC)
+            tinted = Image.new("RGBA", resized.size, tuple(color) + (0,))
+            tinted.putalpha(resized.split()[-1])
+            pil_img.alpha_composite(tinted, (round(cx - resized.width / 2), round(cy - resized.height / 2)))
+        canvas = np.array(pil_img.convert("RGB"))
+
     return canvas
 
 
 def render_json_preview(shapes: list[dict], size: tuple[int, int] = DEFAULT_SIZE,
-                         bg: str = DEFAULT_BG, fg: str = DEFAULT_FG) -> Image.Image:
+                         bg: str = DEFAULT_BG, fg: str = DEFAULT_FG,
+                         vinyls_dir: Path | None = None) -> Image.Image:
     """Render a primitive-composition shape list as it would actually look —
     including stencil-mode mask shapes erasing back to background, not just
-    coverage. Never raises."""
+    coverage. `vinyls_dir` (see `kfps_vinyls_dir`), if given, draws real
+    native-font letterforms in place of their placeholder boxes. Never
+    raises."""
     try:
         resolution = min(size)
-        canvas = _paint_shapes(shapes, resolution, glyph_size=300.0, bg=bg)
+        canvas = _paint_shapes(shapes, resolution, glyph_size=300.0, bg=bg, vinyls_dir=vinyls_dir)
         img = Image.fromarray(canvas, "RGB")
         if (resolution, resolution) != size:
             img = img.resize(size, Image.NEAREST)
@@ -119,8 +205,11 @@ def render_json_preview(shapes: list[dict], size: tuple[int, int] = DEFAULT_SIZE
 
 
 def render_composed_preview(shapes: list[dict], size: tuple[int, int] = DEFAULT_SIZE,
-                             bg: str = DEFAULT_BG, fg: str = DEFAULT_FG) -> Image.Image:
+                             bg: str = DEFAULT_BG, fg: str = DEFAULT_FG,
+                             vinyls_dir: Path | None = None) -> Image.Image:
     """Render a `forza_writer.text_compose.compose_text` shape list.
+    `vinyls_dir` (see `kfps_vinyls_dir`), if given, draws real native-font
+    letterforms in place of their placeholder boxes.
 
     `render_json_preview` assumes shapes live within one glyph's own
     ±150-real-unit box (`glyph_size=300`, centred at 0,0) — true for a
@@ -166,7 +255,7 @@ def render_composed_preview(shapes: list[dict], size: tuple[int, int] = DEFAULT_
         # below still has real detail to work with rather than upscaling
         # already-blocky pixels.
         resolution = min(1600, max(size) * 3)
-        canvas = _paint_shapes(centered, resolution, glyph_size=glyph_size, bg=bg)
+        canvas = _paint_shapes(centered, resolution, glyph_size=glyph_size, bg=bg, vinyls_dir=vinyls_dir)
         img = Image.fromarray(canvas, "RGB")
 
         bg_rgb = tuple(int(bg[i:i + 2], 16) for i in (1, 3, 5))
@@ -271,13 +360,42 @@ def render_forza_text_preview(
         lines = lines or [""]
         w, h = size
         font_path = next((p for p in _MONOSPACE_CANDIDATES if p.exists()), None)
-        line_px = max(6, int((h - 2 * h * MARGIN_FRACTION) / max(1, len(lines))))
-        font = ImageFont.truetype(str(font_path), min(line_px, 48)) if font_path \
-            else ImageFont.load_default()
+        margin_w, margin_h = w * MARGIN_FRACTION, h * MARGIN_FRACTION
+        line_px = max(6, int((h - 2 * margin_h) / max(1, len(lines))))
+        font_size = min(line_px, 48)
+
+        def _font_at(size: int):
+            return ImageFont.truetype(str(font_path), max(1, size)) if font_path \
+                else ImageFont.load_default()
+
+        font = _font_at(font_size)
+        if font_path:
+            # line_px alone only fits the font to how many lines stack
+            # vertically -- a single long line ("This is a test") at a
+            # height-only size can be far wider than the canvas, which
+            # clipped both edges (rendered as "his is a tes"). Shrink to
+            # the widest line's actual measured width too, the same
+            # both-dimensions idea render_ascii_grid_preview already uses
+            # via min(width-per-column, height-per-row); text here isn't a
+            # fixed grid, so the width constraint has to come from
+            # measuring the real glyphs rather than a column count.
+            # A proportional correction from one measurement can slightly
+            # undershoot -- font metrics don't scale perfectly linearly at
+            # integer point sizes (hinting/rounding) -- so this re-measures
+            # after each shrink instead of trusting a single pass, and
+            # stops as soon as it fits or the font hits its floor.
+            probe = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+            available_w = max(1, w - 2 * margin_w)
+            for _ in range(4):
+                widest = max((probe.textlength(line, font=font) for line in lines), default=0)
+                if widest <= available_w or font_size <= 6:
+                    break
+                font_size = max(6, int(font_size * available_w / widest) - 1)
+                font = _font_at(font_size)
 
         img = Image.new("RGB", size, bg)
         draw = ImageDraw.Draw(img)
-        top = h * MARGIN_FRACTION
+        top = margin_h
         for row_index, line in enumerate(lines):
             cy = top + row_index * line_px + line_px / 2
             cx = w / 2 - draw.textlength(line, font=font) / 2

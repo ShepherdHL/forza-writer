@@ -33,10 +33,10 @@ def test_read_mesh_triangles_matches_validate_modelbin_counts(tmp_path):
     assert ok, message
 
     vertices, triangles = read_mesh_triangles(out_path)
-    # validate_modelbin's success message embeds "<N> verts ... <M> indices"
-    # — cross-check against it rather than re-deriving expected counts,
-    # since that message is already proven correct by validate_modelbin's
-    # own consistency checks.
+    # validate_modelbin's success message embeds "<N> verts ... <M> indices".
+    # Cross-check against it rather than re-deriving expected counts, since
+    # that message is already proven correct by validate_modelbin's own
+    # consistency checks.
     assert f"{len(vertices)} verts" in message
     assert f"{len(triangles) * 3} indices" in message
 
@@ -93,7 +93,7 @@ def test_group_contours_order_independent_for_nested_hole():
     groups_outer_first = group_contours_by_nesting([outer, hole])
     groups_hole_first = group_contours_by_nesting([hole, outer])
     # Same geometric result either way: one island, outer=the big square,
-    # holes=[the small square] — just re-indexed for the swapped input order.
+    # holes=[the small square], just re-indexed for the swapped input order.
     outer_idx, holes = groups_hole_first[0]
     assert outer_idx == 1
     assert holes == [0]
@@ -120,10 +120,11 @@ def test_triangulate_true_hole_produces_no_triangles_inside_it():
 
 
 def test_triangulate_disjoint_components_both_produce_triangles():
-    # Regression for the exact Jokerman K/E failure mode: the old
-    # "contour 0 = outer, rest = holes" rule would triangulate only
+    # Guards against the disjoint-contour failure mode seen on Jokerman's
+    # K/E: a "contour 0 = outer, rest = holes" rule would triangulate only
     # whichever contour happened to be listed first and treat the other as
     # a (nonsensical, disjoint) hole cut from it, silently losing it.
+    # Grouping must be based on geometric nesting, not list order.
     left, right = _square(-60, 0, 20), _square(60, 0, 20)
     verts, tris = triangulate([left, right])
     assert len(tris) > 0
@@ -134,11 +135,11 @@ def test_triangulate_disjoint_components_both_produce_triangles():
 
 @requires_jokerman
 def test_triangulate_real_jokerman_k_recovers_the_letterform():
-    # Before the fix: Jokerman 'K' (5 disjoint contours — the stroke plus 4
-    # sparkle accents, with a sparkle listed first) triangulated to almost
-    # nothing because the real letterform got treated as a "hole" cut from
-    # the tiny first accent. After the fix it should triangulate the whole
-    # glyph, comparable in size to a similarly-simple letter like 'J'.
+    # Jokerman 'K' has 5 disjoint contours: the stroke plus 4 sparkle
+    # accents, with a sparkle listed first. Nesting-based grouping must
+    # triangulate the whole glyph rather than treating the real letterform
+    # as a "hole" cut from the tiny first accent, so its triangle count
+    # should be comparable to a similarly simple letter like 'J'.
     contours_k, upm = extract_contours("K", JOKERMAN_FONT, 8)
     verts_k, tris_k = triangulate(normalize_to_128(contours_k, upm))
     contours_j, _ = extract_contours("J", JOKERMAN_FONT, 8)

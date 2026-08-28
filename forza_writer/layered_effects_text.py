@@ -12,9 +12,9 @@ before `primitive_fit.fit_placements`), a flattened multi-layer shape list
 is just as valid an input to `compose_shape_map` as a single-fit shape list
 -- so multi-character and multiline text (spacing, alignment, line height)
 all come from the existing, unmodified composition pipeline for free. This
-is deliberately the "Per Glyph" mode the spec asks be implemented first
-(each glyph gets its own independently-resolved layer stack before layout);
-a future "Whole Text Object" mode would instead union/lay out contours
+is deliberately a "Per Glyph" mode: each glyph gets its own
+independently-resolved layer stack before layout.
+A future "Whole Text Object" mode would instead union/lay out contours
 *before* handing them to `layered_effects`, and can be added as a sibling
 function here without touching this one.
 """

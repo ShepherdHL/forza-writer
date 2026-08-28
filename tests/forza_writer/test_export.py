@@ -9,9 +9,8 @@ def test_shape_without_mask_key_defaults_to_false():
 
 
 def test_shape_with_mask_true_survives_export():
-    # Regression test: to_json() used to build {**shape, "mask": False},
-    # which force-overwrote an upstream mask:True back to False on every
-    # single shape. Stencil mode's cutouts depend on this surviving.
+    # to_json() must not force-overwrite an upstream mask:True back to
+    # False. Stencil mode's cutouts depend on this surviving.
     shapes = [{"type": 1048677, "type_word": 101, "data": [0, 0, 1, 1, 0, 0, 1],
                "color": [0, 0, 0, 255], "mask": True}]
     out = to_json(shapes)

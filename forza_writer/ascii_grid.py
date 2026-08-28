@@ -89,6 +89,7 @@ def layout_ascii_grid(
     center_x: float = 0.0,
     center_y: float = 0.0,
     color: tuple[int, int, int, int] = (255, 255, 255, 255),
+    placeholder_unsupported: bool = False,
 ) -> list[dict]:
     """Place `rows` as a strict fixed-pitch grid of native-font glyphs.
 
@@ -99,7 +100,9 @@ def layout_ascii_grid(
     replacement character, or to `None`/`" "` to force it blank; build it
     from `scan_unsupported` plus the user's own choices. A character with no
     `remap` entry and no `char_to_resource` mapping is simply left blank —
-    never guessed at.
+    never guessed at, unless `placeholder_unsupported` is set, in which case
+    it gets a solid Primitives Square instead (an experimental stand-in, not
+    a real substitute for the missing glyph).
     """
     remap = remap or {}
     glyph_scale = cell_height * 0.82 / PIXEL_ART_SQUARE_SIZE
@@ -115,7 +118,9 @@ def layout_ascii_grid(
                 continue
             resource = char_to_resource(effective, font)
             if resource is None:
-                continue
+                if not placeholder_unsupported:
+                    continue
+                resource = ("Primitives", 1)  # Square — see primitive_shapes.PRIMITIVE_CATALOG
             x = center_x - total_width / 2 + col_index * cell_width + cell_width / 2
             family, index = resource
             shapes.append(

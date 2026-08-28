@@ -26,10 +26,16 @@ this file was written (2026-08-11).
 projects (including bvzrays' forza-painter-fh6 lineage, below) under their
 own terms. The logic forza-writer ported — the fabric-editor and font
 registry — falls under KFPS's primary `LICENSE`, which is MIT-style with
-copyright held by the KFPS project. Reproduce that file's exact text
-verbatim (do not paraphrase it) alongside this notice before distributing;
-fetch it fresh from the link above rather than copying it from here, since
-we do not want to risk a transcription error in a legal document.
+copyright held by the KFPS project. Its exact text (fetched verbatim via
+GitHub's API, not retyped, to avoid a transcription error in a legal
+document) is reproduced in
+[`THIRD_PARTY_LICENSES/KFPS_LICENSE.txt`](THIRD_PARTY_LICENSES/KFPS_LICENSE.txt)
+as fetched on 2026-08-27; re-fetch it from the link above before
+redistributing if that date is old, in case the upstream text has since
+changed. That file also carries KFPS's own upstream credit to AE's
+forza-painter, Sam Twidale's geometrize-lib, and Michael Fogleman's
+Primitive — none of that code was copied into forza-writer directly, but
+it is the same lineage bvzrays' own license (§2 below) separately credits.
 
 ## 2. bvzrays forza-painter-fh6 — directly ported code (this project's own prior work)
 
@@ -44,7 +50,7 @@ we do not want to risk a transcription error in a legal document.
   generation strategy alongside forza-writer's own vector-outline fitter.
   Both the original code in `forza-painter-fh6` and this port were written
   by this project's own author (originally with Cursor, later contributed
-  upstream into bvzray's repo) — no third-party authorship is involved here,
+  upstream into bvzrays' repo) — no third-party authorship is involved here,
   but it's documented anyway for provenance, matching this file's own
   discipline for every other piece of reused code.
 - Also used in: [`forza_writer/forza_colors.py`](forza_writer/forza_colors.py),

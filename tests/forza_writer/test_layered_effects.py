@@ -1,12 +1,12 @@
 """Tests for the Layered Glyph Effects engine (forza_writer/layered_effects.py,
 layer_presets.py, layered_effects_text.py).
 
-Font-style robustness (spec section 8) is tested against a handful of
-structurally different fonts already installed on this machine (bold sans,
-serif, slab serif, script, condensed display, blackletter, geometric sans),
-skipped gracefully when a given font isn't present -- the same
-`requires_font`-style pattern `test_primitive_fit.py`/`test_text_compose.py`
-already use for their own external test font.
+Font-style robustness is tested against a handful of structurally different
+fonts already installed on this machine (bold sans, serif, slab serif,
+script, condensed display, blackletter, geometric sans), skipped gracefully
+when a given font isn't present: the same `requires_font`-style pattern
+`test_primitive_fit.py`/`test_text_compose.py` already use for their own
+external test font.
 """
 
 from pathlib import Path
@@ -93,7 +93,7 @@ def test_ampersand_has_multiple_islands_or_holes():
 
 
 # ---------------------------------------------------------------------------
-# Inset is not scale (spec section 7)
+# Inset is not scale
 # ---------------------------------------------------------------------------
 
 def test_inset_is_not_scale():
@@ -129,7 +129,7 @@ def _apply(geom, layer, resolved=None):
 
 
 # ---------------------------------------------------------------------------
-# Graceful collapse (spec section 9) / font robustness (spec section 8)
+# Graceful collapse / font robustness
 # ---------------------------------------------------------------------------
 
 def test_deep_inset_collapses_gracefully_not_crash():
@@ -249,7 +249,7 @@ def test_structural_change_alters_geometry_signature():
 
 
 # ---------------------------------------------------------------------------
-# Preset round trip (serialization, spec section 21)
+# Preset round trip (serialization)
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("preset_name", sorted(PRESET_REGISTRY))
@@ -263,7 +263,7 @@ def test_preset_dict_round_trip(preset_name):
 
 
 # ---------------------------------------------------------------------------
-# Multi-glyph / multiline text integration (spec section 15)
+# Multi-glyph / multiline text integration
 # ---------------------------------------------------------------------------
 
 def test_layered_text_multiline_matches_plain_layout_advance():
@@ -308,10 +308,10 @@ def test_group_shapes_by_layer_matches_fabric_project_groups():
 
 
 # ---------------------------------------------------------------------------
-# Existing non-layered pipeline unaffected (spec section 28) -- a light
-# smoke check here; the authoritative check is running the pre-existing
-# test_primitive_fit.py / test_text_compose.py / test_export.py /
-# test_fabric_project.py suites unmodified alongside this file.
+# Existing non-layered pipeline unaffected: a light smoke check here, since
+# the authoritative check is running the pre-existing test_primitive_fit.py
+# / test_text_compose.py / test_export.py / test_fabric_project.py suites
+# unmodified alongside this file.
 # ---------------------------------------------------------------------------
 
 def test_plain_fit_glyph_unaffected_by_this_module_importing():

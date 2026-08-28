@@ -106,7 +106,8 @@ class ComposerTabMixin:
 
         # Responsive body: compose text + per-line rows + style bar + preview
         # on the left, the Color panel (DxBang-style value editor + pack
-        # tabs) on the right — side by side only when there's real room for
+        # tabs) on the right — the same right-hand slot every page with a
+        # Color control uses, side by side only when there's real room for
         # both (the preview canvas alone is COMPOSE_PREVIEW_SIZE[0]=640px
         # wide), otherwise stacked with the Color panel below. Without this,
         # a merely-default-sized window clips the Color panel off the right
@@ -146,6 +147,9 @@ class ComposerTabMixin:
         # canvas behind it if the typed text ever exceeds 4 lines.
         self._register_independent_scroll(self.compose_text_widget)
         self.compose_text_widget.bind('<KeyRelease>', self._on_compose_text_changed)
+        compose_actions_row, self.compose_clear_btn, self.compose_select_all_btn = (
+            self._build_text_box_actions_row(compose_frame, self.compose_text_widget))
+        compose_actions_row.pack(fill='x', **gui_theme.ROW_PAD)
         compose_sample_row, self.compose_sample_script_var = self._build_sample_text_row(
             compose_frame, self.compose_text_widget)
         compose_sample_row.pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
@@ -496,42 +500,6 @@ class ComposerTabMixin:
         state = 'Active' if self.compose_layer_effect_var.get() else 'Configured, not enabled'
         self.compose_layer_effect_summary_var.set(
             f'{state}: "{stack.name}" — {len(stack.layers)} layer(s). Edit on the Layer Effects tab.')
-    def _show_compose_pack(self, key: str):
-        self._compose_pack_tab = key
-        for pack_key, pane in self.compose_pack_panes.items():
-            if pack_key == key:
-                pane.pack(fill='both', expand=True)
-            else:
-                pane.pack_forget()
-        self._style_compose_pack_tabs()
-    def _refresh_compose_pack_body_size(self) -> None:
-        """Recompute the fixed size locking Basic/Manufacturer Colors to the
-        same footprint (see `compose_pack_body`'s construction). Called
-        again after any theme/density change, since those change font sizes
-        and therefore each pane's natural size.
-
-        Both width AND height are pinned, not just height: `pack_propagate
-        (False)` freezes whichever dimension is left unset at whatever the
-        frame's actual size happened to be at that moment, not at its
-        children's natural size — leaving width unset meant Manufacturer
-        Colors' wider Treeview (reqwidth ~320px, driven by its Make/Colour/
-        Type column widths) was silently squeezed into Basic's narrower
-        footprint (~144px) every time it was the active pane, clipping the
-        table. Caught by the dedicated 1920x1080 resize audit, not by the
-        original Composer fix, which only ever measured height."""
-        if not hasattr(self, 'compose_pack_body'):
-            return
-        self.compose_pack_body.update_idletasks()
-        widest = max(pane.winfo_reqwidth() for pane in self.compose_pack_panes.values())
-        tallest = max(pane.winfo_reqheight() for pane in self.compose_pack_panes.values())
-        self.compose_pack_body.configure(width=widest, height=tallest)
-        self.compose_pack_body.pack_propagate(False)
-    def _style_compose_pack_tabs(self):
-        p = gui_theme.palette()
-        for key, lbl in self.compose_pack_tab_labels.items():
-            active = key == self._compose_pack_tab
-            lbl.configure(background=p['accent'] if active else p['button_bg'],
-                          foreground=p['select_fg'] if active else p['fg'])
     def _compose_text(self):
         pack_dir = Path(self.compose_pack_var.get().strip())
         text = self.compose_text_widget.get('1.0', 'end-1c')

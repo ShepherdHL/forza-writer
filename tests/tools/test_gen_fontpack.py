@@ -8,15 +8,15 @@ from gen_fontpack import (  # noqa: E402
     build_fontpack, generation_profile_id, glyph_filename, pack_dir_for,
     resolve_requested_chars)
 
-# No font ships in this repo (same policy as the reference .modelbin — see
-# README.md), so font-dependent tests reuse this session's verification font
+# No font ships in this repo (same policy as the reference .modelbin, see
+# README.md), so font-dependent tests reuse this repo's verification font
 # and skip gracefully where it isn't present, rather than requiring one.
 AMARILLO_FONT = Path.home() / "Desktop" / "amarillo-usaf" / "amarurgt.ttf"
 requires_font = pytest.mark.skipif(not AMARILLO_FONT.exists(), reason="test font not present on this machine")
 
-# Amarillo USAF never actually wins with stencil (measured this session) —
-# a font whose stencil savings are real is needed to prove allow_stencil
-# genuinely changes the result, not just that the parameter is threaded.
+# Amarillo USAF never wins with stencil, so a font whose stencil savings are
+# real is needed to prove allow_stencil genuinely changes the result, not
+# just that the parameter is threaded.
 SGA_FONT = Path.home() / "AppData" / "Local" / "Microsoft" / "Windows" / "Fonts" / "minecraft-standard-galactic-alphabet.otf"
 requires_sga_font = pytest.mark.skipif(not SGA_FONT.exists(), reason="Standard Galactic Alphabet font not present on this machine")
 
@@ -45,16 +45,16 @@ def test_generation_profile_identifies_backend_and_curve_smoothness():
 
 def _fake_cjk_charset(_font_path):
     # A stand-in for a CJK font's cmap: bounded Latin buckets plus a large
-    # Han-heavy Letters bucket, the exact shape that used to (mis)land in
-    # "Symbols" before charset.py split Letters out.
+    # Han-heavy Letters bucket, kept distinct from Symbols so a Han-heavy
+    # font's ideographs aren't miscategorized as symbols.
     han = [chr(0x4E00 + i) for i in range(2000)]
     return ({'Uppercase': list('AB'), 'Lowercase': list('ab'), 'Letters': han,
              'Numbers': list('01'), 'Punctuation': list('.,'), 'Symbols': list('$%')}, [])
 
 
 def test_resolve_requested_chars_returns_none_when_no_scoping_flag_given():
-    # None means "the font's entire cmap" — build_fontpack's own existing
-    # default, unchanged for anyone not using the new flags.
+    # None means "the font's entire cmap": build_fontpack's own existing
+    # default, unchanged for anyone not using the scoping flags.
     assert resolve_requested_chars(Path('font.ttf'), None, None, None, False) is None
 
 
@@ -177,8 +177,8 @@ def test_manifest_records_strategy_per_glyph(tmp_path):
     entry = manifest["categories"]["Uppercase"][0]
     assert entry["char"] == "A"
     assert entry["artifacts"]["json"]["strategy"] in ("rect_decompose", "stencil", "primitive_search")
-    # Amarillo's own glyphs never actually win with stencil (measured this
-    # session) — no glyph in this pack should trip the experimental flag.
+    # Amarillo's own glyphs never win with stencil, so no glyph in this pack
+    # should trip the experimental flag.
     assert "experimental" not in manifest
 
 
@@ -292,7 +292,7 @@ def test_json_legacy_output_uses_legacy_primitive_strategy(tmp_path):
     assert entry["char"] == "A"
     assert entry["artifacts"]["json"]["strategy"] == "legacy_primitive"
     assert entry["artifacts"]["json"]["file"] is not None
-    # Shares the same "json" summary key as the modern json path — this is
+    # Shares the same "json" summary key as the modern json path: this is
     # what keeps the GUI's summary-line formatting working unmodified for
     # both json strategies.
     assert manifest["summary"]["json"]["generated"] == 1
@@ -386,7 +386,7 @@ def test_manual_assignment_takes_precedence_over_mask_overrides(tmp_path, monkey
                                manual_assignments={"A": source}, log=lambda *_: None)
 
     # fit_glyph_with_strategy (auto-fit) must never run for the manually
-    # assigned char — only for the untouched one.
+    # assigned char, only for the untouched one.
     assert called == ["B"]
     entries = {e["char"]: e for e in manifest["categories"]["Uppercase"]}
     assert entries["A"]["artifacts"]["json"]["strategy"] == "manual"
@@ -416,7 +416,7 @@ def test_manual_assignment_missing_source_file_is_recorded_as_a_failure(tmp_path
 @requires_sga_font
 def test_allow_stencil_false_forces_direct_fill_on_a_real_font(tmp_path):
     # 'X' on this font genuinely needs fewer shapes as a stencil (10 vs 14
-    # direct) — allow_stencil=False must still force direct fill despite
+    # direct); allow_stencil=False must still force direct fill despite
     # that, not just pass the flag through without effect.
     manifest = build_fontpack(SGA_FONT, tmp_path, "SGATEST", output="json", chars={"X"},
                                allow_stencil=False, log=lambda *_: None)
@@ -441,10 +441,108 @@ def test_output_modes_no_longer_includes_both():
 
 @requires_font
 def test_default_should_stop_and_on_glyph_are_safe_noops(tmp_path):
-    # The CLI path never passes these — must work with zero extra arguments,
-    # same as before this feature existed.
+    # The CLI path never passes these; they must work with zero extra arguments.
     manifest = build_fontpack(AMARILLO_FONT, tmp_path, "DEFAULTS", output="json",
                                chars={"A"}, log=lambda *_: None)
     assert "halted" not in manifest
     assert manifest["files_written"][0] == "Uppercase/DEFAULTS_A.json"
     assert all(path.endswith((".json", "_diff.png")) for path in manifest["files_written"])
+
+
+# -- color_mode / solid_color / high_contrast_seed --------------------------
+
+def _glyph_shapes(tmp_path, manifest, category, char):
+    import json as jsonlib
+    entry = next(e for e in manifest["categories"][category] if e["char"] == char)
+    pack_dir = pack_dir_for(tmp_path, manifest["prefix"], "json", manifest["curve_segments"],
+                             manifest["generation_profile"]["compute_backend"])
+    data = jsonlib.loads((pack_dir / entry["artifacts"]["json"]["file"]).read_text(encoding="utf-8"))
+    return data["shapes"]
+
+
+@requires_font
+def test_default_color_mode_is_solid_white_and_recorded_in_manifest(tmp_path):
+    manifest = build_fontpack(AMARILLO_FONT, tmp_path, "SOLIDDEF", output="json",
+                               chars={"A"}, log=lambda *_: None)
+    assert manifest["color_mode"] == "solid"
+    assert manifest["color_seed"] is None
+    shapes = _glyph_shapes(tmp_path, manifest, "Uppercase", "A")
+    assert all(tuple(s["color"]) == (255, 255, 255, 255) for s in shapes if not s.get("mask"))
+
+
+@requires_font
+def test_custom_solid_color_applies_to_every_shape_and_export_matches(tmp_path):
+    manifest = build_fontpack(AMARILLO_FONT, tmp_path, "SOLIDCUSTOM", output="json",
+                               chars={"A"}, log=lambda *_: None,
+                               color_mode="solid", solid_color=(10, 20, 30, 255))
+    assert manifest["color_mode"] == "solid"
+    shapes = _glyph_shapes(tmp_path, manifest, "Uppercase", "A")
+    assert shapes  # sanity: this glyph actually produced shapes
+    assert all(tuple(s["color"]) == (10, 20, 30, 255) for s in shapes if not s.get("mask"))
+
+
+@requires_font
+def test_high_contrast_mode_gives_adjacent_shapes_distinct_colors(tmp_path):
+    manifest = build_fontpack(AMARILLO_FONT, tmp_path, "HICONTRAST", output="json",
+                               chars={"A"}, log=lambda *_: None,
+                               color_mode="high_contrast", high_contrast_seed=99)
+    assert manifest["color_mode"] == "high_contrast"
+    assert manifest["color_seed"] == 99
+    shapes = [s for s in _glyph_shapes(tmp_path, manifest, "Uppercase", "A") if not s.get("mask")]
+    assert len(shapes) >= 2  # otherwise "adjacent shapes differ" is vacuous
+    colors = [tuple(s["color"]) for s in shapes]
+    assert len(set(colors)) == len(colors), "every shape in this small glyph should be a distinct color"
+
+
+@requires_font
+def test_high_contrast_regeneration_with_same_seed_is_byte_identical(tmp_path):
+    first = build_fontpack(AMARILLO_FONT, tmp_path / "run1", "HC", output="json",
+                            chars={"A", "B"}, log=lambda *_: None,
+                            color_mode="high_contrast", high_contrast_seed=1234)
+    second = build_fontpack(AMARILLO_FONT, tmp_path / "run2", "HC", output="json",
+                             chars={"A", "B"}, log=lambda *_: None,
+                             color_mode="high_contrast", high_contrast_seed=1234)
+    for char in ("A", "B"):
+        colors1 = [tuple(s["color"]) for s in _glyph_shapes(tmp_path / "run1", first, "Uppercase", char)]
+        colors2 = [tuple(s["color"]) for s in _glyph_shapes(tmp_path / "run2", second, "Uppercase", char)]
+        assert colors1 == colors2
+
+
+@requires_font
+def test_high_contrast_preview_and_export_use_the_same_assignment(tmp_path):
+    """The shapes written to disk (export) and the shapes fit_glyph_with_
+    strategy returns in-process (what a live preview renders from) are the
+    exact same call -- this pins that there's only one code path, not a
+    preview-only and an export-only version that could drift apart."""
+    import gen_fontpack
+    from forza_writer.primitive_fit import fit_glyph_with_strategy
+    from forza_writer.high_contrast import seed_for_char
+
+    manifest = build_fontpack(AMARILLO_FONT, tmp_path, "AGREE", output="json",
+                               chars={"A"}, log=lambda *_: None,
+                               color_mode="high_contrast", high_contrast_seed=55)
+    exported = [tuple(s["color"]) for s in _glyph_shapes(tmp_path, manifest, "Uppercase", "A")]
+
+    preview_shapes, _strategy = fit_glyph_with_strategy(
+        "A", AMARILLO_FONT, high_contrast_seed=seed_for_char(55, "A"))
+    preview = [tuple(s["color"]) for s in preview_shapes]
+    assert preview == exported
+
+
+@requires_font
+def test_mask_shapes_keep_mask_color_even_in_high_contrast_mode(tmp_path, monkeypatch):
+    """A mask shape is a transparency cutout, never actually drawn -- high
+    contrast coloring must never touch it, in export or preview."""
+    from forza_writer.primitive_fit import PlacedShape, placements_to_shapes
+
+    placements = [
+        PlacedShape(shape_id="square", cx=10.0, cy=10.0, scale_x=1.0, scale_y=1.0,
+                    rotation_deg=0.0, is_mask=True),
+        PlacedShape(shape_id="square", cx=50.0, cy=50.0, scale_x=1.0, scale_y=1.0,
+                    rotation_deg=0.0, is_mask=False),
+    ]
+    shapes = placements_to_shapes(placements, resolution=64, high_contrast_seed=7)
+    assert shapes[0]["mask"] is True
+    assert tuple(shapes[0]["color"]) == (0, 0, 0, 255)
+    assert shapes[1]["mask"] is False
+    assert tuple(shapes[1]["color"]) != (0, 0, 0, 255)

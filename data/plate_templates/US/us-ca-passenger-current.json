@@ -1,0 +1,118 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "us-ca-passenger-current",
+  "display_name_key": "plates.template.us_ca_passenger_current",
+  "country": "US",
+  "jurisdiction": "CA",
+  "era": "current",
+  "plate_type": "passenger",
+  "width_mm": 304.8,
+  "height_mm": 152.4,
+  "accuracy_status": "reference_based",
+  "provenance": {
+    "source_notes": "12in x 6in and the legacy '1ABC234' format are verified via California Vehicle Code Section 5201. No official font name is confirmed for the plate face -- typography here is approximated with a bundled sans-serif, not an authentic reproduction. A reversed '123ABC1'-style format is reported effective ~March 2026 in news coverage only, not confirmed against a DMV.ca.gov primary source; this template models the long-standing legacy format and should be revisited once a primary source for the new format is found.",
+    "contributors": [],
+    "reference_urls": [
+      "https://law.justia.com/codes/california/code-veh/division-3/chapter-1/article-9/section-5201/"
+    ],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 3.0,
+    "y_mm": 3.0,
+    "width_mm": 298.8,
+    "height_mm": 146.4,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": {
+    "decoration_id": "border",
+    "kind": "border",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      0,
+      40,
+      130,
+      255
+    ],
+    "asset_ref": null,
+    "editable": true
+  },
+  "fields": [
+    {
+      "field_id": "jurisdiction_header",
+      "label_key": "plates.field.jurisdiction_header",
+      "role": "jurisdiction_text",
+      "x_mm": 20.0,
+      "y_mm": 10.0,
+      "width_mm": 264.8,
+      "height_mm": 28.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.55,
+      "tracking": 1.0,
+      "line_spacing": 1.0,
+      "default_text": "California",
+      "color": [
+        190,
+        20,
+        20,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 20.0,
+      "y_mm": 48.0,
+      "width_mm": 264.8,
+      "height_mm": 70.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.57,
+      "tracking": 4.0,
+      "line_spacing": 1.0,
+      "default_text": "1ABC234",
+      "color": [
+        0,
+        40,
+        130,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.us_ca.format_hint",
+        "min_length": 7,
+        "max_length": 7,
+        "allowed_pattern": "[0-9][A-Z]{3}[0-9]{3}",
+        "excluded_chars": [],
+        "custom_rule_id": "us_ca_no_ambiguous_letters_in_outer_positions"
+      },
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [],
+  "tags": [
+    "vanity-available"
+  ]
+}

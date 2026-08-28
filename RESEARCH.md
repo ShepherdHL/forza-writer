@@ -3,9 +3,7 @@
 This is the technical reference for how **forza-writer** talks to Forza
 Horizon 6: the memory layout, the built-in shape catalog, the live SQLite
 database backing that catalog, and the `.modelbin` mesh format vinyl shapes
-are stored in. It consolidates three earlier working documents
-(`forza-writer-briefing.md`, `forza-writer-cursor-briefing.md`,
-`forza-writer-project-summary.md`) into one, in place of them.
+are stored in.
 
 Everything here concerns **offline/solo use only**. FH6-DBDUMPER and the
 memory probe write to a live game process — never run this tooling while
@@ -275,16 +273,14 @@ Each entry carries a tag, properties (Name, Id, BBox, TRef), and a
 
 **Vinyl modelbins are simpler than car models** — no skeleton, no morph, no
 skinning. Confirmed (by parsing `S_01.modelbin` directly) to contain
-`MatI` / `VLay` / `IndB` / `Modl`, plus **`VerB` twice** — this is the one
-correction to the original extraction pass, only discovered once forza-writer
-started *writing* these files instead of just reading them (see "The
-malformed-mesh bug" below): one `VerB` is **position-only** (SNORM16 `(x, y)`
-pairs, 8-byte stride, coordinates in the same ±128 space as everything else
-here), the other carries the **full per-vertex attribute set** — position,
-normal, tangent, texcoord, and vertex color. The KFPS vertex JSON format
-above (`Vertices`/`Indices`/`VerticesAlpha`) is a simplified read of the
-position-only buffer plus per-vertex alpha; it doesn't capture the second
-buffer at all, which turned out to matter a great deal (below).
+`MatI` / `VLay` / `IndB` / `Modl`, plus **`VerB` twice**: one `VerB` is
+**position-only** (SNORM16 `(x, y)` pairs, 8-byte stride, coordinates in the
+same ±128 space as everything else here), the other carries the **full
+per-vertex attribute set** — position, normal, tangent, texcoord, and vertex
+color. The KFPS vertex JSON format above (`Vertices`/`Indices`/`VerticesAlpha`)
+is a simplified read of the position-only buffer plus per-vertex alpha; it
+does not capture the second buffer at all, which matters for mesh generation
+(see "The malformed-mesh bug" below).
 
 Outlines are straight-line polygons with holes where needed (e.g. letter
 'A' has an outer contour plus a triangular counter/hole) — well suited to
@@ -292,8 +288,9 @@ earcut-style triangulation with hole support. **Triangle winding is
 clockwise** (confirmed by signed-area comparison against `S_01.modelbin`,
 majority clockwise there vs. `mapbox-earcut`'s uniformly counter-clockwise
 output) — `tools/gen_modelbin.py` flips winding by default
-(`--no-flip-winding` to disable); getting this backwards is a plausible
-backface-culling explanation for an early round of invisible-glyph results.
+(`--no-flip-winding` to disable). Getting the winding direction wrong makes
+glyphs invisible via backface culling, so treat winding as the first thing
+to check if generated shapes render blank.
 
 **Encryption status:** FH5/FM2023 GameDB (`.slt`) is TransformIT-encrypted
 (Arxan + CRC-32). FH6 vinyl modelbins, by contrast, were readable directly —
@@ -347,48 +344,43 @@ own export for the same text.
 
 The goal: get a custom font's glyphs into FH6's shape catalog, so custom
 text renders as real native vinyl layers rather than a decal/trace hack.
-Phase 2 is really two problems stacked — get the game to *know about* a
-new shape, and get it to *load a mesh* for that shape — and the story
-below is the order things were actually learned, including a conclusion
-that had to be walked back once better instrumentation existed. The short
-version, if you read nothing else in this section: **the registration
-path is proven — not by adding new catalog entries, which turned out not
-to work, but by hijacking an existing catalog row — mesh delivery via
-`Vinyls.zip` injection is proven, and the remaining blocker is a specific,
-understood bug in this project's own mesh writer, not an unknown in the
-game.** See "Current status" near the end for the
+This splits into two problems: getting the game to *know about* a new
+shape, and getting it to *load a mesh* for that shape.
+
+**The registration path is proven**: not by adding new catalog entries,
+which does not work, but by hijacking an existing catalog row. Mesh
+delivery via `Vinyls.zip` injection is also proven. The remaining blocker
+is a specific, understood bug in this project's own mesh writer, not an
+unknown in the game. See "Current status" near the end for the
 capability-by-capability breakdown.
 
 ### 1. FH6 enforces its shape catalog at save time
 
-Early experiments wrote out-of-range shape words directly to offset `0x7A`:
+Writing an out-of-range shape word directly to memory offset `0x7A`
+behaves as follows:
 
-- **`0xFFFF`:** accepted in memory, rendered as a mask layer.
+- **`0xFFFF`:** accepted in memory, renders as a mask layer.
 - **`0x0F01` (3841, one past the last known Font 11 entry):** accepted in
-  memory, briefly rendered something E-like — but on export after
-  save/reload, the game had **silently normalized it back to `0x0771`**
-  (Font 1 'E'). `resource_ptr_0xA8` confirmed both pointed at identical mesh
-  data.
+  memory and renders something E-like immediately, but on export after
+  save/reload the game silently normalizes it back to `0x0771` (Font 1
+  'E'). `resource_ptr_0xA8` confirms both point at identical mesh data.
 
-**Conclusion:** the catalog is enforced somewhere in FH6's asset system, not
-just checked once at write time. Writing an unrecognized shape word to
-`0x7A` alone is not sufficient for custom shapes — the catalog itself has
-to be extended.
+The catalog is enforced somewhere in FH6's asset system, not just checked
+once at write time. Writing an unrecognized shape word to `0x7A` alone is
+not sufficient for custom shapes: the catalog itself has to be extended.
 
 ### 2. FH6-DBDUMPER and the live catalog table
 
-Runtime memory probing (before DBDUMPER) found the `resource_ptr_0xA8`
-field points to a render-pass object, not the catalog directly — at
-`+0x10` a descriptor object, at `+0x18` mesh data, in a mesh pool with a
-fixed **720-byte (0x2D0) stride** per shape, with descriptor objects
-carrying a monotonically increasing *load-order* ID (not shape-word order)
-at descriptor offset `0x038`. That path was abandoned once a more direct
-route was found:
+The `resource_ptr_0xA8` field points to a render-pass object, not the
+catalog directly: at `+0x10` a descriptor object, at `+0x18` mesh data, in
+a mesh pool with a fixed **720-byte (0x2D0) stride** per shape, with
+descriptor objects carrying a monotonically increasing *load-order* ID
+(not shape-word order) at descriptor offset `0x038`. The more direct route
+into the catalog itself is the live database:
 
-**FH6-DBDUMPER** (`github.com/matkhl/FH6-DBDUMPER`, C++, built locally) —
-locates FH6's live in-memory SQLite database via an AOB (array-of-bytes)
-pattern scan, then executes arbitrary SQL against it via
-`CreateRemoteThread` injection:
+**FH6-DBDUMPER** (`github.com/matkhl/FH6-DBDUMPER`, C++) locates FH6's
+live in-memory SQLite database via an AOB (array-of-bytes) pattern scan,
+then executes arbitrary SQL against it via `CreateRemoteThread` injection:
 
 ```
 CDatabase AOB pattern:
@@ -397,8 +389,8 @@ CDatabase AOB pattern:
 
 `execute_query` sits at vtable index 9 (offset `0x48`). Confirmed-working
 SQL against a live FH6 process (from prior modding research, cited here as
-context — not run as part of this project except the custom-SQL insert
-below):
+context, distinct from the catalog inserts/updates this project's tooling
+actually runs, described below):
 
 ```sql
 UPDATE Data_Car SET BaseCost = 0
@@ -409,12 +401,12 @@ CREATE VIEW Drivable_Data_Car AS SELECT * FROM Data_Car
 CREATE TABLE _backup_AutoshowState AS SELECT ...
 ```
 
-DBDUMPER also supports a **persist** mode: write a modified local `.sqlite`
-file back into the live database (delete existing rows + insert from the
-local file, table by table). It was extended this session with a
-lightweight "execute custom SQL" option, since a full 214-table persist
-took over 20 hours in an earlier attempt and had to be aborted — a single
-`INSERT`/`UPDATE` via custom SQL takes seconds instead.
+DBDUMPER supports two ways to modify the live database: a **persist** mode
+that writes a modified local `.sqlite` file back into the live database
+(delete existing rows + insert from the local file, table by table, across
+all 214 tables; slow, on the order of hours), and a lightweight **execute
+custom SQL** option for a single targeted `INSERT`/`UPDATE`, which takes
+seconds and is the practical choice for catalog edits.
 
 **The catalog table, confirmed:** dumping FH6's live database (214 tables
 total) identified `Livery_VinylsDecals` as the shape catalog:
@@ -427,121 +419,110 @@ total) identified `Livery_VinylsDecals` as the shape catalog:
 
 1,442 existing rows, IDs 101–3840.
 
-### 3. The ID 4001 test, and a conclusion that had to be corrected
+### 3. A registered shape word is not the same as a resolved mesh
 
-Inserted a new row directly into the **live** in-memory database via
-DBDUMPER's custom-SQL option: `ID = 4001`, `Path =
-GAME:\Media\Livery\Vinyls\S_01.modelbin` (reusing an existing mesh file as
-a placeholder). Built a 2-layer test vinyl (layer 1 = shape word 4001,
-layer 2 = known shape word 1901 as a baseline), imported via KFPS, saved
-and reloaded in-game.
-
+Inserting a new row directly into the **live** in-memory database via
+DBDUMPER's custom-SQL option (`ID = 4001`, `Path =
+GAME:\Media\Livery\Vinyls\S_01.modelbin`, reusing an existing mesh file as
+a placeholder) and placing a layer with that shape word shows that the
+shape word itself can survive a save/reload without being normalized away.
 Reading `0x7A` back afterward (via forza-writer's own memory probe,
-`forza_writer/probe.py`) confirmed:
+`forza_writer/probe.py`) confirms `type_word = 4001` on the test layer,
+against a `type_word = 1901` baseline layer confirming the right group was
+read.
 
-- Layer 1: `type_word = 4001` — **survived, not normalized**.
-- Layer 2: `type_word = 1901` — baseline correct, confirming the right
-  group was read.
-
-At the time this was read as "a catalog row is enough to anchor a custom
-shape" — it felt like the breakthrough for Phase 2. **That was only a
-partial read, and it's worth being honest about the correction**: what
-survived was the *shape word in memory*. `resource_ptr_0xA8` for layer 1
-came back `0x0` the entire time — a null resource pointer. FH6 accepted the
-shape ID and found a catalog row, but never actually resolved a mesh for
-it; the layer was registered but invisible. This didn't become clear until
-much later, once better instrumentation (§8 below) made the null pointer
-impossible to explain away. A partial success can look more complete than
-it is — that's the general lesson, not just a footnote about this one test.
+That is not, on its own, evidence that the shape is actually rendering.
+`resource_ptr_0xA8` must also be checked: a shape word that reads back
+correctly but resolves to a null resource pointer (`0x0`) means FH6
+accepted the shape ID and found a catalog row, but never resolved a mesh
+for it. The layer is registered in memory but invisible. Telling "shape
+word survived" apart from "mesh actually resolved" requires the
+resource-pointer check; the shape word surviving on its own does not imply
+the glyph is visible (the diagnostics tooling in §8 surfaces this
+distinction directly).
 
 ### 4. Why new rows don't actually work: the encrypted startup catalog
 
-The natural next move was inserting many new rows at once — 62 of them (IDs
-4002–4063), one per glyph of a test font. DBDUMPER's `INSERT` reported
-`OK`, but a follow-up `SELECT COUNT(*)` for those exact IDs came back
-**0**. The rows weren't there, despite the insert "succeeding."
+Inserting many new rows at once (62 of them, IDs 4002–4063, one per glyph
+of a test font) reports `OK` from DBDUMPER's `INSERT`, but a follow-up
+`SELECT COUNT(*)` for those exact IDs comes back **0**: the rows are not
+there despite the insert reporting success. This is not a DBDUMPER commit
+failure: `UPDATE`-ing an existing legitimate row (101) and reading it back
+does persist. **Writes do commit: FH6 specifically does not keep
+brand-new catalog rows inserted at runtime.** New IDs never enter whatever
+set the renderer actually resolves against.
 
-A discriminating test settled whether this was DBDUMPER failing to commit
-anything, or FH6 specifically rejecting *new* rows: instead of inserting, an
-existing legitimate row (101) was `UPDATE`-ed and read back. It persisted.
-**Writes do commit — FH6 specifically does not keep brand-new catalog rows
-inserted at runtime.** New IDs never enter whatever set the renderer
-actually resolves against.
-
-The working theory, consistent with every observation so far: FH6's
-authoritative shape catalog is built once at process startup from a
-**packed, encrypted on-disk database, `gamedbRC.slt`** — not the live,
-in-memory SQLite table DBDUMPER edits. The live table can be *read* and
-individual existing rows can be *updated* (both changes are real and
-persist), but it isn't the source the renderer consults for "does this ID
-exist at all" — that check happens against something already resolved from
-the encrypted database before DBDUMPER ever gets a chance to touch memory.
-This reframes Phase 2 entirely: **don't add new rows — hijack existing
-ones.**
+The working theory, consistent with every observation: FH6's authoritative
+shape catalog is built once at process startup from a **packed, encrypted
+on-disk database, `gamedbRC.slt`**, not the live, in-memory SQLite table
+DBDUMPER edits. The live table can be *read* and individual existing rows
+can be *updated* (both changes are real and persist), but it is not the
+source the renderer consults for "does this ID exist at all": that check
+happens against something already resolved from the encrypted database
+before DBDUMPER ever gets a chance to touch memory. Practical consequence:
+**don't add new rows, hijack existing ones.**
 
 ### 5. The hijack: repointing an existing row, and how to tell it worked
 
 Since `UPDATE`s to existing rows stick, an existing shape word FH6 already
 knows about can be repointed at a custom mesh instead of registering a new
-one. Tested by repointing shape word 1901 (normally a built-in Font 1 'A')
-at a custom mesh file.
+one (tested by repointing shape word 1901, normally a built-in Font 1 'A',
+at a custom mesh file).
 
-At first this looked like a failure — placed layers using shape word 1901
-still showed the original built-in glyph. But those layers had their
-meshes **cached** from before the edit; live-placed layers don't
-necessarily re-resolve just because the catalog row changed underneath
-them. The tell came from the **font-selection menu**, which renders its
-thumbnails fresh on every open: after the hijack, that glyph's thumbnail
-rendered **invisible** rather than as the original shape. An
-invisible-but-changed thumbnail is a positive result, not a null one — it
-means FH6 *did* read the new catalog path on a fresh resolve and *did* try
-to load the new mesh. The remaining problem is narrower than "does hijacking
-work" — it's "why does our mesh render nothing."
+**Already-placed layers are not a reliable test of this.** A layer placed
+with shape word 1901 before the hijack keeps showing the original built-in
+glyph afterward, because its mesh is **cached** from before the edit;
+live-placed layers don't necessarily re-resolve just because the catalog
+row changed underneath them. The reliable test is the **font-selection
+menu**, which renders its thumbnails fresh on every open: after the
+hijack, that glyph's thumbnail renders **invisible** rather than as the
+original shape. An invisible-but-changed thumbnail is a positive result,
+not a null one: it means FH6 *did* read the new catalog path on a fresh
+resolve and *did* try to load the new mesh. The open problem from here is
+narrower than "does hijacking work": it's "why does the mesh render
+nothing" (see §6).
 
-**This — hijacking an existing row, not inserting a new one — is the
-confirmed, working registration path for Phase 2.**
+**Hijacking an existing row, not inserting a new one, is the confirmed,
+working registration path for Phase 2.**
 
 ### 6. The malformed-mesh bug: why hijacked custom meshes render nothing
 
-Comparing a generated file against the reference pinned this down exactly.
 The generator regenerates the position-only `VerB` and the `IndB` index
-buffer from the glyph's actual geometry, but it **copies the full-attribute
-`VerB` verbatim from the reference mesh** (see the two-`VerB` correction
-above). So for a generated glyph with more vertices than the reference —
-Jokerman's "A" needs up to 50, the reference mesh it was copied from only
-has 23 — the index buffer references vertex indices past the end of the
-attribute buffer the GPU actually renders from. The mesh is structurally
-malformed and draws nothing, silently.
+buffer from the glyph's actual geometry, but it **copies the
+full-attribute `VerB` verbatim from the reference mesh** (see the
+two-`VerB` description above). For a generated glyph with more vertices
+than the reference (Jokerman's "A" needs up to 50 vertices; the reference
+mesh it was copied from only has 23), the index buffer references vertex
+indices past the end of the attribute buffer the GPU actually renders
+from. The mesh is structurally malformed and draws nothing, silently.
 
-This is a fixable, purely offline code problem, not anything about the
-game's behavior — regenerate the full-attribute buffer (correct vertex
-count, flat viewer-facing normals, UVs, tangents, opaque vertex colors)
-to match the newly-generated geometry instead of copying it from the
-reference. It's the single most likely fix to turn an invisible hijacked
-glyph into a visible one, and it's the current top priority (see "Next
-steps" below).
+This is a purely offline code problem, not a game-behavior limitation:
+regenerate the full-attribute buffer (correct vertex count, flat
+viewer-facing normals, UVs, tangents, opaque vertex colors) to match the
+newly-generated geometry instead of copying it from the reference. This is
+the single most likely fix to turn an invisible hijacked glyph into a
+visible one, and is the current top priority (see "Next steps" below).
 
 ### 7. Delivering the mesh: `Vinyls.zip`, not `MediaOverride`
 
 All existing vinyl shapes live inside `media\Livery\Vinyls.zip`. There is
 **no `MediaOverride` loose-file folder anywhere in this actual FH6
-installation** — despite ForzaModelTool documenting that mechanism for FH5;
-that FH5 precedent doesn't carry over here. A loose-file test (placing a
-`.modelbin` next to the zip, updating the DB row's `Path` to point at it)
-was tried and instrumentation (§8) later confirmed the game never touched
-that file.
+installation**: ForzaModelTool documents that mechanism for FH5, but that
+precedent does not carry over here. Placing a `.modelbin` next to the zip
+and updating the DB row's `Path` to point at it does not work: the
+diagnostics tooling (§8) confirms the game never touches that file.
 
 **Confirmed working instead: inject the custom mesh directly into
-`Vinyls.zip`** (with a backup taken first). Diagnostics later caught FH6
-reading `Vinyls.zip` during shape resolution, which both confirms the zip
-is the real delivery channel and that injected files are reachable there.
+`Vinyls.zip`** (take a backup first). Diagnostics (§8) confirm FH6 reads
+`Vinyls.zip` during shape resolution, which both confirms the zip is the
+real delivery channel and that injected files are reachable there.
 
 ### 8. Diagnostics tooling, and three separate resolution paths in FH6
 
-Diagnosing this by hand from raw hex dumps, and via KFPS's memory scanner
-(unreliable for small vinyl groups — too many candidate matches in memory),
-kept producing ambiguous conclusions. `forza_writer/diagnostics/` is a
-read-only, three-source event logger built to stop guessing:
+`forza_writer/diagnostics/` is a read-only, three-source event logger for
+diagnosing catalog/mesh resolution, in place of manual hex-dump inspection
+or KFPS's memory scanner (unreliable for small vinyl groups; too many
+candidate matches in memory):
 
 - Polls FH6 process memory (`0x7A` / `0xA8` per layer) for changes, flagging
   values that change and then revert to baseline — the fingerprint of
@@ -559,38 +540,32 @@ python -m forza_writer.diagnostics --layers 3 --sqlite "<path to a live-updating
 ```
 
 **Operational note:** the memory watcher needs an **elevated
-(Administrator) terminal** to open the game process — without it, it fails
-silently and captures nothing. Easy to lose a session to.
+(Administrator) terminal** to open the game process; without it, it fails
+silently and captures nothing.
 
-This instrumentation is what surfaced the most important structural
-finding about *how* FH6 resolves shapes: **live placement, thumbnail
-generation, and the save/reload cycle are separate resolution paths, and
-they don't agree.** After the hijack + winding-order fix below, a freshly
-placed layer using the hijacked shape word rendered correctly — a real,
-correctly-shaped letterform. Saving and reloading that *same session* (not
-a restart, not session contamination — confirmed by isolating it to a
-single fresh layer with nothing else touching that shape word first) made
-it go blank again. Meanwhile the file-thumbnail preview rendered the same
-hijacked shape correctly, in the same session, at the same time the loaded
-vinyl itself was blank. Three resolution paths, at least, and only the
-authoritative reload path currently rejects the injected mesh — which,
-combined with §6, is now explained by the malformed attribute buffer rather
-than being a separate mystery.
+**Structural finding: live placement, thumbnail generation, and the
+save/reload cycle are separate resolution paths in FH6, and they do not
+agree.** With the hijack and winding-order fix in place, a freshly placed
+layer using the hijacked shape word renders correctly as a real,
+correctly-shaped letterform. Saving and reloading that same session (not a
+restart, isolated to a single fresh layer with nothing else touching that
+shape word first) makes it go blank again. Meanwhile the file-thumbnail
+preview renders the same hijacked shape correctly, in the same session, at
+the same time the loaded vinyl itself is blank. Of the (at least) three
+resolution paths, only the authoritative reload path currently rejects the
+injected mesh, which, combined with §6, is explained by the malformed
+attribute buffer rather than being a separate mystery.
 
-**One unresolved thread from this stretch of testing, deliberately not
-overclaimed:** an early live retest (hijacking 1901 before the winding-order
-fix below) produced two silent FH6 crashes. Windows Event Log showed
-`LiveKernelEvent` id 1001, bugcheck `0x193` (`VIDEO_DXGKRNL_LIVEDUMP`) — a
-GPU driver watchdog stall, not an application-level exception. An Nvidia
-driver update was installed, and a subsequent diagnostics-instrumented run
-completed cleanly with no crashes. That's a correlation, not a diagnosis —
-the crash was never root-caused, and it's entirely possible the *actual*
-trigger was the malformed pre-winding-fix mesh choking the driver rather
-than anything the update itself fixed. Treat this as **unresolved and
-worth re-investigating**, not closed: if a similar crash recurs during
-future live testing (especially anything involving a mesh that hasn't been
-validated yet), don't assume it's unrelated to the driver just because it
-didn't recur once before.
+**Known risk, unresolved:** live testing of a hijacked shape word with an
+invalid or malformed mesh has produced silent FH6 crashes correlated with
+a GPU driver watchdog stall (Windows Event Log `LiveKernelEvent` id 1001,
+bugcheck `0x193`, `VIDEO_DXGKRNL_LIVEDUMP`) rather than an
+application-level exception. This correlation is not a diagnosis: the
+crash has never been root-caused, and the actual trigger may be the
+malformed mesh itself rather than any driver-level issue. Treat any
+recurrence of this crash during live testing, especially with a mesh that
+has not been validated yet, as still open rather than as something already
+explained.
 
 ### Current status
 
@@ -687,10 +662,10 @@ work:
 - A modified `Vinyls.zip` (the mesh-delivery mechanism, Phase 2 §7) is a
   modified game file — restore `Vinyls.zip.bak` before playing online. See
   Phase 2's "two ceilings" for the full local-only/anti-cheat picture.
-- An early live test produced a GPU driver watchdog crash (bugcheck
-  `0x193`) that was only correlated with a driver update, never actually
-  root-caused (Phase 2 §8) — don't assume a recurrence during live testing
-  is unrelated just because it didn't happen again once.
+- Live testing a hijacked shape word with an invalid or malformed mesh can
+  trigger a GPU driver watchdog crash (bugcheck `0x193`); the root cause is
+  unconfirmed (Phase 2 §8), so treat any recurrence during live testing as
+  a live risk, not a solved issue.
 
 ## Key external references
 

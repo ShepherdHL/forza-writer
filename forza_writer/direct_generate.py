@@ -110,6 +110,7 @@ def generate_image(
     cell_size: int = DEFAULT_CELL_SIZE,
     max_dimension: int = 256,
     design_size: float = 300.0,
+    solid_color: tuple[int, int, int, int] = (255, 255, 255, 255),
 ) -> tuple[list[dict], list[str], dict]:
     """Lift a monochrome lettering/signature silhouette from an image."""
     image_path = Path(image_path)
@@ -146,7 +147,7 @@ def generate_image(
             round(height * scale / PIXEL_ART_SQUARE_SIZE, 6),
             0.0, 0.0, 0,
         ],
-        "color": [255, 255, 255, 255],
+        "color": list(solid_color),
         "mask": False,
     } for x, y, width, height in rects]
     # The trace snapshot rides along in the metadata so a caller that wants
@@ -201,15 +202,16 @@ def generate_modern(
     letter_spacing: float = 0.0,
     mask_mode: str = "auto",
     compute_backend: str = "cpu",
+    solid_color: tuple[int, int, int, int] = (255, 255, 255, 255),
 ) -> tuple[list[dict], list[str], dict]:
     """Fit each unique glyph with a quality-gated primitive/Square hybrid.
 
     The general fontpack fitter intentionally trades fidelity for a small
     layer count by approximating curves with FH6's stars, arrows, rings, and
     other primitives.  That trade is actively unhelpful in Direct Generation,
-    whose purpose is to preview the exact requested text.  Rasterizing and
-    Each full-library fit is independently rendered and compared with the
-    source outline.  It is retained only when it preserves topology, clears
+    whose purpose is to preview the exact requested text.  Each full-library
+    fit is independently rendered and compared with the source outline.  It
+    is retained only when it preserves topology, clears
     strict silhouette/edge/overshoot thresholds, and actually saves layers;
     otherwise an exact spill-free Square trace is used.  This keeps a star or
     arrow when it truly matches a glyph without letting layer count excuse a
@@ -251,13 +253,14 @@ def generate_modern(
             target, max_rects=target.size, min_area=1)
         placements = rects_to_placements(rects, DIRECT_TRACE_RESOLUTION)
         exact_shapes = placements_to_shapes(
-            placements, DIRECT_TRACE_RESOLUTION)
+            placements, DIRECT_TRACE_RESOLUTION, solid_color=solid_color)
         primitive_shapes, primitive_strategy = fit_glyph_name_with_strategy(
             glyph_name,
             font_path,
             curve_segments=max(1, int(curve_segments)),
             mask_mode=mask_mode,
             compute_backend=compute_backend,
+            solid_color=solid_color,
         )
         quality, _target, _generated = assess_glyph_name(
             glyph_name, font_path, primitive_shapes,
@@ -339,6 +342,7 @@ def generate_legacy(
     cell_size: int = DEFAULT_CELL_SIZE,
     font_size: int = DEFAULT_FONT_SIZE,
     design_size: float = 300.0,
+    solid_color: tuple[int, int, int, int] = (255, 255, 255, 255),
 ) -> tuple[list[dict], list[str], dict]:
     """Trace the complete text mask with the original rectangle algorithm."""
     if not text or not text.strip():
@@ -372,7 +376,7 @@ def generate_legacy(
                 0.0,
                 0,
             ],
-            "color": [255, 255, 255, 255],
+            "color": list(solid_color),
             "mask": False,
         })
     warnings = [f"{char!r} is not supported by {font_path.name}; fallback glyph may appear"

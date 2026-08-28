@@ -1,0 +1,130 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "halo-reach-barcode-fictional",
+  "display_name_key": "plates.template.halo_reach_barcode_fictional",
+  "country": "HALO",
+  "jurisdiction": "Reach",
+  "era": "fictional",
+  "plate_type": "passenger",
+  "width_mm": 304.8,
+  "height_mm": 152.4,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Halopedia's civilian-vehicles article states that identification on the planet Reach is 'achieved through a barcode,' unlike Earth locations (which use letters and numbers). Reference for this template's layout and text came from screenshots the Forza Writer user supplied directly (in-game/in-editor captures), not from any file, image, or asset extracted or downloaded from the game itself or an official tool. No source documents what that barcode actually looks like, so this template's specific colors, proportions, and the barcode itself (approximated as a run of '|' characters through the same fontpack pipeline as every other field -- the schema has no barcode-symbology decoration kind) come entirely from the supplied screenshots, not from any wiki or official description. The 'standard' variant's registration reads 'M·100627' (a raised middle dot), matching the supplied screenshot directly.",
+    "contributors": [],
+    "reference_urls": [
+      "https://www.halopedia.org/Civilian_vehicles"
+    ],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      158,
+      154,
+      142,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": null,
+  "fields": [
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 15.0,
+      "y_mm": 48.0,
+      "width_mm": 274.8,
+      "height_mm": 58.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.6,
+      "tracking": 3.0,
+      "line_spacing": 1.0,
+      "default_text": "T2345GB1",
+      "color": [
+        35,
+        35,
+        32,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.halo_reach.format_hint",
+        "min_length": 8,
+        "max_length": 8,
+        "allowed_pattern": "[A-Z][0-9]{4}[A-Z]{2}[0-9]",
+        "excluded_chars": [],
+        "custom_rule_id": null
+      },
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "barcode",
+      "label_key": "plates.field.barcode",
+      "role": "decorative_text",
+      "x_mm": 30.0,
+      "y_mm": 14.0,
+      "width_mm": 244.8,
+      "height_mm": 28.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.85,
+      "tracking": 1.5,
+      "line_spacing": 1.0,
+      "default_text": "||||||||||||||||||||||",
+      "color": [
+        30,
+        30,
+        28,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "spartan_bios",
+      "label_key": "plates.field.spartan_bios",
+      "role": "decorative_text",
+      "x_mm": 15.0,
+      "y_mm": 112.0,
+      "width_mm": 274.8,
+      "height_mm": 14.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.28,
+      "tracking": 0.5,
+      "line_spacing": 1.0,
+      "default_text": "SPARTAN III BIOS S56.7854.3354-DKW",
+      "color": [
+        110,
+        108,
+        100,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

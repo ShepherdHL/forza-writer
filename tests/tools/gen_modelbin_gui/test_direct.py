@@ -96,3 +96,43 @@ def test_generator_shortcut_sends_selected_font_to_direct_generator(gui, tmp_pat
     assert 'Direct Generator' in gui.generator_to_direct_btn.cget('text')
 
 
+def test_direct_text_clear_and_select_all_buttons(gui):
+    gui.direct_text_widget.insert('1.0', 'Some text')
+
+    gui.direct_select_all_btn.invoke()
+    assert tuple(str(i) for i in gui.direct_text_widget.tag_ranges('sel')) == (
+        gui.direct_text_widget.index('1.0'), gui.direct_text_widget.index('1.0 lineend'))
+
+    gui.direct_clear_btn.invoke()
+    assert gui.direct_text_widget.get('1.0', 'end-1c') == ''
+
+
+def test_direct_has_its_own_embedded_color_picker(gui):
+    from gen_modelbin_gui.color_picker_widget import ColorPickerWidget
+    assert isinstance(gui.direct_color_picker, ColorPickerWidget)
+
+
+def test_direct_generation_forwards_the_picker_color(gui, tmp_path, monkeypatch):
+    import gen_modelbin_gui as mod
+
+    font_path = tmp_path / 'debug-font.ttf'
+    font_path.write_bytes(b'placeholder')
+    calls = []
+
+    def fake_generate_direct(*args, **kwargs):
+        calls.append(kwargs)
+        return [], [], {'method': 'modern', 'unique_glyphs': 0, 'strategies': {}}
+
+    monkeypatch.setattr(mod, 'generate_direct', fake_generate_direct)
+    gui.direct_font_var.set(str(font_path))
+    gui.direct_text_widget.insert('1.0', 'A')
+    gui.direct_method_var.set('modern')
+    gui.direct_color = (77, 88, 99, 255)
+
+    gui._start_direct_generation()
+    gui.worker.join(timeout=5)
+    gui._poll_queue()
+
+    assert calls and calls[0]['solid_color'] == (77, 88, 99, 255)
+
+

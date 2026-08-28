@@ -2,9 +2,8 @@
 
 `LiberationSans-Regular.ttf` — Liberation Sans, by Red Hat, licensed under
 the SIL Open Font License 1.1. Chosen as the default glyph-template tracing
-font because it's metrically compatible with Arial (unlike Arial itself,
-it's actually redistributable/embeddable) and was already present as a
-system font on the machine this was copied from (`C:\Windows\Fonts`).
+font because it's metrically compatible with Arial and, unlike Arial
+itself, is actually redistributable/embeddable.
 
 Canonical source, current releases, and the authoritative license text:
 https://github.com/liberationfonts/liberation-fonts

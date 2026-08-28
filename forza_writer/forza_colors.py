@@ -5,7 +5,7 @@ RGB/HSB/HSL/hex conversions match Bang's Forza Color Converter v1.3 (fcc.js):
 https://dxbang.github.io/forza-colors/
 
 Ported near-verbatim from `forza-painter-fh6-1.9.5/src/forza_colors.py`
-(this project's own prior work — see THIRD_PARTY_NOTICES.md, same provenance
+(this project's own prior work; see THIRD_PARTY_NOTICES.md, same provenance
 as the §2 entry there) with one addition: `forza_hsb_to_rgb`, the inverse of
 `rgb_to_forza_hsb`, needed to turn the GTPlanet Colour Creation Database's
 recorded H,S,B recipes (see forza_writer/manufacturer_colors.py) back into a
@@ -127,7 +127,7 @@ def rgb_to_forza_hsb(r: int, g: int, b: int) -> Tuple[float, float, float]:
 def forza_hsb_to_rgb(h: float, s: float, b: float) -> RgbColor:
     """Inverse of `rgb_to_forza_hsb`: Forza's H,S,B (each 0-1) back to RGB.
     Forza's H,S,B is already plain normalized HSV (see `rgb_to_forza_hsb`'s
-    body — it's `rgb_to_hsb` with h/360, s/100, and value left as a 0-1
+    body: it's `rgb_to_hsb` with h/360, s/100, and value left as a 0-1
     fraction), so this is exactly `colorsys.hsv_to_rgb`."""
     r, g, bl = colorsys.hsv_to_rgb(h, s, b)
     return RgbColor(round(r * 255), round(g * 255), round(bl * 255)).clamped()

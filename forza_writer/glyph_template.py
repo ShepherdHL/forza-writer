@@ -1,7 +1,7 @@
 """Blank glyph-slot templates for hand-made fontpacks.
 
 A template is a fixed grid of labeled, empty cells (character + codepoint,
-no rendered letterforms — nothing copied from any reference site or font)
+no rendered letterforms; nothing copied from any reference site or font)
 that a user hand-draws into using Kloudy's Fabric Editor. Because each
 cell's position is fixed and known in advance, Forza Writer can identify
 which glyph a drawn shape group represents purely from where it sits in the
@@ -31,7 +31,7 @@ TEMPLATE_FORMAT = "forza_writer_glyph_template_v1"
 
 # GLYPH_SIZE is the content box a placed/traced glyph is sized within;
 # CELL_PADDING sets the cell pitch (GLYPH_SIZE * CELL_PADDING = 400, an
-# exact, easy-to-verify number in KFPS's own grid/guide display) — chosen
+# exact, easy-to-verify number in KFPS's own grid/guide display), chosen
 # independently of tools/gen_fabric_project.py's own GLYPH_SIZE/CELL_PADDING,
 # which is a separate pipeline (fitted packs) this module's blank/traced
 # templates never share a grid with, so nothing requires the two to match.
@@ -40,7 +40,7 @@ CELL_PADDING = 400.0 / 300.0
 DEFAULT_CHARS_PER_ROW = 10
 
 # Hand-picked, not derived from any font file: A-Z, a-z, 0-9, common ASCII
-# punctuation. Order matters — it fixes each character's row/column, so
+# punctuation. Order matters: it fixes each character's row/column, so
 # don't reorder an existing template's char list without minting a new
 # template_id (old exports would silently decode to the wrong glyphs).
 BASIC_LATIN_CHARS = (
@@ -69,7 +69,7 @@ def categorized_basic_latin() -> dict[str, list[str]]:
 
 def categorized_for_script_group(script: str, group_label: str) -> dict[str, list[str]]:
     """A single named group from forza_writer.alphabets.groups_for_script,
-    e.g. categorized_for_script_group("Japanese", "Katakana") — the same
+    e.g. categorized_for_script_group("Japanese", "Katakana"): the same
     curated, bounded character set the Generator tab's script checkboxes
     use, so a hand-made template's char list matches what a fitted fontpack
     for the same script would cover."""
@@ -110,10 +110,10 @@ class GlyphTemplate:
 
     def cell_offset(self, row: int, col: int) -> tuple[float, float]:
         """Top-left corner of a cell in *template space*: row-down, Y=0 at
-        row 0 — the convention the reference-image overlay is drawn in
+        row 0, the convention the reference-image overlay is drawn in
         (`build_blank_overlay_svg`) and the one this dataclass's own
         `row`/`col` numbering follows. Not the convention KFPS's native
-        shape coordinates use — see `cell_center_world`."""
+        shape coordinates use; see `cell_center_world`."""
         return (col * self.cell_size, row * self.cell_size)
 
     def cell_center_world(self, row: int, col: int) -> tuple[float, float]:
@@ -122,7 +122,7 @@ class GlyphTemplate:
 
         Confirmed empirically (not assumed): placing a shape at
         `cell_offset`'s template-space Y put row 10 (the template's last
-        row) at the *top* of the KFPS canvas and row 0 at the bottom —
+        row) at the *top* of the KFPS canvas and row 0 at the bottom:
         KFPS's native shape Y axis runs opposite to the row-down numbering
         everything else here uses. `forza_writer.layout.layout_forza_text`
         already negates Y for the same reason; this does the same, so a
@@ -199,7 +199,7 @@ def build_flat_template(chars: list[str], template_id: str, category_label: str 
                          chars_per_row: int = DEFAULT_CHARS_PER_ROW,
                          glyph_size: float = GLYPH_SIZE, cell_padding: float = CELL_PADDING) -> GlyphTemplate:
     """Lay an already-ordered, flat char list into a grid, chunked at
-    chars_per_row — no CATEGORY_ORDER/chunk_rows bucketing, unlike
+    chars_per_row: no CATEGORY_ORDER/chunk_rows bucketing, unlike
     build_template(). For a single-Unicode-block template (see
     TEMPLATE_UNICODE_BLOCKS below), where the whole block is already one
     semantic group and codepoint order is the only order that matters."""
@@ -219,7 +219,7 @@ def build_flat_template(chars: list[str], template_id: str, category_label: str 
 
 # name -> list of (first_codepoint, last_codepoint) inclusive ranges, for
 # tools/gen_font_block_templates.py's one-template-per-block batch mode. A
-# curated subset of real Unicode blocks (not the full ~397-block table —
+# curated subset of real Unicode blocks (not the full ~397-block table;
 # see forza_writer.unicode_blocks.BLOCKS for that, used elsewhere for
 # general font introspection, a different job from this one), reshaped so
 # "Basic Latin" is split into the four groups forza_writer.charset.
@@ -230,7 +230,7 @@ def build_flat_template(chars: list[str], template_id: str, category_label: str 
 # runs rather than sitting in one span.
 #
 # Ranges/names are standard Unicode Character Database data (unicode.org's
-# Blocks.txt) — factual codepoint boundaries, not anyone's copyrightable
+# Blocks.txt), factual codepoint boundaries, not anyone's copyrightable
 # expression, so hardcoding them here carries none of the licensing
 # concerns a font file or scraped artwork would.
 TEMPLATE_UNICODE_BLOCKS: list[tuple[str, list[tuple[int, int]]]] = [
@@ -263,7 +263,7 @@ TEMPLATE_UNICODE_BLOCKS: list[tuple[str, list[tuple[int, int]]]] = [
 
 
 def chars_in_block(cmap: dict[int, str], ranges: list[tuple[int, int]]) -> list[str]:
-    """Characters a font's cmap actually has a glyph for within `ranges` —
+    """Characters a font's cmap actually has a glyph for within `ranges`:
     codepoint order, not every codepoint in the range (most blocks have
     unassigned gaps, and a font rarely covers a whole block anyway)."""
     return [chr(cp) for start, end in ranges for cp in range(start, end + 1) if cp in cmap]
@@ -272,7 +272,7 @@ def chars_in_block(cmap: dict[int, str], ranges: list[tuple[int, int]]) -> list[
 def blocks_covered_by_font(cmap: dict[int, str], min_chars: int = 4) -> list[tuple[str, list[str]]]:
     """Every TEMPLATE_UNICODE_BLOCKS entry the font covers with at least
     `min_chars` glyphs, in block order, as (name, chars). Skips blocks the
-    font barely or doesn't touch — a font missing a script shouldn't
+    font barely or doesn't touch; a font missing a script shouldn't
     produce a near-empty template for it."""
     result = []
     for name, ranges in TEMPLATE_UNICODE_BLOCKS:
@@ -297,14 +297,14 @@ def build_editor_guides(template: GlyphTemplate, grid_opacity: int = 30) -> dict
     exact cell pitch.
 
     `gridEnabled`/`gridSize` turns on KFPS's own live background grid at
-    `cell_size` — its floor(bounds/step)*step rendering (editor.js
+    `cell_size`: its floor(bounds/step)*step rendering (editor.js
     `renderGuideObjects`) means grid lines land on multiples of `gridSize`
     starting from 0, which is exactly where our cell boundaries fall, so no
     offset math is needed to line the two up.
 
     Explicit horizontal/vertical `guides` (schema confirmed from editor.js:
     `{id, x1, y1, x2, y2, constraint}`) are added on top at every cell
-    boundary — unlike the background grid these are individually visible,
+    boundary; unlike the background grid these are individually visible,
     selectable, and Ctrl-snappable on their own regardless of whether the
     grid toggle is on, which is the stronger alignment signal while tracing.
     """
@@ -349,7 +349,7 @@ def _xml_escape(text: str) -> str:
 def build_blank_overlay_svg(template: GlyphTemplate) -> str:
     """A labeled-but-empty grid: cell outline + character + codepoint per
     slot, no rendered letterforms. Meant as a `.fabric-project.json`
-    `editor_source_overlay` — a tracing *layout* aid, not a tracing
+    `editor_source_overlay`: a tracing *layout* aid, not a tracing
     *artwork* aid; the user draws their own glyph inside each outline."""
     cell = template.cell_size
     width = template.chars_per_row * cell
@@ -388,13 +388,13 @@ _FONT_FORMAT = {"otf": "opentype", "ttf": "truetype", "woff": "woff", "woff2": "
 def build_font_traced_overlay_svg(template: GlyphTemplate, font_path: str | Path,
                                    font_size_ratio: float = 0.62) -> tuple[str, list[str]]:
     """Grid overlay with each cell's actual letterform rendered from a real,
-    locally-held font file — the font itself is embedded as a base64
+    locally-held font file: the font itself is embedded as a base64
     `@font-face` so it renders correctly in KFPS regardless of whether it's
     installed as a system font, not merely referenced by family name the
     way `reference_svg.build_reference_svg` does.
 
     This embeds the *user's own font file* directly (nothing fetched or
-    scraped) — only appropriate for a font the user actually holds a license
+    scraped); only appropriate for a font the user actually holds a license
     for; the caller is responsible for that, this function just draws it.
 
     Characters the font's cmap doesn't cover fall back to a label-only cell,
@@ -464,7 +464,7 @@ def wrap_template_as_project(template: GlyphTemplate, overlay_svg: str, template
                               overlay_opacity: float = 0.6) -> dict:
     """Wrap a template + its overlay SVG into a KFPS `.fabric-project.json`
     dict: the reference-image overlay block, the empty-shapes-list
-    workaround (one throwaway placeholder shape — see the comment below),
+    workaround (one throwaway placeholder shape, see the comment below),
     and the grid/guides wired to the template's exact cell pitch. Shared by
     gen_glyph_template.py and gen_font_block_templates.py so both stay in
     sync rather than maintaining two copies of this."""
@@ -492,9 +492,9 @@ def wrap_template_as_project(template: GlyphTemplate, overlay_svg: str, template
     }
     # KFPS's loader (editor.js loadPayload) hard-rejects a project whose
     # shapes list is empty ("JSON shapes list is empty."), so a truly blank
-    # canvas can't be opened at all. Seed one throwaway placeholder — a
+    # canvas can't be opened at all. Seed one throwaway placeholder: a
     # tiny red square parked one full cell above-left of the grid (negative
-    # coordinates, outside every labeled cell) — so the project loads; the
+    # coordinates, outside every labeled cell), so the project loads; the
     # user deletes it before drawing their first real glyph. Uses the same
     # (type, type_word) pair as a real exported "Square" primitive
     # (VINYL_TYPE_BASES["Primitives"], shape_word 101) so it's a valid,

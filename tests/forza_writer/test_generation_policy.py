@@ -82,7 +82,7 @@ def test_empty_allowed_set_produces_no_placements_rather_than_crashing():
 
 
 def test_allowed_restriction_reduces_the_candidates_actually_generated():
-    # Disallowed shapes must never become candidates at all — restricting the
+    # Disallowed shapes must never become candidates at all: restricting the
     # set should make the search cheaper, not merely filter its output.
     wide, narrow = GenerationStats(), GenerationStats()
     fit_silhouette(_square_mask(), 64, policy=DEFAULT_POLICY, stats=wide)

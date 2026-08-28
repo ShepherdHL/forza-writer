@@ -10,9 +10,12 @@ Pillow>=10.0
 shapely>=2.0
 uharfbuzz>=0.52
 
-# Optional NVIDIA acceleration. Install with:
-#   pip install "cupy-cuda12x[ctk]>=14.1"
-# CPU generation remains available when this extra is absent.
+# Optional NVIDIA CUDA acceleration for primitive-composed JSON generation.
+# The [ctk] extra supplies the redistributable CUDA runtime/compiler pieces;
+# users still need a compatible NVIDIA display driver. CPU generation
+# remains available when this is absent. Install with:
+#   pip install "cupy-cuda12x[ctk]>=14.1,<15"
+# cupy-cuda12x[ctk]>=14.1,<15
 
 # Optional AMD/Intel/NVIDIA acceleration via DirectML — EXPERIMENTAL, unverified
 # on real DirectML hardware (see docs/DIRECTML_ACCELERATION.md). Install with:
@@ -23,3 +26,10 @@ uharfbuzz>=0.52
 # If absent, the filesystem watcher falls back to polling automatically, so
 # this is not required. Install with: pip install watchdog
 # watchdog>=3.0
+
+# Build-time-only: needed only to build the optional Rust CPU-acceleration
+# extension (rust/primitive_fit_rs). Not required to run Forza Writer — it
+# falls back to the pure-Python implementation when the extension isn't
+# built/installed (see docs/RUST_CPU_ACCELERATION.md). Install with:
+#   pip install "maturin>=1.5,<2.0"
+# maturin>=1.5,<2.0

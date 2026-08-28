@@ -1,7 +1,7 @@
 """Group a font's characters into dafont-style categories.
 
 dafont's own charmap pages (e.g. dafont.com/<font>.charmap) group glyphs into
-visual blocks — for Amarillo USAF specifically: uppercase, lowercase, digits,
+visual blocks: for Amarillo USAF specifically, uppercase, lowercase, digits,
 a punctuation pair, then a trailing block of whitespace/dashes/private-use
 glyphs. That trailing grouping mirrors the font's internal glyph order, which
 is a font-specific artifact and doesn't generalize across fonts. What does
@@ -9,8 +9,8 @@ generalize is grouping by Unicode general category, which produces the same
 content split into six named buckets: Uppercase, Lowercase, Letters, Numbers,
 Punctuation, Symbols. ``Letters`` is deliberately separate: uncased scripts
 such as Han, Hangul, and Kana are letters, not symbols. Whitespace and
-control/format glyphs are excluded — they
-have no ink to render as vinyl.
+control/format glyphs are excluded, since they have no ink to render as
+vinyl.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ def categorize_char(char: str) -> str | None:
         return "Uppercase"
     if cat in ("Ll",):
         return "Lowercase"
-    if cat[0] == "L":  # Lt, Lm, Lo — titlecase/modifier/other letters
+    if cat[0] == "L":  # Lt, Lm, Lo: titlecase/modifier/other letters
         return "Uppercase" if char.isupper() else "Lowercase" if char.islower() else "Letters"
     if cat[0] == "N":  # Nd, Nl, No
         return "Numbers"
@@ -63,7 +63,7 @@ def categorize_char(char: str) -> str | None:
 # Mode's glyph list, and the Symbols character group each call it
 # independently), and every call fully reopens the font and re-derives its
 # cmap from scratch. Installed-font files are static for the life of the
-# process — nothing in this app modifies them while running — so caching
+# process (nothing in this app modifies them while running), so caching
 # the categorized result per path is safe; a stale entry (the file being
 # replaced on disk mid-session, which nothing here does) would only
 # self-correct on the next app restart. Bounded by the number of distinct
@@ -77,7 +77,7 @@ def charset_from_font(font_path: Path) -> tuple[dict[str, list[str]], list[tuple
     Returns (categorized, skipped): `categorized` maps category name -> chars
     sorted by codepoint; `skipped` lists (char, reason) for cmap'd characters
     that fell into no category (whitespace/control glyphs). Cached per
-    resolved file path — see _charset_cache above.
+    resolved file path (see _charset_cache above).
     """
     key = str(font_path)
     cached = _charset_cache.get(key)

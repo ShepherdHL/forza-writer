@@ -1,0 +1,103 @@
+{
+  "format": "forza_writer_plate_blank_v1",
+  "template_id": "sr-stilwater-passenger-fictional",
+  "decoration_signature": "cef04d62b13223eb",
+  "shapes": [
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        0.0,
+        0.0,
+        2.372021,
+        1.18601,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false
+    },
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        -12.4,
+        -42.7,
+        1.945555,
+        0.023347,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        60,
+        100,
+        160,
+        255
+      ],
+      "mask": false
+    },
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        128.6,
+        -61.2,
+        0.171209,
+        0.14008,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        220,
+        190,
+        40,
+        255
+      ],
+      "mask": false
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "bg",
+      "kind": "background",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        0
+      ],
+      "editable": false,
+      "deletable": true
+    },
+    {
+      "node_id": "divider",
+      "kind": "decoration",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        1
+      ],
+      "editable": true,
+      "deletable": true
+    },
+    {
+      "node_id": "sticker",
+      "kind": "decoration",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        2
+      ],
+      "editable": true,
+      "deletable": true
+    }
+  ],
+  "warnings": []
+}

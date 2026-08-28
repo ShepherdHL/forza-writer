@@ -9,8 +9,8 @@ Indices come from the in-game shape picker (Page 1 "Primitives"), a
 4-row x 10-column grid filled column-major:
 `resource_index = (column - 1) * 4 + row`. See `FH6 - Vinyl Shape Codes.xlsx`
 and the provenance note in `forza_writer.primitive_shapes`' docstring --
-in particular, KFPS's shape-names.json misnames slots 7 and 27, which is
-where `rounded_square` and `quarter_circle` were previously pointed.
+in particular, KFPS's shape-names.json misnames slots 7 and 27, so
+`rounded_square` and `quarter_circle` must not be pinned to those slots.
 """
 
 import pytest
@@ -33,11 +33,11 @@ EXPECTED_PRIMITIVES = {
     # picker calls this one "Narrowing Rectangle"
     "tapered_rectangle": (20, "Tapered Rectangle", 4, 5),
     "fat_five_pointed_star": (21, "Fat Five Pointed Star", 1, 6),
-    # slot 7 is Cut Square, not this -- the long-standing off-by-a-slot bug
+    # slot 7 is Cut Square, not this: rounded_square must not be pinned there
     "rounded_square": (22, "Rounded Square", 2, 6),
     "ten_pointed_star": (23, "Ten Pointed Star", 3, 6),
     "up_arrow": (25, "Up Arrow", 1, 7),
-    # slot 27 is Animal Tooth, not this -- same bug
+    # slot 27 is Animal Tooth, not this: quarter_circle must not be pinned there
     "quarter_circle": (30, "Quarter Circle", 2, 8),
     "pentagon": (35, "Pentagon", 3, 9),
 }

@@ -1,0 +1,81 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "custom-blank",
+  "display_name_key": "plates.template.custom_blank",
+  "country": "XX",
+  "jurisdiction": null,
+  "era": "current",
+  "plate_type": "custom",
+  "width_mm": 300.0,
+  "height_mm": 150.0,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Not based on any real jurisdiction. Dimensions are an arbitrary default, freely changeable.",
+    "contributors": [],
+    "reference_urls": [],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 6.0,
+    "y_mm": 6.0,
+    "width_mm": 288.0,
+    "height_mm": 138.0,
+    "color": [
+      245,
+      245,
+      240,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": {
+    "decoration_id": "border",
+    "kind": "border",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      20,
+      20,
+      20,
+      255
+    ],
+    "asset_ref": null,
+    "editable": true
+  },
+  "fields": [
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "free_text",
+      "x_mm": 15.0,
+      "y_mm": 55.0,
+      "width_mm": 270.0,
+      "height_mm": 40.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.79,
+      "tracking": 2.0,
+      "line_spacing": 1.0,
+      "default_text": "YOUR TEXT",
+      "color": [
+        20,
+        20,
+        20,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": true
+    }
+  ],
+  "decorations": [],
+  "tags": []
+}

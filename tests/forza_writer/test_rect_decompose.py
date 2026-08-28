@@ -19,12 +19,12 @@ COMB_SIZE = 46
 
 
 def _comb_mask():
-    """Bottom bar + 5 thin prongs separated by 4 gaps — a shape where the
+    """Bottom bar + 5 thin prongs separated by 4 gaps: a shape where the
     ink needs more rectangles to fill directly than the gaps need to cut.
     Bar spans exactly the prongs' extent (no overhang) so the negative
     space is exactly the 4 inter-prong gaps, nothing more. Square canvas
     (COMB_SIZE x COMB_SIZE) to match how render_candidate/stencil_placements
-    are actually used elsewhere — both assume a single square resolution."""
+    are actually used elsewhere: both assume a single square resolution."""
     mask = np.zeros((COMB_SIZE, COMB_SIZE), dtype=bool)
     mask[20:24, 1:40] = True  # bar
     for i in range(5):

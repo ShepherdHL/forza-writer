@@ -7,11 +7,11 @@ Why this needs its own scale math, not just placing generated glyph files
 side by side: `tools/gen_modelbin.py::normalize_to_128` (via
 `glyph_bbox_and_scale`) normalizes each glyph *independently* to fill its
 own ±100 box based on its own raw bounding box, which is exactly right for
-a single centred glyph but wrong for composed text — a period (rawbbox
+a single centred glyph but wrong for composed text: a period (rawbbox
 100x100 on Amarillo USAF) and a capital M (rawbbox 600x600) would render at
 identical size. This module re-derives, per glyph, the per-glyph
 centre/scale that was actually baked into its saved shapes at generation
-time (`glyph_bbox_and_scale` on a fresh contour extraction — cheap, no
+time (`glyph_bbox_and_scale` on a fresh contour extraction; cheap, no
 re-fitting), and replaces it with one shared font-wide scale
 (`200 / units_per_em`) and the font's real baseline (font-space y=0),
 rather than each glyph's own bbox centre.
@@ -104,7 +104,7 @@ def _underline_strike_metrics(font_path_str: str) -> tuple[float, float, float, 
 def _glyph_layout_metrics(char: str, font_path_str: str, curve_segments: int) -> GlyphMetrics:
     """Recover the exact per-glyph centre/scale `normalize_to_128` applied
     when this glyph's shapes were generated, plus its real advance width, by
-    re-extracting the glyph's raw contours (cheap — no re-fitting)."""
+    re-extracting the glyph's raw contours (cheap; no re-fitting)."""
     font_path = Path(font_path_str)
     contours, units_per_em = extract_contours(char, font_path, curve_segments)
     cx, cy, scale_g = glyph_bbox_and_scale(contours)
@@ -402,7 +402,7 @@ def compose_text(text: str, fontpack_dir: str | Path, align: str = "left",
                   letter_spacing: float = 0.0, size_scale: float = 1.0,
                   line_spacing: float = 1.0, style: TextStyle | None = None
                   ) -> tuple[list[dict], list[str]]:
-    """Compose `text` (may contain `\\n` line breaks — no auto-wrap) into one
+    """Compose `text` (may contain `\\n` line breaks, no auto-wrap) into one
     shape list using the glyphs already generated in `fontpack_dir` (a
     directory containing `manifest.json`, as produced by
     `tools/gen_fontpack.py::build_fontpack`).

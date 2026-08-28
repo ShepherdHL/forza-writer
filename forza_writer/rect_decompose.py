@@ -3,12 +3,12 @@
 Why this exists alongside `forza_writer.primitive_fit`'s greedy shape search:
 the two solve genuinely different problems, and each is bad at the other's.
 
-For a glyph whose outline is entirely axis-aligned — stencil/blocky fonts
-like Amarillo USAF, where every edge is horizontal or vertical — the ideal
+For a glyph whose outline is entirely axis-aligned (stencil/blocky fonts
+like Amarillo USAF, where every edge is horizontal or vertical), the ideal
 answer is a small set of exact rectangles, and it can be computed rather
 than searched for. Measured on Amarillo USAF: 'E' decomposes to 4 rectangles
 at IoU 1.000, where the greedy shape search needed 9 shapes and still only
-reached IoU 0.855. The search literally cannot express the answer — the
+reached IoU 0.855. The search literally cannot express the answer: the
 rectangles an 'E' needs have aspect ratios 0.188/2.909/1.333, and the
 search's discrete scale x aspect ladder only spans 0.51-1.96.
 
@@ -17,7 +17,7 @@ search: on curved glyphs rectangle decomposition explodes (Amarillo 'O' needs
 18 rectangles where the search finds 2 shapes, 'S' needs 29 where the search
 finds 5). `primitive_fit.fit_glyph` routes between the two.
 
-This mirrors how the same problem is solved elsewhere — both hand-made vinyl
+This mirrors how the same problem is solved elsewhere: both hand-made vinyl
 fontpacks and forza-painter-fh6's text engine are decomposition-first, with
 continuous (unquantized) per-rectangle scaling.
 """
@@ -33,7 +33,7 @@ from forza_writer.primitive_shapes import PRIMITIVE_CATALOG
 # curve flattening introduces small residuals, so this can't be zero.
 AXIS_TOLERANCE = 0.75
 
-# Below this pixel area a leftover region isn't worth its own vinyl layer —
+# Below this pixel area a leftover region isn't worth its own vinyl layer:
 # it would be a sliver invisible at real scale.
 MIN_RECT_AREA = 6
 
@@ -43,7 +43,7 @@ def is_rectilinear(contours: list[list[tuple[float, float]]],
     """True if every edge of every contour is horizontal or vertical.
 
     This is the routing signal for choosing decomposition over search. It's
-    a property of the glyph, not the font — a font can mix blocky and curved
+    a property of the glyph, not the font: a font can mix blocky and curved
     glyphs and each is routed on its own merits.
     """
     if not contours:
@@ -90,7 +90,7 @@ def decompose_mask_to_rects(mask: np.ndarray, max_rects: int = 40,
     """Cover `mask` with axis-aligned rectangles, largest-first.
 
     Every rectangle is fully inside the mask, so the cover never spills
-    outside the glyph — for a truly rectilinear shape this reaches an exact
+    outside the glyph: for a truly rectilinear shape this reaches an exact
     (IoU 1.0) cover. Returns a list of (top, left, height, width) in pixels.
     """
     residual = mask.copy()
@@ -111,7 +111,7 @@ def rects_to_placements(rects: list[tuple[int, int, int, int]], resolution: int,
     """Convert pixel rectangles into `primitive_fit.PlacedShape` squares.
 
     Each rectangle becomes one Square primitive scaled independently on X and
-    Y to exactly its own dimensions — no aspect quantization, which is the
+    Y to exactly its own dimensions: no aspect quantization, which is the
     whole point of this path. `is_mask` tags every resulting placement as a
     stencil cutout (see `stencil_placements`) rather than an ordinary fill.
     """
@@ -147,13 +147,13 @@ def _bounding_box(mask: np.ndarray) -> tuple[int, int, int, int] | None:
 
 def decompose_negative_space(mask: np.ndarray, max_rects: int = 40,
                               min_area: int = MIN_RECT_AREA) -> list[tuple[int, int, int, int]] | None:
-    """Rectangle-decompose the gaps *inside* `mask`'s own bounding box —
+    """Rectangle-decompose the gaps *inside* `mask`'s own bounding box:
     the "notches" a stencil would need to cut from a solid background to
     reveal `mask`'s shape. Returns None if `mask` is empty (nothing to cut
     a stencil from in the first place).
 
     A rectilinear region's complement within its own bounding rectangle is
-    itself rectilinear, so this reuses `decompose_mask_to_rects` unchanged —
+    itself rectilinear, so this reuses `decompose_mask_to_rects` unchanged:
     no separate algorithm, just a second call against an inverted, bbox-
     clipped input.
     """
@@ -172,7 +172,7 @@ def stencil_placements(mask: np.ndarray, resolution: int, max_rects: int = 40):
     glyph's bounding box, plus one mask cutout per negative-space rectangle.
 
     Returns None if the glyph is empty, or if the negative space needs more
-    than `max_rects` cutouts (not worth it — falls back to the direct fill).
+    than `max_rects` cutouts (not worth it; falls back to the direct fill).
     """
     bbox = _bounding_box(mask)
     if bbox is None:

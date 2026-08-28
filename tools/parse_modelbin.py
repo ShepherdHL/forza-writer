@@ -42,7 +42,7 @@ def parse_grub_header(data, off):
 
 def parse_verB(data, off, size):
     """Parse VerB (vertex buffer)."""
-    # Try to find vertex data — typically float pairs for 2D vinyl
+    # Try to find vertex data: typically float pairs for 2D vinyl
     print(f"  VerB at 0x{off:x}, size={size}")
     # Dump raw hex
     chunk = data[off:off+min(size, 128)]
@@ -106,7 +106,7 @@ def main(path):
         print(f"Chunk '{tag}': abs=0x{off:x} size={size} (unk={c['unk']},{c['unk2']})")
 
         if tag == 'Grub':
-            # Nested Grub — recurse one level
+            # Nested Grub: recurse one level
             sub_chunks, _ = parse_grub_header(data, off)
             for sc in sub_chunks:
                 stag = sc['tag']

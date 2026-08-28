@@ -1,5 +1,5 @@
 """
-Generate one glyph template per Unicode block a font actually supports —
+Generate one glyph template per Unicode block a font actually supports:
 the batch version of gen_glyph_template.py, meant for building a reusable
 default template library from an openly-licensed font (e.g. Liberation
 Sans, SIL OFL) rather than one-off templates for a specific licensed font
@@ -42,7 +42,7 @@ def build_all_block_projects(font_path: Path, prefix_base: str, chars_per_row: i
                               log=print):
     """Yields (block_name, template_id, template, project) for every block
     the font covers. `only_blocks`, if given, restricts to those exact
-    TEMPLATE_UNICODE_BLOCKS names (case-sensitive) — e.g. to avoid embedding a large
+    TEMPLATE_UNICODE_BLOCKS names (case-sensitive), to avoid embedding a large
     CJK font once per every block it happens to cover when only a couple
     are actually wanted."""
     font = TTFont(str(font_path), fontNumber=0)

@@ -28,9 +28,8 @@ def test_font1_lowercase_a():
 
 
 def test_symbol_mapping():
-    # Corrected against the KFPS glyph-mismatch report — see shapes.py's
-    # module docstring. The old (buggy) table put "%" at 27; the game
-    # meshes put it at 37.
+    # '%' maps to index 37, matching the game meshes (see shapes.py's module
+    # docstring for the KFPS glyph-mismatch report this is corrected against).
     family, index = char_to_resource("%", font=1)
     assert family == "Lower_Letters_1"
     assert index == 37

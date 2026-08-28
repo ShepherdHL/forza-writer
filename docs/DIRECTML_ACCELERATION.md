@@ -1,8 +1,8 @@
 # AMD/Intel DirectML Acceleration — Experimental
 
 This backend exists so that GPU-accelerated generation isn't an NVIDIA-only
-feature.
-Unfortunately, this has never been tested on DirectML hardware, because I do not own any.
+feature. It has not been tested on real AMD/Intel DirectML hardware; see
+"What Has *Not* Been Verified" below for exactly what that leaves unknown.
 
 ## Why it's separate from the CUDA path
 
@@ -72,6 +72,3 @@ produces.
 4. Only after (1)-(3): promote from "explicit opt-in with a warning dialog"
    to a real menu item without the disclaimer, and consider whether `auto`
    should ever prefer it (e.g., on a machine with no NVIDIA GPU at all).
-
-If enough people give it a try and it doesn't seem to make a meaningful difference, then
-it is what it is.

@@ -68,9 +68,8 @@ def test_credit_link_brightens_on_hover(gui):
 
 
 def test_every_credit_entry_follows_the_same_schema(gui):
-    # Guards the "one editor, one structure" consistency the beautification
-    # pass established: every entry must supply the same fields in the same
-    # shapes, so no entry can silently regress to an inconsistent format.
+    # Every credit entry must supply the same fields in the same shape, so
+    # no entry can silently regress to an inconsistent format.
     from gen_modelbin_gui.tabs.credits import CREDITS_SECTIONS
     for section_title, entries in CREDITS_SECTIONS:
         assert section_title == section_title.strip()
@@ -95,11 +94,10 @@ def test_every_credit_entry_follows_the_same_schema(gui):
 
 
 def test_credit_descriptions_avoid_conversational_and_process_language(gui):
-    # The second editorial pass was specifically about purging
+    # Credits copy must read as matter-of-fact attribution, not
     # development-narrative phrasing ("noted here for provenance",
-    # "documented for provenance", "background research only", etc.) in
-    # favor of matter-of-fact attribution statements. Guard against it
-    # creeping back in.
+    # "documented for provenance", "background research only", etc.).
+    # Guard against it creeping back in.
     from gen_modelbin_gui.tabs.credits import CREDITS_SECTIONS
     banned_phrases = [
         'we found', 'we determined', 'this informed our understanding', 'for completeness',

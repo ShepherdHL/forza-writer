@@ -82,7 +82,7 @@ class OutputsTabMixin:
         ttk.Button(root_row, text='Browse...', command=self._pick_outputs_root).pack(side='left', padx=2)
         ttk.Button(root_row, text='Refresh', command=self._refresh_outputs_pack_list).pack(side='left', padx=2)
 
-        # Fixed line-count height (not a pixel guess) — inside the page's
+        # Fixed line-count height (not a pixel guess): inside the page's
         # own scroll canvas these size to their natural/requested height
         # rather than stretching to fill the window, so an explicit
         # height keeps them at a genuinely useful size instead of
@@ -118,7 +118,7 @@ class OutputsTabMixin:
         self.outputs_glyph_listbox.bind('<<ListboxSelect>>', self._on_outputs_glyph_selected)
         self._register_independent_scroll(self.outputs_glyph_listbox)
 
-        # Preview — also doubles as "browse any file directly" for a file
+        # Preview also doubles as "browse any file directly" for a file
         # outside any recognized pack. No in-app shape editor since KFPS's
         # own is better; this is just "let me see what's actually in this
         # file" for a .json (primitive-composition, mask cutouts rendered

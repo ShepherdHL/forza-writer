@@ -5,8 +5,8 @@ funnels every event into one common-schema timeline, and on stop (Ctrl+C or
 ``--duration`` timeout) auto-runs the correlation pass and writes both output
 files into ``logs/<session_id>/``:
 
-* ``session_<id>.json``        — full machine-readable log (paste-to-AI ready)
-* ``session_<id>.summary.md``  — human digest (overview, table, flagged failures)
+* ``session_<id>.json``: full machine-readable log (paste-to-AI ready)
+* ``session_<id>.summary.md``: human digest (overview, table, flagged failures)
 
 Examples
 --------

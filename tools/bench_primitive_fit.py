@@ -2,7 +2,7 @@
 
 This is Gate 1 of `docs/RUST_CPU_ACCELERATION.md`: a baseline measurement
 taken *before* any Rust kernel exists, so later work has something concrete
-to beat. Run it, save the JSON, and diff future runs against it — a Rust
+to beat. Run it, save the JSON, and diff future runs against it: a Rust
 port only clears the gate if it matches `mask_sha256`/`shapes_sha256`
 exactly and meaningfully improves `elapsed_seconds` end-to-end (not just in
 a microbenchmark), per the doc's gate 3/4.

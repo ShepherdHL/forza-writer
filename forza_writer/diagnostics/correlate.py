@@ -10,7 +10,7 @@ and flags the ones that look like failures:
 * any step touching a shape id outside the known 101-3840 validation range
   -> out-of-range (the boundary FH6 enforces at save time)
 
-The result is designed so a human — or an AI assistant — can read the flagged
+The result is designed so a human, or an AI assistant, can read the flagged
 transactions alone and see the whole cross-source story of each failure.
 """
 
@@ -172,8 +172,8 @@ def build_report(
     """Correlate events into transactions and collect flagged failures.
 
     When ``since_last_fail`` is set, everything up to and including the last
-    failed transaction is dropped and only the remainder is correlated — handy
-    when iterating on a fix and re-running the same test repeatedly.
+    failed transaction is dropped and only the remainder is correlated. This is
+    useful when iterating on a fix and re-running the same test repeatedly.
     """
     transactions = correlate(events, window_ms=window_ms, known_range=known_range)
     cutoff = None

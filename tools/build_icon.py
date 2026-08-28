@@ -1,10 +1,10 @@
-"""Build the app icon: FW as two braille cells — F = dots 1,2,4, W = dots
-2,4,5,6 — in Forza Writer orange and off-white, with faint
+"""Build the app icon: FW as two braille cells (F = dots 1,2,4, W = dots
+2,4,5,6) in Forza Writer orange and off-white, with faint
 "ghost" dots at unfilled positions so it reads as an authentic braille
 cell rather than a random dot cluster.
 
 Writes a real multi-resolution `assets/icon.ico` (transparent background,
-PNG-encoded frames — natively supported since Windows Vista, no legacy
+PNG-encoded frames, natively supported since Windows Vista, no legacy
 BMP encoding needed) plus a full-resolution `assets/icon.png` for
 reference/README use. Small and desktop-size frames use the deliberately
 simple orange/white two-dot mark; larger brand surfaces use the full FW.
@@ -120,8 +120,8 @@ def _square(img: Image.Image, size: int) -> Image.Image:
 
 
 def write_ico(images: dict[int, Image.Image], out_path: Path) -> None:
-    """Manual "PNG-in-ICO" writer — each directory entry's image data is a
-    real PNG, natively supported since Windows Vista — so different sizes
+    """Manual "PNG-in-ICO" writer: each directory entry's image data is a
+    real PNG, natively supported since Windows Vista, so different sizes
     can carry genuinely different artwork instead of one image resized
     uniformly (Pillow's own ICO writer only supports the latter)."""
     sizes = sorted(images)

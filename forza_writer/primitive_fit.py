@@ -1,5 +1,5 @@
 """Approximate a glyph's silhouette by greedily composing FH6's built-in
-"Primitives" shape catalog (`forza_writer.primitive_shapes`) — not a fixed
+"Primitives" shape catalog (`forza_writer.primitive_shapes`), not a fixed
 pixel grid. Output is a list of shape dicts in exactly the format
 `forza_writer.layout` already produces, so `forza_writer.export.to_json()`
 works unmodified and the result needs no catalog hijack: every shape it uses
@@ -83,7 +83,7 @@ DEFAULT_RESOLUTION = 64
 OVERSHOOT_PENALTY = DEFAULT_OVERSHOOT_PENALTY
 
 SCALES = (0.35, 0.55, 0.8, 1.05)
-ASPECTS = (1.0, 1.4, 1 / 1.4)  # scale_x = scale*aspect, scale_y = scale/aspect — lets rings/rects stretch to match non-circular strokes
+ASPECTS = (1.0, 1.4, 1 / 1.4)  # scale_x = scale*aspect, scale_y = scale/aspect: lets rings/rects stretch to match non-circular strokes
 ROTATIONS_ASYMMETRIC = (0.0, 60.0, 120.0)
 ROTATIONS_SYMMETRIC = (0.0,)
 POSITION_GRID = 3  # samples per axis over the residual's bounding box
@@ -107,27 +107,23 @@ def rasterize_contours(contours: list[list[tuple[float, float]]], resolution: in
     by `gen_modelbin.normalize_to_128`) to a boolean fill mask, using the
     standard even-odd fill rule: XOR together each contour's own
     independently-rasterized solid fill. A pixel ends up filled if an odd
-    number of contours cover it — a nested hole is covered by both its
+    number of contours cover it: a nested hole is covered by both its
     enclosing contour and itself (even, cancels to unfilled), a disjoint
     component is covered by only itself (odd, stays filled), and this falls
     out correctly for arbitrary nesting depth with no separate
     depth/parent bookkeeping needed.
 
-    The previous rule ("contour 0 is always the outer boundary, every other
-    contour is a hole cut from it") assumed fontTools' `RecordingPen`
-    always yields the largest/outer contour first, which isn't guaranteed —
-    decorative multi-part glyphs (e.g. Jokerman's 'K', which is 5 disjoint
-    contours: the main stroke plus 4 separate sparkle accents, with a
-    *sparkle* first) hit this constantly: the tiny first contour got
-    treated as "the whole glyph" and the actual letterform got subtracted
-    from it as a "hole", leaving almost nothing. Confirmed by rasterizing
-    Jokerman K/E in isolation: the old rule filled 108px/244px out of
-    16384 — essentially blank — for glyphs that clearly have real ink.
-    `tools/gen_modelbin.py`'s earcut mesh triangulation had the identical
-    first-contour-is-outer assumption; fixed there too, via
-    `group_contours_by_nesting` (a proper containment *tree*, since
-    earcut's outer-ring-plus-holes API needs one earcut() call per
-    disjoint island rather than a single fill mask).
+    This must not assume contour 0 is always the outer boundary with every
+    other contour a hole cut from it: fontTools' `RecordingPen` does not
+    guarantee the largest/outer contour comes first, and decorative
+    multi-part glyphs break that assumption outright (e.g. Jokerman's 'K'
+    is 5 disjoint contours, the main stroke plus 4 separate sparkle
+    accents, with a sparkle first; treating that first contour as the
+    whole glyph would subtract the real letterform from it as a "hole").
+    `tools/gen_modelbin.py`'s earcut mesh triangulation has the same
+    requirement, handled there via `group_contours_by_nesting` (a proper
+    containment tree, since earcut's outer-ring-plus-holes API needs one
+    earcut() call per disjoint island rather than a single fill mask).
     """
     from PIL import ImageDraw
 
@@ -240,7 +236,7 @@ def refine_candidate(best: PlacedShape, residual: np.ndarray, target_mask: np.nd
     """Locally hill-climb a coarse winner's position, scale, and x-skew.
 
     The coarse search samples a small discrete ladder of scales/aspects, so
-    the shape it picks is rarely the best *version* of that shape — it's the
+    the shape it picks is rarely the best *version* of that shape: it's the
     best one that happened to be on the grid. This nudges each parameter
     independently with shrinking steps, which recovers most of the benefit of
     a continuous aspect/skew search (arbitrary sx/sy plus bounded FH6 shear,
@@ -258,8 +254,8 @@ def refine_candidate(best: PlacedShape, residual: np.ndarray, target_mask: np.nd
     pos_step = max(1.0, resolution * 0.06)
     scale_step = 0.12
     skew_step = 0.24
-    # Keep shrinking the step until it's finer than a single pixel of scale —
-    # stopping early leaves the shape a pixel or two off the ideal size, and
+    # Keep shrinking the step until it's finer than a single pixel of scale.
+    # Stopping early leaves the shape a pixel or two off the ideal size, and
     # that leftover sliver is big enough to pull in a whole extra layer it
     # doesn't deserve.
     min_scale_step = 0.5 / resolution
@@ -371,7 +367,7 @@ def fit_silhouette(target_mask: np.ndarray, resolution: int = DEFAULT_RESOLUTION
         # fill their bounding box (circle, hexagon, pentagon) over ones that
         # fill it (square), because the under-fillers overshoot less at a
         # too-large scale. On an exact square target, square ranks 11th of 17
-        # coarse — yet it is the only shape that refines to a perfect fit
+        # coarse, yet it is the only shape that refines to a perfect fit
         # (1024 vs rounded_square's 929). Refining a truncated top-N wouldn't
         # rescue it either; the coarse ranking has to be treated as nothing
         # more than a per-shape starting point.
@@ -513,8 +509,8 @@ def _coverage_iou(placements: list[PlacedShape], target_mask: np.ndarray,
                    resolution: int) -> float:
     """IoU of what `placements` actually cover against the target.
 
-    Honours mask layers the same way FH6 does — a cutout subtracts from what
-    is already covered rather than adding — so a stencil result is measured as
+    Honours mask layers the same way FH6 does: a cutout subtracts from what
+    is already covered rather than adding, so a stencil result is measured as
     what the player would see, not as the union of its layers.
     """
     covered = np.zeros_like(target_mask)
@@ -538,7 +534,7 @@ def _curved_stencil_placements(target_mask: np.ndarray, resolution: int = DEFAUL
                                 ) -> list[PlacedShape] | None:
     """Stencil decomposition for a non-rectilinear (curved) glyph: one
     background Square sized to the glyph's bounding box, plus mask cutouts
-    for the negative space within that box — found by the same greedy
+    for the negative space within that box, found by the same greedy
     `fit_silhouette` search used for direct fills, run against the negative
     space instead of the glyph itself, rather than `rect_decompose`'s exact
     rectangle cover (which only works when the negative space is itself
@@ -546,7 +542,7 @@ def _curved_stencil_placements(target_mask: np.ndarray, resolution: int = DEFAUL
 
     Because the cutout cover comes from a search, not an exact decomposition,
     it can leave a visible gap between the background's edge and the glyph's
-    true outline — callers that care about quality should check the result
+    true outline. Callers that care about quality should check the result
     against `target_mask` (e.g. via IoU) rather than assuming a perfect cover
     the way the rectilinear stencil path can.
 
@@ -633,7 +629,9 @@ def shape_to_render_params(shape: dict, resolution: int = DEFAULT_RESOLUTION,
 
 
 def placements_to_shapes(placements: list[PlacedShape], resolution: int,
-                          glyph_size: float = 300.0) -> list[dict]:
+                          glyph_size: float = 300.0,
+                          solid_color: tuple[int, int, int, int] = (255, 255, 255, 255),
+                          high_contrast_seed: int | None = None) -> list[dict]:
     """Convert PlacedShape placements (pixel space, normalized ±COORD_RANGE
     glyph space) into forza_writer shape dicts in real FH6 editor units,
     matching forza_writer.layout's convention exactly:
@@ -645,29 +643,49 @@ def placements_to_shapes(placements: list[PlacedShape], resolution: int,
     where `scale=1.0` means a fixed native size of
     `forza_writer.layout.PIXEL_ART_SQUARE_SIZE` editor units (~128.5),
     regardless of glyph size. `glyph_size` is the real-unit width/height a
-    single glyph's ±COORD_RANGE bounding box should occupy once placed —
+    single glyph's ±COORD_RANGE bounding box should occupy once placed,
     300 default, matching layout.py's own single-line glyph_height for its
     default target_height=360 (360 * 0.82 ~= 295).
+
+    Every non-mask shape gets `solid_color` (defaults to plain white,
+    exactly the old hardcoded behavior) unless `high_contrast_seed` is
+    given, in which case each shape gets its own color from
+    `forza_writer.high_contrast`'s curated palette instead -- deterministic
+    for a given seed and layout, so regenerating the same glyph with the
+    same seed reproduces the same per-shape colors (see that module for
+    why). Mask shapes always stay the special mask color regardless of
+    either: a mask is a transparency cutout, never actually drawn, so
+    "which color" doesn't apply to it the way it does to a visible shape.
     """
+    from forza_writer.high_contrast import assign_high_contrast_colors
     from forza_writer.layout import PIXEL_ART_SQUARE_SIZE
     from forza_writer.shapes import resource_to_shape_word, resource_to_typecode
 
     real_units_per_glyph_unit = glyph_size / (2 * COORD_RANGE)
 
+    glyph_centers = [_px_to_glyph(p.cx, p.cy, resolution) for p in placements]
+    shape_colors = (assign_high_contrast_colors(glyph_centers, high_contrast_seed)
+                     if high_contrast_seed is not None else None)
+
     shapes = []
-    for p in placements:
+    for i, p in enumerate(placements):
         shape = PRIMITIVE_CATALOG[p.shape_id]
-        gx, gy = _px_to_glyph(p.cx, p.cy, resolution)
+        gx, gy = glyph_centers[i]
         real_x = gx * real_units_per_glyph_unit
         real_y = gy * real_units_per_glyph_unit
         fh6_scale_x = p.scale_x * glyph_size / PIXEL_ART_SQUARE_SIZE
         fh6_scale_y = p.scale_y * glyph_size / PIXEL_ART_SQUARE_SIZE
         # Mask convention matches forza-painter-fh6's make_fh6_mask_shape:
         # color (0,0,0,255) and data[6]=1, which is what the game reads as
-        # "this layer punches transparency through what's below it" — plus
-        # our own "mask" key, which export.to_json() now preserves rather
-        # than clobbering back to False.
-        color = [0, 0, 0, 255] if p.is_mask else [255, 255, 255, 255]
+        # "this layer punches transparency through what's below it", plus
+        # our own "mask" key, which export.to_json() must preserve rather
+        # than reset to False.
+        if p.is_mask:
+            color = [0, 0, 0, 255]
+        elif shape_colors is not None:
+            color = list(shape_colors[i])
+        else:
+            color = list(solid_color)
         mask_flag = 1 if p.is_mask else 0
         shapes.append({
             "type": resource_to_typecode("Primitives", shape.resource_index),
@@ -692,7 +710,7 @@ def _rectilinear_placements(target_mask: np.ndarray, resolution: int,
                              mode: MaskMode = "auto"
                              ) -> tuple[list[PlacedShape], str] | None:
     """Compare the exact-cover strategies available for a rectilinear mask,
-    and return whichever `mode` selects — or None if none produces a usable
+    and return whichever `mode` selects, or None if none produces a usable
     cover (caller falls back to the primitive search).
 
     Direct (fill the ink) and stencil (background + negative-space cutout
@@ -706,7 +724,7 @@ def _rectilinear_placements(target_mask: np.ndarray, resolution: int,
     the stencil candidate entirely, forcing direct fill even when stencil
     would need fewer shapes. `mode="force"` (a per-glyph Advanced Mode
     override) returns the stencil cover whenever one exists, even if it
-    needs more shapes than direct fill — an explicit per-glyph choice, not
+    needs more shapes than direct fill: an explicit per-glyph choice, not
     the shape-count-minimizing default.
     """
     from forza_writer.rect_decompose import (
@@ -739,7 +757,7 @@ def fit_placements(contours_norm, resolution: int = DEFAULT_RESOLUTION,
     """Route a glyph to whichever fitting strategy suits its geometry, and
     return `(placements, strategy_name)`.
 
-    Rectilinear glyphs (blocky/stencil fonts — every contour edge horizontal
+    Rectilinear glyphs (blocky/stencil fonts, every contour edge horizontal
     or vertical) get an exact rectangle decomposition, in whichever of two
     forms `mask_mode` selects (see `_rectilinear_placements`): fewer layers
     *and* perfect coverage either way, because the answer can be computed
@@ -750,15 +768,15 @@ def fit_placements(contours_norm, resolution: int = DEFAULT_RESOLUTION,
     Measured on Amarillo USAF: routing takes 'E' from 9 shapes at IoU 0.855
     to 4 shapes at IoU 1.000, while leaving 'O' at 2 shapes rather than the
     18 rectangles an unrouted decomposition would produce. On that
-    particular font the stencil path never actually wins under `"auto"` —
+    particular font the stencil path never actually wins under `"auto"`:
     its strokes are already the "simple" side of the shape. It does win on
-    other fonts though — e.g. the Minecraft Standard Galactic Alphabet's 'X'
-    (14 direct vs. 10 stencil) and 'Z' (12 vs. 7) — so `"auto"` compares
+    other fonts though, e.g. the Minecraft Standard Galactic Alphabet's 'X'
+    (14 direct vs. 10 stencil) and 'Z' (12 vs. 7), so `"auto"` compares
     automatically rather than assuming, and `"never"` exists for callers who'd
     rather opt out of that trade entirely.
 
-    `mask_mode="force"` on a curved (non-rectilinear) glyph — never possible
-    before — invokes `_curved_stencil_placements` (see its docstring for why
+    `mask_mode="force"` on a curved (non-rectilinear) glyph invokes
+    `_curved_stencil_placements` (see its docstring for why
     this is a search, not an exact cover, unlike the rectilinear case). This
     is deliberately *not* attempted under `"auto"`: it doubles the cost of an
     already-expensive greedy search, so it only runs when a caller explicitly
@@ -772,8 +790,8 @@ def fit_placements(contours_norm, resolution: int = DEFAULT_RESOLUTION,
     target_mask = rasterize_contours(contours_norm, resolution)
 
     # The exact-cover routes are built entirely from Square (see
-    # generation_policy.EXACT_COVER_SHAPE). If the policy withholds it — or
-    # disables exact cover outright, as "Primitive Only" does — skip them
+    # generation_policy.EXACT_COVER_SHAPE). If the policy withholds it, or
+    # disables exact cover outright, as "Primitive Only" does, skip them
     # rather than let rect_decompose's assertion fire, and let the greedy
     # search answer the glyph instead.
     if is_rectilinear(contours_norm) and policy.allows_exact_cover:
@@ -806,7 +824,7 @@ def fit_placements(contours_norm, resolution: int = DEFAULT_RESOLUTION,
 
     # Fallback ladder. Only reached when the restricted set genuinely fell
     # short, so an unrestricted policy never pays for it. Whatever happens,
-    # the outcome is recorded rather than applied silently — the one thing
+    # the outcome is recorded rather than applied silently. The one thing
     # this must never do is quietly ignore the user's restriction.
     if achieved < effective_quality:
         shortfall = (f"Selected shapes reached IoU {achieved:.3f}, "
@@ -844,15 +862,21 @@ def fit_glyph_with_strategy(char: str, font_path: Path, curve_segments: int = 8,
                              glyph_size: float = 300.0, mask_mode: MaskMode = "auto",
                              compute_backend: str = "cpu",
                              policy: GenerationPolicy | None = None,
-                             stats: GenerationStats | None = None) -> tuple[list[dict], str]:
+                             stats: GenerationStats | None = None,
+                             solid_color: tuple[int, int, int, int] = (255, 255, 255, 255),
+                             high_contrast_seed: int | None = None) -> tuple[list[dict], str]:
     """Like `fit_glyph`, but also returns which strategy was used
     (`"rect_decompose"` / `"stencil"` / `"stencil_search"` /
-    `"primitive_search"`) — for callers that want to record it, e.g.
+    `"primitive_search"`), for callers that want to record it, e.g.
     gen_fontpack.py's manifest.
 
     Pass a `GenerationStats` to collect per-glyph diagnostics (shape counts by
     type, candidates tested/rejected, achieved IoU, whether a fallback fired,
     elapsed time) without re-deriving any of it from the returned shapes.
+
+    `solid_color`/`high_contrast_seed` pass straight through to
+    `placements_to_shapes` -- see its docstring for how they interact
+    (`high_contrast_seed`, when given, wins).
     """
     from gen_modelbin import extract_contours, normalize_to_128
 
@@ -864,7 +888,9 @@ def fit_glyph_with_strategy(char: str, font_path: Path, curve_segments: int = 8,
                                            mask_mode, compute_backend, policy=policy, stats=stats)
     if stats is not None:
         stats.finish()
-    return placements_to_shapes(placements, resolution, glyph_size), strategy
+    shapes = placements_to_shapes(placements, resolution, glyph_size,
+                                   solid_color=solid_color, high_contrast_seed=high_contrast_seed)
+    return shapes, strategy
 
 
 def fit_glyph_name_with_strategy(glyph_name: str, font_path: Path, curve_segments: int = 8,
@@ -873,7 +899,8 @@ def fit_glyph_name_with_strategy(glyph_name: str, font_path: Path, curve_segment
                                   quality_target: float = DEFAULT_QUALITY_TARGET,
                                   glyph_size: float = 300.0,
                                   mask_mode: MaskMode = "auto",
-                                  compute_backend: str = "cpu"
+                                  compute_backend: str = "cpu",
+                                  solid_color: tuple[int, int, int, int] = (255, 255, 255, 255),
                                   ) -> tuple[list[dict], str]:
     """Fit an explicit shaped OpenType glyph rather than a cmap character."""
     from gen_modelbin import extract_glyph_contours, normalize_to_128
@@ -885,14 +912,15 @@ def fit_glyph_name_with_strategy(glyph_name: str, font_path: Path, curve_segment
     placements, strategy = fit_placements(
         contours_norm, resolution, max_layers, quality_target,
         mask_mode, compute_backend)
-    return placements_to_shapes(placements, resolution, glyph_size), strategy
+    shapes = placements_to_shapes(placements, resolution, glyph_size, solid_color=solid_color)
+    return shapes, strategy
 
 
 def fit_glyph(char: str, font_path: Path, curve_segments: int = 8,
               resolution: int = DEFAULT_RESOLUTION, max_layers: int = DEFAULT_MAX_LAYERS,
               quality_target: float = DEFAULT_QUALITY_TARGET, glyph_size: float = 300.0) -> list[dict]:
     """Generate a primitive-composed FH6 shape list for one glyph. No
-    .modelbin/catalog hijack involved — every shape used already exists in
+    .modelbin/catalog hijack involved: every shape used already exists in
     FH6's built-in Primitives family."""
     shapes, _strategy = fit_glyph_with_strategy(
         char, font_path, curve_segments, resolution, max_layers, quality_target, glyph_size)
@@ -947,9 +975,9 @@ def preview_glyph_mask_options(char: str, font_path: Path, curve_segments: int =
     For rectilinear glyphs this whole thing is essentially free (exact
     rectangle decomposition, no search, same as `_rectilinear_placements`
     already does), so it's always computed. For curved glyphs,
-    `auto_strategy`/`auto_shape_count` are free too — `"auto"` never
-    attempts a mask on a curved glyph by construction (see `fit_placements`)
-    — but `can_force_mask`/`forced_shape_count`/`forced_iou` require
+    `auto_strategy`/`auto_shape_count` are free too: `"auto"` never
+    attempts a mask on a curved glyph by construction (see `fit_placements`),
+    but `can_force_mask`/`forced_shape_count`/`forced_iou` require
     actually running `_curved_stencil_placements`, which *is* the expensive
     part. `curved_force_check=False` skips that one call (leaving those
     expensive forced fit. It can still report whether the glyph has negative

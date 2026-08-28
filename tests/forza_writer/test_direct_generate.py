@@ -99,3 +99,48 @@ def test_image_to_text_uses_transparency_automatically(tmp_path):
 
     assert shapes
     assert metadata["polarity"] == "alpha"
+
+
+# -- Direct Generator's embedded solid-color picker --------------------------
+
+@requires_arial
+def test_modern_default_color_is_unchanged_white(monkeypatch):
+    """The three generate_direct methods all default solid_color=white --
+    picking no color in the GUI must reproduce exactly today's output."""
+    shapes, _warnings, _metadata = generate_modern("A", WINDOWS_ARIAL)
+    assert all(tuple(s["color"]) == (255, 255, 255, 255) for s in shapes)
+
+
+@requires_arial
+def test_modern_custom_solid_color_applies_to_every_shape():
+    shapes, _warnings, _metadata = generate_modern("A", WINDOWS_ARIAL, solid_color=(10, 20, 30, 255))
+    assert shapes
+    assert all(tuple(s["color"]) == (10, 20, 30, 255) for s in shapes)
+
+
+@requires_arial
+def test_legacy_custom_solid_color_applies_to_every_shape():
+    shapes, _warnings, _metadata = generate_legacy("A", WINDOWS_ARIAL, cell_size=4,
+                                                     solid_color=(40, 50, 60, 255))
+    assert shapes
+    assert all(tuple(s["color"]) == (40, 50, 60, 255) for s in shapes)
+
+
+def test_image_to_text_custom_solid_color_applies_to_every_shape(tmp_path):
+    source = tmp_path / "signature.png"
+    image = Image.new("RGB", (80, 40), (230, 40, 20))
+    draw = ImageDraw.Draw(image)
+    draw.line((8, 30, 28, 8, 45, 31, 70, 10), fill="white", width=3)
+    image.save(source)
+
+    shapes, _warnings, _metadata = generate_image(
+        source, polarity="light", threshold=220, cell_size=1, solid_color=(70, 80, 90, 255))
+
+    assert shapes
+    assert all(tuple(s["color"]) == (70, 80, 90, 255) for s in shapes)
+
+
+@requires_arial
+def test_generate_direct_dispatch_forwards_solid_color_to_every_method():
+    shapes, _w, _m = generate_direct("A", WINDOWS_ARIAL, method="modern", solid_color=(1, 2, 3, 255))
+    assert all(tuple(s["color"]) == (1, 2, 3, 255) for s in shapes)

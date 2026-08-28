@@ -10,7 +10,7 @@ Colors are plain `(r, g, b, a)` int tuples, 0-255 per channel, matching the
 `forza_writer/primitive_fit.py`'s `placements_to_shapes`).
 
 Bold and italic both reuse fields FH6's own renderer already understands
-per-shape (`data[2]`/`data[3]` scale, `data[5]` shear slope — see
+per-shape (`data[2]`/`data[3]` scale, `data[5]` shear slope: see
 `primitive_fit.py`'s `MAX_ABS_SKEW`), rather than duplicating shapes: an
 offset-duplicated outline/shadow would multiply the FH6 vinyl layer count
 (e.g. an 8-direction outline turns 50 shapes into 450), which this project
@@ -30,7 +30,7 @@ RGBA = tuple[int, int, int, int]
 FILL_MODES = ("solid", "sequence", "rainbow")
 
 # Matches primitive_fit.MAX_ABS_SKEW: FH6's own bound on data[5]'s shear
-# slope (a tan(angle), not degrees) — going past this is unrenderable, not
+# slope (a tan(angle), not degrees); going past this is unrenderable, not
 # just visually extreme.
 MAX_ABS_SKEW = 0.8
 
@@ -42,11 +42,9 @@ class LineFill:
     """The color treatment for one line of composed text. `sequence`
     generalizes both a 2-stop gradient and a fixed-band rainbow (e.g.
     ROYGBIV) into one editable color list: `blend=True` interpolates
-    smoothly across every stop (the old 2-stop-gradient behavior, now with
-    any number of stops); `blend=False` repeats each stop as a discrete
-    band, cycling (the old ROYGBIV-banding behavior, now with any color
-    list, not just the fixed rainbow one) — see forza_writer/text_style.py
-    mockup discussion for why these two used to be separate modes."""
+    smoothly across every stop, supporting any number of stops; `blend=False`
+    repeats each stop as a discrete band, cycling through any color list,
+    not just a fixed rainbow."""
     mode: Literal["solid", "sequence", "rainbow"] = "solid"
     colors: tuple[RGBA, ...] = (WHITE,)
     blend: bool = False
@@ -65,11 +63,11 @@ class LineFill:
 @dataclass(frozen=True)
 class TextStyle:
     """A no-arg `TextStyle()` is a complete no-op: no bold/italic/underline/
-    strikethrough and no per-line fills — existing callers that don't pass
+    strikethrough and no per-line fills: existing callers that don't pass
     a style must see byte-identical output to before this module existed.
 
     Bold/italic/underline/strikethrough/size/spacing stay document-wide
-    (set once for the whole composed block); only fill color is per-line —
+    (set once for the whole composed block); only fill color is per-line:
     `fills[i]` is the LineFill for composed line `i`."""
     bold: bool = False
     italic: bool = False
@@ -85,7 +83,7 @@ class TextStyle:
     def fill_for_line(self, index: int) -> LineFill:
         """The LineFill for composed line `index`. No fills configured (the
         default) means every line is unstyled; an index past the end of
-        `fills` reuses the last entry — defensive only, since callers are
+        `fills` reuses the last entry: defensive only, since callers are
         expected to keep `fills` sized to the actual line count."""
         if not self.fills:
             return LineFill()
@@ -95,9 +93,9 @@ class TextStyle:
 @dataclass(frozen=True)
 class CharPosition:
     """Where one composed character/token sits within its own line, for
-    `color_for` to key off of. Both Sequence and Rainbow are per-line-scoped
-    now that fill is a per-line concept (a document-spanning Rainbow sweep
-    would be the odd one out) — see this module's docstring."""
+    `color_for` to key off of. Both Sequence and Rainbow are per-line-scoped,
+    since fill is a per-line concept and a document-spanning Rainbow sweep
+    would be the odd one out."""
     index_in_line: int
     chars_in_line: int
 
@@ -141,12 +139,12 @@ def color_for(fill: LineFill, pos: CharPosition) -> RGBA:
             t = _fraction(pos.index_in_line, pos.chars_in_line)
             return _lerp_sequence(fill.colors, t)
         return fill.colors[pos.index_in_line % len(fill.colors)]
-    raise ValueError(f"unknown fill mode {fill.mode!r}")  # pragma: no cover — guarded by __post_init__
+    raise ValueError(f"unknown fill mode {fill.mode!r}")  # pragma: no cover: guarded by __post_init__
 
 
 def apply_bold(shape: dict, factor: float = 1.15) -> dict:
     """Thickens a non-mask shape by scaling its own width/height in place
-    (around its own center — data[0]/data[1] are untouched, so this can't
+    (around its own center: data[0]/data[1] are untouched, so this can't
     shift the shape's position). Mask (cutout/counter) shapes pass through
     unscaled: growing a letter's outline while its counter stays put is
     exactly what shrinks the counter the way a real bold weight does, and
@@ -177,7 +175,7 @@ def apply_italic(shape: dict, skew_delta: float = 0.25) -> dict:
 def build_bar_shape(x_start: float, x_end: float, y_center: float,
                      thickness: float, color: RGBA) -> dict:
     """One "Square" primitive shape spanning [x_start, x_end] at y_center
-    with the given height — used for underline/strikethrough bars. Same
+    with the given height, used for underline/strikethrough bars. Same
     type/type_word/scale construction as primitive_fit.placements_to_shapes
     uses for Square primitives, but built directly in real-unit space
     (text_compose's shapes are already final real units, not the pixel/

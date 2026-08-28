@@ -1,7 +1,7 @@
 """What the generator is *allowed* and *encouraged* to build with.
 
 The fitting pipeline in `forza_writer.primitive_fit` already had every stage
-this module needs — it just had no way to be told about user intent, because
+this module needs: it just had no way to be told about user intent, because
 the shape catalog was consulted directly (`PRIMITIVE_CATALOG.values()`) at the
 two candidate-generation sites and the tuning constants were module globals.
 This module is the missing input, not a second generator: nothing here fits,
@@ -11,17 +11,17 @@ instead of each growing its own copy.
 
 The distinction the pipeline now draws, in order:
 
-1. **Available** primitives — `primitive_shapes.PRIMITIVE_CATALOG`, the fixed
+1. **Available** primitives: `primitive_shapes.PRIMITIVE_CATALOG`, the fixed
    set of FH6 shapes we can actually reproduce a silhouette for.
-2. **Allowed** primitives — `GenerationPolicy.allowed`. A hard restriction:
+2. **Allowed** primitives: `GenerationPolicy.allowed`. A hard restriction:
    the search never *generates* a candidate for a disallowed shape, rather
    than generating and then discarding it, so restricting the set makes
    generation faster as well as narrower.
-3. **Preferred** primitives — `GenerationPolicy.preferred`. A soft bias
+3. **Preferred** primitives: `GenerationPolicy.preferred`. A soft bias
    applied during scoring, deliberately small (see `preference_bonus`): it
    breaks near-ties toward shapes the user likes without letting a preferred
    shape win a placement it visibly fits worse.
-4. **Candidates**, 5. **scoring/selection**, 6. **fallback** — all in
+4. **Candidates**, 5. **scoring/selection**, 6. **fallback**: all in
    `primitive_fit`, which reads this policy rather than the old globals.
 
 `DEFAULT_POLICY` reproduces the pre-policy behaviour exactly: every shape
@@ -39,18 +39,18 @@ from typing import Iterator, Literal
 from forza_writer.primitive_shapes import PRIMITIVE_CATALOG, PrimitiveShape
 
 # Deliberately imports only `primitive_shapes`. `primitive_fit` imports *this*
-# module, so importing it back here would be circular — which is also why the
+# module, so importing it back here would be circular; that is also why the
 # tuning defaults below live here rather than being imported from there.
 
 # What to do when the allowed set alone can't reproduce the target acceptably.
 #
-# "strict"   — honour the restriction no matter the result. The user asked for
+# "strict"   : honour the restriction no matter the result. The user asked for
 #              these shapes only; a worse fit is the expected cost, not a bug.
-# "warn"     — same output as "strict", but record why it fell short so the
+# "warn"     : same output as "strict", but record why it fell short so the
 #              caller can surface it. Never silently degrades.
-# "auto"     — retry with the full catalog when the restricted fit misses the
+# "auto"     : retry with the full catalog when the restricted fit misses the
 #              quality target. Restrictions become a preference, not a rule.
-# "triangle" — retry with triangles added, the universal decomposition
+# "triangle" : retry with triangles added, the universal decomposition
 #              fallback: any polygon can be built from them, so this recovers
 #              accuracy while staying far closer to the user's intent than
 #              re-enabling every decorative primitive.
@@ -58,10 +58,10 @@ FallbackMode = Literal["strict", "warn", "auto", "triangle"]
 FALLBACK_MODES: tuple[FallbackMode, ...] = ("strict", "warn", "auto", "triangle")
 
 FALLBACK_LABELS: dict[str, str] = {
-    "strict": "Strict — only the selected shapes, whatever the accuracy",
-    "warn": "Warn — keep the restriction, but report when it isn't enough",
-    "auto": "Automatic — allow other shapes when the selection falls short",
-    "triangle": "Triangle fallback — add triangles when the selection falls short",
+    "strict": "Strict: only the selected shapes, whatever the accuracy",
+    "warn": "Warn: keep the restriction, but report when it isn't enough",
+    "auto": "Automatic: allow other shapes when the selection falls short",
+    "triangle": "Triangle fallback: add triangles when the selection falls short",
 }
 
 # Canonical tuning defaults. `primitive_fit` re-exports these under its
@@ -74,13 +74,13 @@ DEFAULT_OVERSHOOT_PENALTY = 2.5  # ink outside the target costs this much more t
 # Small on purpose. A preference is a tie-breaker, not an override: at 8% a
 # preferred shape wins when it is within a few percent of the best candidate,
 # and loses when it genuinely fits worse. Large values here reintroduce the
-# exact failure the greedy search's overshoot penalty exists to prevent —
+# exact failure the greedy search's overshoot penalty exists to prevent:
 # one favoured shape smeared over geometry it doesn't match.
 DEFAULT_PREFERENCE_BONUS = 0.08
 
 # The exact-cover strategies (`rect_decompose`'s rectilinear fill, and both
 # stencil paths, which need a solid background rectangle) are built entirely
-# from this one primitive — see rect_decompose.rects_to_placements, which
+# from this one primitive; see rect_decompose.rects_to_placements, which
 # asserts on it. Disallowing Square therefore doesn't just remove a shape, it
 # removes whole strategies, so `primitive_fit` has to route around them rather
 # than hit that assertion.
@@ -107,7 +107,7 @@ class GenerationPolicy:
     preferred: frozenset[str] = frozenset()
     preference_bonus: float = DEFAULT_PREFERENCE_BONUS
     # "warn", not "auto", is the default deliberately. A restriction the user
-    # set by hand must survive by default — auto-widening back to the full
+    # set by hand must survive by default: auto-widening back to the full
     # catalog the moment a fit falls short would mean selecting "rectangles
     # only" quietly produces stars and arrows, which is exactly the silent
     # override this feature exists to prevent. Widening stays available, it
@@ -117,7 +117,7 @@ class GenerationPolicy:
     fallback: FallbackMode = "warn"
     # Whether the deterministic exact-cover routes may be used at all.
     # Turning this off forces the greedy primitive search even on rectilinear
-    # glyphs it would normally solve exactly — which is the whole point of the
+    # glyphs it would normally solve exactly; that is the whole point of the
     # "Primitive Only" preset, whose complaint is precisely that an exact
     # cover answers a blocky glyph with a pile of rectangles.
     allow_exact_cover: bool = True
@@ -156,7 +156,7 @@ class GenerationPolicy:
 
         Only positive gains are scaled. Scaling a negative gain would make a
         preferred shape rank *below* an equally-bad non-preferred one, which
-        inverts the intent — a preference must never actively push a shape
+        inverts the intent: a preference must never actively push a shape
         down.
         """
         if gain <= 0:
@@ -219,7 +219,7 @@ class GenerationPolicy:
         doesn't retry (`strict`/`warn` keep the user's restriction by
         definition; the others widen the allowed set and re-fit).
 
-        Returns None too when widening would change nothing — an unrestricted
+        Returns None too when widening would change nothing: an unrestricted
         policy has nothing to fall back *to*, and retrying an identical fit
         would just double the work for an identical answer.
         """
@@ -234,7 +234,7 @@ class GenerationPolicy:
 
 DEFAULT_POLICY = GenerationPolicy()
 
-# Everything except the plain rectangle — "recognizable Forza primitives", as
+# Everything except the plain rectangle: "recognizable Forza primitives", as
 # opposed to the rectangle grid an exact decomposition produces.
 _EXPRESSIVE_SHAPES = frozenset(ALL_SHAPE_IDS - {EXACT_COVER_SHAPE})
 
@@ -274,7 +274,7 @@ def preset_name_for(policy: GenerationPolicy) -> str:
     """Name of the preset this policy exactly equals, or `"custom"`.
 
     Lets the UI show "Custom" the moment a user edits any dial, without the UI
-    having to track edits itself — the policy value is the whole state.
+    having to track edits itself: the policy value is the whole state.
     """
     for name, preset in PRESETS.items():
         if policy == preset:
@@ -308,7 +308,7 @@ def policy_from_dict(data: dict | None,
                       ) -> tuple[GenerationPolicy, list[str]]:
     """Rebuild a policy from `policy_to_dict` output.
 
-    Returns `(policy, dropped)` — never raises, and never silently substitutes
+    Returns `(policy, dropped)`; never raises, and never silently substitutes
     defaults for something the user chose. Shape ids that no longer exist in
     this build's catalog are dropped and *named* in `dropped`, so the caller
     can say so rather than the user discovering a shape quietly re-enabled.

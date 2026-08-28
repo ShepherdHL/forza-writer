@@ -6,8 +6,8 @@ HEX_RE = re.compile(r"^#[0-9a-f]{6}$")
 
 
 def test_bundled_dataset_has_a_sane_row_count():
-    # ~10,997 rows as of the GTPlanet Colour Creation Database snapshot this
-    # was built from (see THIRD_PARTY_NOTICES.md §3) — a loose lower bound
+    # ~10,997 rows in the GTPlanet Colour Creation Database snapshot this is
+    # built from (see THIRD_PARTY_NOTICES.md §3). Use a loose lower bound
     # so this doesn't break on minor future re-generation.
     assert len(load_all()) > 10000
 

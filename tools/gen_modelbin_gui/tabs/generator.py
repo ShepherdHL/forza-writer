@@ -60,6 +60,7 @@ from forza_writer import manufacturer_colors  # noqa: E402
 from forza_writer.variable_fonts import (  # noqa: E402
     VariableFontInfo, inspect_variable_font, instantiate_font, variation_slug)
 
+from ..color_picker_widget import ColorPickerWidget  # noqa: E402
 from ..state import (  # noqa: E402
     FONT_EXTENSIONS, FONTS_DIR_SYSTEM, GRID_MAX_TILES, GRID_TILE_GAP, GRID_TILE_SIZE,
     ICON_PATH, LIVE_PREVIEW_SIZE, COMPOSE_PREVIEW_SIZE, OUTPUT_MODE_LABELS, PREVIEW_SIZE,
@@ -84,14 +85,14 @@ class GeneratorTabMixin:
         font_frame.pack(fill='both', expand=True, **gui_theme.SECTION_PAD)
 
         # The installed-font registry is scanned automatically in the
-        # background as soon as the window opens (see __init__) — this is a
+        # background as soon as the window opens (see __init__): this is a
         # fast registry-only scan (~512 fonts well under a second, measured
         # on this machine), unlike the per-file script-classification pass
         # that follows it. "Rescan Fonts" re-runs the same scan on demand
         # (e.g. after installing a new font without restarting); "Browse on
         # machine..." skips the installed-font list entirely and picks one
-        # file directly — same split as forza-painter-fh6's own Text Vinyl
-        # tab.
+        # file directly, mirroring the split forza-painter-fh6 uses in its
+        # own Text Vinyl tab, for consistency.
         load_row = ttk.Frame(font_frame)
         load_row.pack(fill='x', **gui_theme.ROW_PAD_TOP)
         self.load_fonts_btn = ttk.Button(load_row, text='Rescan Fonts', command=self._load_all_fonts)
@@ -111,13 +112,13 @@ class GeneratorTabMixin:
             side='left', fill='x', expand=True, padx=4)
 
         # Script sub-tabs: filter the (already-loaded) font list down to
-        # fonts whose cmap actually appears to support a given script —
-        # prep work for non-Latin generation support, not full support
-        # itself yet (see forza_writer/script_detect.py's module
+        # fonts whose cmap actually appears to support a given script.
+        # This is prep work for non-Latin generation support, not full
+        # support itself yet (see forza_writer/script_detect.py's module
         # docstring for how "appears to support" is decided). Classified
         # in the background right after the startup font scan finishes,
         # streamed in via the same queue/_poll_queue pattern as font-grid
-        # tiles — a script tab just shows fewer fonts until classification
+        # tiles, so a script tab just shows fewer fonts until classification
         # for the rest streams in, rather than blocking on the whole pass.
         script_tab_frame = ttk.Frame(font_frame)
         script_tab_frame.pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
@@ -148,9 +149,9 @@ class GeneratorTabMixin:
                          command=self._on_font_view_changed).pack(side='left')
 
         # Grid overflow/status belongs on its own full-width line above the
-        # browser. Keeping it inside grid_outer caused pack's side geometry
-        # to reserve a wide strip beside the canvas, reducing the number of
-        # font tiles that could fit across the row.
+        # browser. Packing it inside grid_outer instead would reserve a wide
+        # strip beside the canvas for pack's side geometry, reducing the
+        # number of font tiles that fit across the row.
         self.grid_status_var = tk.StringVar()
         self.grid_status_lbl = ttk.Label(
             font_frame, textvariable=self.grid_status_var, style='Hint.TLabel')
@@ -183,7 +184,7 @@ class GeneratorTabMixin:
         self.font_list.bind('<<ListboxSelect>>', self._on_font_selected)
         self._register_independent_scroll(self.font_list)
 
-        # Grid view — built but not packed; _on_font_view_changed swaps it
+        # Grid view: built but not packed; _on_font_view_changed swaps it
         # in for font_list's list_row when the user picks "Grid".
         self.grid_outer = ttk.Frame(font_frame)
         self.grid_canvas = tk.Canvas(self.grid_outer, height=200, highlightthickness=0)
@@ -285,14 +286,14 @@ class GeneratorTabMixin:
                   style='Hint.TLabel', wraplength=gui_theme.WRAP_MED,
                   justify='left').pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
 
-        # Non-Latin alphabets — real generation support (not just the
+        # Non-Latin alphabets: real generation support (not just the
         # Font section's script-tab filtering) for the 7 scripts that fit
         # this tool's flat one-glyph-per-character model (see
         # forza_writer/alphabets.py's module docstring for the shaping
-        # caveats — e.g. Arabic renders isolated letterforms, Korean
+        # caveats, e.g. Arabic renders isolated letterforms, Korean
         # renders individual Jamo not composed syllable blocks). Every
         # script's checkboxes are built once and stay alive regardless of
-        # which script tab is currently selected — selecting a different
+        # which script tab is currently selected: selecting a different
         # script only changes which group is *visible*; a box checked
         # earlier still counts when generating, same "additive, not
         # exclusive" behavior the ASCII row above already has.
@@ -361,7 +362,7 @@ class GeneratorTabMixin:
         self.output_var = tk.StringVar(value='json')
         for mode in OUTPUT_MODES:
             title, description = OUTPUT_MODE_LABELS[mode]
-            # The modelbin path's description leads with "Experimental." —
+            # The modelbin path's description leads with "Experimental.";
             # give it the Warn style so that caveat actually reads as one,
             # rather than blending into the same muted tone as every other
             # secondary label.
@@ -372,9 +373,9 @@ class GeneratorTabMixin:
 
         # Primitive Shapes (.json) only: a rectilinear glyph sometimes needs
         # fewer shapes as a stencil (background Square + mask cutouts) than
-        # filled directly — real savings, not a routing bug (e.g. the
+        # filled directly: real savings, not a routing bug (e.g. the
         # Minecraft Standard Galactic Alphabet's 'X' needs 14 shapes direct
-        # vs. 10 stencil) — but it relies on FH6 mask-layer semantics that
+        # vs. 10 stencil), but it relies on FH6 mask-layer semantics that
         # haven't been confirmed against a live session yet (RESEARCH.md).
         # Default on (it's a genuine improvement when it wins); this lets
         # anyone who'd rather avoid masks entirely opt out, at the cost of
@@ -392,9 +393,9 @@ class GeneratorTabMixin:
                   style='Hint.TLabel', wraplength=gui_theme.WRAP_MED,
                   justify='left').pack(anchor='w', padx=gui_theme.INDENT_PAD)
 
-        # Per-glyph control is recessed lower in this page.  Keeping its
-        # expensive font scan closed until requested makes the common
-        # generation path as light as it was before the merge.
+        # Per-glyph control is recessed lower in this page. Keeping its
+        # expensive font scan closed until requested keeps the common
+        # generation path lightweight by default.
         glyph_link_row = ttk.Frame(output_frame)
         glyph_link_row.pack(fill='x', padx=4, pady=(4, 3))
         ttk.Button(glyph_link_row, text='Open per-glyph overrides…',
@@ -408,8 +409,8 @@ class GeneratorTabMixin:
                   justify='left').pack(anchor='w', padx=gui_theme.INDENT_PAD)
 
         # Options: curve segments + prefix (per-run). Reference-modelbin
-        # and the output directory are persistent paths now owned by the
-        # Settings tab — this section just shows what they're currently
+        # and the output directory are persistent paths owned by the
+        # Settings tab; this section just shows what they're currently
         # set to, with a shortcut to go change them.
         opt_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('4. Options'))
         opt_frame.pack(fill='x', **gui_theme.SECTION_PAD)
@@ -474,6 +475,7 @@ class GeneratorTabMixin:
         ttk.Label(opt_frame, textvariable=self.reference_warning_var, style='Warn.TLabel',
                   wraplength=gui_theme.WRAP_MED, justify='left').pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
 
+        self._build_generator_color_section(content)
         self._build_generation_section(content)
         self._build_configurator_workspace(content)
 
@@ -503,11 +505,10 @@ class GeneratorTabMixin:
                   style='Hint.TLabel', wraplength=gui_theme.WRAP_WIDE,
                   justify='left').pack(fill='x', padx=8, pady=(0, 4))
 
-        # A small live "watch it generate" view (§ "actively witness
-        # generation" / "a preview window") — _run_batch renders each
-        # glyph into this canvas as it completes. Separate from the
-        # Outputs tab's (larger) browse-a-finished-pack canvas: this one is
-        # about the run in progress, that one's about packs already done.
+        # A small live preview: _run_batch renders each glyph into this
+        # canvas as it completes. Separate from the Outputs tab's (larger)
+        # browse-a-finished-pack canvas: this one is about the run in
+        # progress, that one's about packs already done.
         live_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('Live preview'))
         live_frame.pack(fill='x', **gui_theme.SECTION_PAD)
         live_body = ttk.Frame(live_frame)
@@ -526,9 +527,18 @@ class GeneratorTabMixin:
         self.load_fonts_btn.configure(state='disabled')
         self.font_scan_status_var.set('Scanning installed fonts…')
 
+        # Capture msg_queue itself, not self: this closure runs on a
+        # background thread that this app never waits on or cancels, so it
+        # keeps running (and keeps whatever it closes over alive) for as
+        # long as the font scan takes, independent of the window's own
+        # lifetime. Closing over self would pin the *entire* GUI instance --
+        # every widget, every generated preview image -- alive for that
+        # whole time instead of just the queue it actually needs.
+        msg_queue = self.msg_queue
+
         def worker():
             fonts = enumerate_installed_fonts()
-            self.msg_queue.put(('fonts_loaded', generation, fonts))
+            msg_queue.put(('fonts_loaded', generation, fonts))
 
         threading.Thread(target=worker, daemon=True).start()
     def _on_fonts_loaded(self, generation: int, fonts: dict):
@@ -537,7 +547,7 @@ class GeneratorTabMixin:
         self.fonts = fonts
         # Keep script detections already known from an earlier scan (a
         # font file's script support can't change between scans) instead
-        # of wiping the cache on every "Rescan Fonts" click — only fonts
+        # of wiping the cache on every "Rescan Fonts" click: only fonts
         # this app hasn't classified before get (re-)detected below. Drop
         # entries for fonts no longer installed so this doesn't grow
         # across repeated install/uninstall cycles.
@@ -550,15 +560,15 @@ class GeneratorTabMixin:
             self._populate_font_grid()
         self._classify_font_scripts(generation)
     def _classify_font_scripts(self, generation: int):
-        # Chained after the registry scan, not part of it — opening every
+        # Chained after the registry scan, not part of it: opening every
         # font file to read its cmap is real per-file work (unlike the
         # registry-only scan, which never opens a font at all), so this
         # runs as its own background pass and streams results back one
         # font at a time rather than blocking on the whole thing. Fonts
         # already classified by an earlier scan (see _on_fonts_loaded) are
-        # skipped — re-detecting an already-known font's scripts on every
+        # skipped: re-detecting an already-known font's scripts on every
         # rescan would just reopen and reparse it for the identical answer
-        # (measured ~3ms/font of real cmap-parsing work — real money across
+        # (measured ~3ms/font of real cmap-parsing work, real cost across
         # a few hundred installed fonts, and pure waste the second time).
         fonts = {name: path for name, path in self.fonts.items() if name not in self._font_scripts}
         if not fonts:
@@ -583,7 +593,7 @@ class GeneratorTabMixin:
         self._update_alphabet_section()
     def _update_alphabet_section(self):
         # Only the group matching the currently-selected script tab is
-        # shown — Latin needs no extra block (the ASCII checkboxes above
+        # shown: Latin needs no extra block (the ASCII checkboxes above
         # already cover it), and "All" shows nothing extra either, same
         # as picking no script filter at all.
         for frame in self._alphabet_group_frames.values():
@@ -626,9 +636,8 @@ class GeneratorTabMixin:
         for name in self._visible_fonts:
             self.font_list.insert('end', name)
     def _check_lowercase_warning(self):
-        # Not a blocking dialog — an all-caps stencil font (like this
-        # session's own Amarillo USAF test font) legitimately has no
-        # lowercase glyphs on purpose. Just make sure the user sees that
+        # Not a blocking dialog: an all-caps stencil font legitimately has
+        # no lowercase glyphs on purpose. Just make sure the user sees that
         # before generating and being surprised the Lowercase folder is empty.
         if self.selected_font is None:
             self.lowercase_warning_var.set('')
@@ -740,7 +749,7 @@ class GeneratorTabMixin:
         self._show_tab('generator')
         self._set_configurator_workspace_open(True)
     def _quick_export_kfps(self):
-        # Wraps gen_fabric_project.build_fabric_project() — the fontpack
+        # Wraps gen_fabric_project.build_fabric_project(): the fontpack
         # dir is derived from the current Prefix/Fontpack-root-folder
         # fields, same as a Generate run would use, so this works whether
         # that pack was just generated this session or already existed.
@@ -770,7 +779,7 @@ class GeneratorTabMixin:
                 before=self.grid_outer)
             # Force geometry to settle immediately so the canvas already
             # reports its real width below, rather than whatever stale
-            # width (often 1px, never-laid-out) it had before this pack —
+            # width (often 1px, never-laid-out) it had before this pack:
             # otherwise the first population would compute a bogus column
             # count from that stale width.
             self.grid_outer.update_idletasks()
@@ -781,7 +790,7 @@ class GeneratorTabMixin:
             self.font_list.master.pack(fill='both', expand=True, padx=4, pady=2)
     def _grid_columns_for_width(self, width: int) -> int:
         """How many GRID_TILE_SIZE tiles (with their gap) fit across
-        `width` — the responsive replacement for a hard-coded column
+        `width`: the responsive replacement for a hard-coded column
         count, conceptually `repeat(auto-fill, minmax(tile, tile))`.
         Always at least 1, so a narrow window still shows a single column
         instead of a zero-column/div-by-zero grid."""
@@ -789,8 +798,8 @@ class GeneratorTabMixin:
         return max(1, width // column_span)
     def _relayout_grid_tiles(self) -> None:
         """Re-place every already-rendered tile at its row/column for the
-        current self._grid_columns, without touching the rendered images —
-        cheap, so it's safe to call on every resize that changes the
+        current self._grid_columns, without touching the rendered images.
+        Cheap, so it's safe to call on every resize that changes the
         column count instead of only once at population time."""
         for i, tile in enumerate(self.grid_inner.winfo_children()):
             tile.grid_configure(row=i // self._grid_columns, column=i % self._grid_columns)
@@ -878,6 +887,65 @@ class GeneratorTabMixin:
             var.set(False)
         self.custom_var.set(text)
         self._on_all_toggled()
+    # -- Color (solid, or High Contrast per-shape) -------------------------
+    def _build_generator_color_section(self, content):
+        color_frame = ttk.LabelFrame(content, text=gui_theme.hud_label('5. Color'))
+        color_frame.pack(fill='x', **gui_theme.SECTION_PAD)
+
+        self.generator_color_mode_var = tk.StringVar(value='solid')
+        mode_row = ttk.Frame(color_frame)
+        mode_row.pack(fill='x', **gui_theme.ROW_PAD)
+        ttk.Label(mode_row, text='Color mode:').pack(side='left', padx=(4, 6))
+        ttk.Radiobutton(mode_row, text='Solid Color', value='solid',
+                        variable=self.generator_color_mode_var,
+                        command=self._on_generator_color_mode_changed).pack(side='left', padx=(0, 10))
+        ttk.Radiobutton(mode_row, text='High Contrast (KFPS Fabric Editor)', value='high_contrast',
+                        variable=self.generator_color_mode_var,
+                        command=self._on_generator_color_mode_changed).pack(side='left')
+
+        self.generator_color_picker_frame = ttk.Frame(color_frame)
+        self.generator_color_picker = ColorPickerWidget(
+            self.generator_color_picker_frame, settings_key='color_generator',
+            on_change=self._on_generator_color_change, title='')
+        self.generator_color_picker.pack(fill='x')
+        self.generator_color = self.generator_color_picker.color
+
+        self.generator_hc_frame = ttk.Frame(color_frame)
+        seed_row = ttk.Frame(self.generator_hc_frame)
+        seed_row.pack(fill='x', **gui_theme.ROW_PAD)
+        ttk.Label(seed_row, text='Seed:').pack(side='left', padx=(4, 6))
+        self.generator_hc_seed_var = tk.IntVar(value=0)
+        ttk.Spinbox(seed_row, from_=0, to=2**31 - 1, width=12,
+                    textvariable=self.generator_hc_seed_var).pack(side='left')
+        ttk.Button(seed_row, text='Randomize', command=self._randomize_generator_seed).pack(
+            side='left', padx=(6, 0))
+        ttk.Label(
+            self.generator_hc_frame,
+            text="Each generated letter's individual primitive shapes get their own color from a "
+                 'curated high-contrast palette, so you can tell them apart and select them '
+                 'individually in KFPS Fabric Editor -- applied to the exported shapes themselves, '
+                 'not just this preview. Deterministic for a given seed: regenerating with the same '
+                 'seed reproduces the exact same colors. The seed used is recorded in the pack\'s '
+                 'manifest either way.',
+            style='Hint.TLabel', wraplength=gui_theme.WRAP_MED, justify='left',
+        ).pack(fill='x', padx=gui_theme.INDENT_PAD, pady=gui_theme.ROW_PAD_BOTTOM['pady'])
+
+        self._on_generator_color_mode_changed()
+
+    def _on_generator_color_change(self, rgba: tuple):
+        self.generator_color = rgba
+
+    def _on_generator_color_mode_changed(self):
+        if self.generator_color_mode_var.get() == 'high_contrast':
+            self.generator_color_picker_frame.pack_forget()
+            self.generator_hc_frame.pack(fill='x')
+        else:
+            self.generator_hc_frame.pack_forget()
+            self.generator_color_picker_frame.pack(fill='x', **gui_theme.ROW_PAD)
+
+    def _randomize_generator_seed(self):
+        import random
+        self.generator_hc_seed_var.set(random.randint(0, 2**31 - 1))
     # -- Generation policy (which vinyls the generator may use) -----------
     def _build_generation_section(self, content):
         """The vinyl-shape restrictions, preferences, preset and fallback.
@@ -889,7 +957,7 @@ class GeneratorTabMixin:
         primitive added to the catalog appears here with no UI change and no
         second list to keep in sync.
         """
-        frame = ttk.LabelFrame(content, text=gui_theme.hud_label('5. Vinyl Shapes'))
+        frame = ttk.LabelFrame(content, text=gui_theme.hud_label('6. Vinyl Shapes'))
         frame.pack(fill='x', **gui_theme.SECTION_PAD)
 
         ttk.Label(
@@ -1018,7 +1086,7 @@ class GeneratorTabMixin:
             "allow_exact_cover": self.settings.get('generation_allow_exact_cover', True),
         })
         preset_name = self.settings.get('generation_preset', RECOMMENDED_PRESET)
-        # A stored preset only wins when the stored dials still match it —
+        # A stored preset only wins when the stored dials still match it;
         # otherwise the individual settings are the truth and the preset is
         # stale, which is exactly the "custom" state.
         if preset_name in PRESETS and policy == PRESETS[preset_name]:
@@ -1085,7 +1153,7 @@ class GeneratorTabMixin:
 
         Hit-tested against the same constants that drew the badge (see
         `vinyl_tiles.badge_hit`) so the target can't drift from the artwork.
-        The badge is only live on an allowed tile — preferring a disabled
+        The badge is only live on an allowed tile: preferring a disabled
         shape is an invalid policy, so clicking there allows it first.
         """
         allow_var = self._shape_allow_vars[shape_id]
@@ -1101,15 +1169,15 @@ class GeneratorTabMixin:
     @staticmethod
     def _shape_tile_columns_for_width(width: int) -> int:
         """How many tiles fit across `width`, at least 1 and never more than
-        the catalog has — the same `repeat(auto-fill, ...)` idea the font grid
+        the catalog has: the same `repeat(auto-fill, ...)` idea the font grid
         uses, so a maximized window packs more per row instead of stretching
         the gaps between a fixed six."""
         span = vinyl_tiles.TILE_W + 6  # tile plus its padx on both sides
         return max(1, min(len(PRIMITIVE_CATALOG), width // span))
 
     def _relayout_shape_tiles(self, width: int | None = None) -> None:
-        """Re-place the tiles for the current width. Cheap — it only moves
-        existing widgets and never re-renders their images — so it is safe to
+        """Re-place the tiles for the current width. Cheap: it only moves
+        existing widgets and never re-renders their images, so it is safe to
         call on any resize that actually changes the column count."""
         if not hasattr(self, '_shape_tiles'):
             return
@@ -1167,7 +1235,7 @@ class GeneratorTabMixin:
             var.set(allowed)
         if not allowed:
             # A preference on a disabled shape is an invalid state, not a
-            # remembered one — clear rather than leave it to fail validation.
+            # remembered one: clear rather than leave it to fail validation.
             for var in self._shape_prefer_vars.values():
                 var.set(False)
         self._on_generation_policy_changed()
@@ -1286,7 +1354,7 @@ class GeneratorTabMixin:
         if self.punct_var.get():
             chars.update(string.punctuation)
         if self.symbols_var.get() and selection_font is not None:
-            # "Symbols" isn't a fixed ASCII set like the others — pull
+            # "Symbols" isn't a fixed ASCII set like the others: pull
             # whatever the selected font's own cmap actually categorizes as
             # Symbols (forza_writer.charset's Unicode-category grouping).
             categorized, _ = gen_modelbin_gui.charset_from_font(selection_font)
@@ -1297,7 +1365,7 @@ class GeneratorTabMixin:
             chars.update(c for c in categorized.get('Symbols', [])
                          if unicodedata.category(c) == 'Co')
         # Every script's checkboxes count regardless of which one is
-        # currently visible (see _update_alphabet_section) — additive,
+        # currently visible (see _update_alphabet_section): additive,
         # same as every other row in this section.
         for script, group_vars in self._alphabet_vars.items():
             groups = alphabets.groups_for_script(script)

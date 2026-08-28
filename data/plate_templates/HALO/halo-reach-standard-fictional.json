@@ -1,0 +1,104 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "halo-reach-standard-fictional",
+  "display_name_key": "plates.template.halo_reach_standard_fictional",
+  "country": "HALO",
+  "jurisdiction": "Reach",
+  "era": "fictional",
+  "plate_type": "passenger",
+  "width_mm": 304.8,
+  "height_mm": 152.4,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Halopedia's civilian-vehicles article states that identification on the planet Reach is 'achieved through a barcode,' unlike Earth locations (which use letters and numbers). Reference for this template's layout and text came from screenshots the Forza Writer user supplied directly (in-game/in-editor captures), not from any file, image, or asset extracted or downloaded from the game itself or an official tool. No source documents what that barcode actually looks like, so this template's specific colors, proportions, and the barcode itself (approximated as a run of '|' characters through the same fontpack pipeline as every other field -- the schema has no barcode-symbology decoration kind) come entirely from the supplied screenshots, not from any wiki or official description. The 'standard' variant's registration reads 'M·100627' (a raised middle dot), matching the supplied screenshot directly.",
+    "contributors": [],
+    "reference_urls": [
+      "https://www.halopedia.org/Civilian_vehicles"
+    ],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      210,
+      208,
+      200,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": null,
+  "fields": [
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 15.0,
+      "y_mm": 48.0,
+      "width_mm": 274.8,
+      "height_mm": 58.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.6,
+      "tracking": 3.0,
+      "line_spacing": 1.0,
+      "default_text": "M·100627",
+      "color": [
+        35,
+        35,
+        32,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.halo_reach_standard.format_hint",
+        "min_length": 8,
+        "max_length": 8,
+        "allowed_pattern": "M·[0-9]{6}",
+        "excluded_chars": [],
+        "custom_rule_id": null
+      },
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "csg_mark",
+      "label_key": "plates.field.csg_mark",
+      "role": "decorative_text",
+      "x_mm": 254.0,
+      "y_mm": 52.0,
+      "width_mm": 36.0,
+      "height_mm": 20.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.4,
+      "tracking": 1.0,
+      "line_spacing": 1.0,
+      "default_text": "CSG",
+      "color": [
+        70,
+        70,
+        65,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

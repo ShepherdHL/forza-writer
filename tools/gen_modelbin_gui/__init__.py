@@ -9,8 +9,8 @@ on the top-level package, rather than only imported locally by whichever
 tab module calls them. Tab modules call back through
 `gen_modelbin_gui.<name>(...)` (see each tabs/*.py) instead of a bare
 `from x import name`, so tests can substitute a fake via
-`monkeypatch.setattr(gen_modelbin_gui, 'name', fake)` — a plain
-`from x import name` snapshots the reference at import time and a patch
+`monkeypatch.setattr(gen_modelbin_gui, 'name', fake)`: a plain
+`from x import name` snapshots the reference at import time, and a patch
 here would never reach it. This must stay imported before `.app`, since
 the tab modules resolve `gen_modelbin_gui.<name>` through this
 already-partially-initialized package at their own import time.

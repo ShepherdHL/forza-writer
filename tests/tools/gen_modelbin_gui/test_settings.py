@@ -46,8 +46,14 @@ def test_appearance_defaults_are_charcoal_and_balanced(gui):
     assert gui_settings.DEFAULT_SETTINGS['density'] == 'balanced'
 
 
-def test_appearance_changes_preview_immediately_without_saving(gui):
+def test_appearance_changes_preview_immediately_without_saving(gui, tmp_path, monkeypatch):
+    import gui_settings
     import gui_theme
+
+    settings_path = tmp_path / 'settings.json'
+    monkeypatch.setattr(gui_settings, 'SETTINGS_PATH', settings_path)
+    monkeypatch.setattr(gui_settings, 'SETTINGS_DIR', settings_path.parent)
+
     gui.palette_var.set('charcoal')
     gui.density_var.set('compact')
     gui._preview_appearance()
@@ -65,6 +71,54 @@ def test_appearance_changes_preview_immediately_without_saving(gui):
         gui.palette_var.set('charcoal')
         gui.density_var.set('balanced')
         gui._preview_appearance()
+
+
+def test_appearance_changes_persist_without_clicking_save(gui, tmp_path, monkeypatch):
+    """Picking a palette/density is itself the save action now -- no
+    separate trip to the Save settings button, matching how window geometry
+    and the color picker's saved/recent colors already persist immediately."""
+    import gui_settings
+
+    settings_path = tmp_path / 'settings.json'
+    monkeypatch.setattr(gui_settings, 'SETTINGS_PATH', settings_path)
+    monkeypatch.setattr(gui_settings, 'SETTINGS_DIR', settings_path.parent)
+
+    gui.palette_var.set('eurocorp')
+    gui.density_var.set('compact')
+    gui._preview_appearance()
+
+    loaded = gui_settings.load_settings()
+    assert loaded['palette'] == 'eurocorp'
+    assert loaded['density'] == 'compact'
+
+
+def test_save_settings_does_not_reset_unrelated_saved_fields(gui, tmp_path, monkeypatch):
+    """Regression test: _save_settings used to call gui_settings.save_settings
+    with a partial dict, which silently resets every field it doesn't name
+    back to DEFAULT_SETTINGS -- window geometry, the color picker's saved/
+    recent colors, and each tab's own last color included."""
+    import gui_settings
+
+    settings_path = tmp_path / 'settings.json'
+    monkeypatch.setattr(gui_settings, 'SETTINGS_PATH', settings_path)
+    monkeypatch.setattr(gui_settings, 'SETTINGS_DIR', settings_path.parent)
+
+    gui_settings.save_settings({
+        'window_geometry': '1200x900+50+60',
+        'window_maximized': False,
+        'saved_colors': {'Team Red': [200, 20, 20, 255]},
+        'recent_colors': [[1, 2, 3, 255]],
+        'color_ascii_art': [10, 20, 30, 255],
+    })
+
+    gui._save_settings()
+
+    loaded = gui_settings.load_settings()
+    assert loaded['window_geometry'] == '1200x900+50+60'
+    assert loaded['window_maximized'] is False
+    assert loaded['saved_colors'] == {'Team Red': [200, 20, 20, 255]}
+    assert loaded['recent_colors'] == [[1, 2, 3, 255]]
+    assert loaded['color_ascii_art'] == [10, 20, 30, 255]
 
 
 def test_settings_status_reflects_path_existence(gui, tmp_path):

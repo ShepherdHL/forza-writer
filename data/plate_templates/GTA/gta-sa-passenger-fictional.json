@@ -1,0 +1,106 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "gta-sa-passenger-fictional",
+  "display_name_key": "plates.template.gta_sa_passenger_fictional",
+  "country": "GTA",
+  "jurisdiction": "San Andreas",
+  "era": "fictional",
+  "plate_type": "passenger",
+  "width_mm": 304.8,
+  "height_mm": 152.4,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Grand Theft Auto V ships five stock San Andreas plate variants (yellow-on-black, yellow-on-blue, a striped white variant, a plain white/blue variant, and a white government 'SA EXEMPT' plate) -- this template models the plain white-background/blue-text variant, the one described as most common. 'SAN ANDREAS' as the header text and the 2-digit/3-letter/3-digit registration format (e.g. 12ABC345) are corroborated across two independent wikis. No slogan/motto text was found on the plate itself in either source -- treat any claim of one as unconfirmed. The text color (a dark blue, approximately #0F2352) comes from a single wiki's datamined-looking hex values, not independently corroborated. The font is named 'Penitentiary Gothic Regular' by one wiki only; not bundled here either way -- this template's text uses the same placeholder Latin fontpack as every real-world template.",
+    "contributors": [],
+    "reference_urls": [
+      "https://www.grandtheftwiki.com/Vehicle_License_Plates",
+      "https://gta.wiki/w/License_Plates",
+      "https://gtaforums.com/topic/573705-san-andreas-license-plates/"
+    ],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": null,
+  "fields": [
+    {
+      "field_id": "jurisdiction_header",
+      "label_key": "plates.field.jurisdiction_header",
+      "role": "jurisdiction_text",
+      "x_mm": 20.0,
+      "y_mm": 10.0,
+      "width_mm": 264.8,
+      "height_mm": 26.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.55,
+      "tracking": 2.0,
+      "line_spacing": 1.0,
+      "default_text": "SAN ANDREAS",
+      "color": [
+        15,
+        35,
+        82,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 20.0,
+      "y_mm": 48.0,
+      "width_mm": 264.8,
+      "height_mm": 70.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.51,
+      "tracking": 4.0,
+      "line_spacing": 1.0,
+      "default_text": "12ABC345",
+      "color": [
+        15,
+        35,
+        82,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.gta_sa.format_hint",
+        "min_length": 8,
+        "max_length": 8,
+        "allowed_pattern": "[0-9]{2}[A-Z]{3}[0-9]{3}",
+        "excluded_chars": [],
+        "custom_rule_id": null
+      },
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

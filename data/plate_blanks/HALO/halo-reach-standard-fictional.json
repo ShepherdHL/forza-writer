@@ -1,0 +1,41 @@
+{
+  "format": "forza_writer_plate_blank_v1",
+  "template_id": "halo-reach-standard-fictional",
+  "decoration_signature": "a5c930ef32d78755",
+  "shapes": [
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        0.0,
+        0.0,
+        2.372021,
+        1.18601,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        210,
+        208,
+        200,
+        255
+      ],
+      "mask": false
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "bg",
+      "kind": "background",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        0
+      ],
+      "editable": false,
+      "deletable": true
+    }
+  ],
+  "warnings": []
+}

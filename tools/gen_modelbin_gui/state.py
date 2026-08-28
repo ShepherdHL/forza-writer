@@ -1,8 +1,8 @@
 """Module-level constants and font-discovery helpers shared across the GUI package.
 
-No app-mixin dependencies here on purpose — every tab module imports from this
-one so there is a single place these live, instead of duplicated or import-order-
-dependent copies.
+No app-mixin dependencies here on purpose. Every tab module imports from this
+one, so there is a single place these live instead of duplicated or import-
+order-dependent copies.
 """
 import re
 import winreg
@@ -14,7 +14,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from gen_fontpack import sanitize_prefix  # noqa: E402
 import gui_theme  # noqa: E402
 
-_MODE_LABELS = {"auto": "Auto", "force": "Force Mask", "never": "Force No Mask", "manual": "Manual"}
+from .i18n import t
+
+_MODE_LABELS = {
+    "auto": t("state.mask_mode.auto"),
+    "force": t("state.mask_mode.force"),
+    "never": t("state.mask_mode.never"),
+    "manual": t("state.mask_mode.manual"),
+}
 
 FONT_EXTENSIONS = {'.ttf', '.otf'}
 
@@ -33,13 +40,13 @@ def is_running_as_administrator() -> bool:
 
 GRID_TILE_SIZE = (170, 36)
 
-GRID_TILE_GAP = 3      # px between tiles, both axes — column count is derived from this + GRID_TILE_SIZE
+GRID_TILE_GAP = 3      # px between tiles, both axes. Column count is derived from this plus GRID_TILE_SIZE
 
 GRID_MAX_TILES = 60
 
 PREVIEW_SIZE = (280, 280)
 
-# Glyph Inspector's categorized browser grid — same "cap the tile count,
+# Glyph Inspector's categorized browser grid. Same "cap the tile count,
 # offer to render more" shape as GRID_MAX_TILES above, just per-category
 # instead of per-font-list, since one CJK category alone (e.g. CJK Unified
 # Ideographs) can hold 10,000+ glyphs and must never all render at once.
@@ -50,14 +57,14 @@ GLYPH_TILE_GAP = 3
 GLYPH_CATEGORY_TILE_CAP = 200
 
 # "Show more" grows a category by this many tiles per click, up to
-# GLYPH_CATEGORY_HARD_CAP — confirmed by hitting it directly that letting
+# GLYPH_CATEGORY_HARD_CAP. Confirmed by hitting it directly: letting
 # "Show more" render an entire 12,000+-glyph CJK Unified Ideographs category
 # in one shot exhausts Windows' per-process GDI bitmap handle budget and
 # crashes the process ("Fail to allocate bitmap"), since each tile is a real
 # Tk PhotoImage/Label, not a virtualized draw. The hard cap is a stopgap for
 # Phase 1; true virtualized/windowed rendering (only building widgets for
-# tiles actually scrolled into view) is the real fix and isn't in scope yet
-# — past the cap, search is the only way to reach a specific glyph.
+# tiles actually scrolled into view) is the real fix and isn't in scope yet.
+# Past the cap, search is the only way to reach a specific glyph.
 GLYPH_CATEGORY_EXPAND_STEP = 200
 
 GLYPH_CATEGORY_HARD_CAP = 1000
@@ -72,28 +79,35 @@ COMPOSE_PREVIEW_SIZE = (640, 200)
 
 LAYER_EFFECTS_PREVIEW_SIZE = (480, 300)
 
-# Taller than COMPOSE_PREVIEW_SIZE — ASCII art is typically closer to square
+# Taller than COMPOSE_PREVIEW_SIZE. ASCII art is typically closer to square
 # or portrait (many rows) rather than composed text's one-line-tall span.
 ASCII_PREVIEW_SIZE = (640, 420)
 
 SIDEBAR_WIDTH = 170
 
 TABS = ['forza_font_text', 'generator', 'advanced', 'direct', 'ascii_art', 'glyph_inspector',
-        'layer_effects', 'outputs', 'composer', 'settings', 'credits']
+        'layer_effects', 'outputs', 'composer', 'plates', 'settings', 'credits']
 
 TAB_LABELS = {
-    'forza_font_text': 'Forza Font Text',
-    'generator': 'Generator',
-    'advanced': 'Advanced Generator',
-    'direct': 'Direct Generator',
-    'ascii_art': 'ASCII Art',
-    'glyph_inspector': 'Glyph Inspector',
-    'layer_effects': 'Layer Effects',
-    'outputs': 'Output',
-    'composer': 'Composer',
-    'settings': 'Settings',
-    'credits': 'Credits',
+    'forza_font_text': t('state.tab.forza_font_text'),
+    'generator': t('state.tab.generator'),
+    'advanced': t('state.tab.advanced'),
+    'direct': t('state.tab.direct'),
+    'ascii_art': t('state.tab.ascii_art'),
+    'glyph_inspector': t('state.tab.glyph_inspector'),
+    'layer_effects': t('state.tab.layer_effects'),
+    'outputs': t('state.tab.outputs'),
+    'composer': t('state.tab.composer'),
+    'plates': t('state.tab.plates'),
+    'settings': t('state.tab.settings'),
+    'credits': t('state.tab.credits'),
 }
+
+# Plates tab preview canvas, following the size-constant convention every
+# other tab's preview already uses (PREVIEW_SIZE, LIVE_PREVIEW_SIZE, etc.
+# above). Wider than tall like COMPOSE_PREVIEW_SIZE: a plate is a wide,
+# short aspect ratio (~2:1 to ~5:1) far more often than square.
+PLATES_PREVIEW_SIZE = (640, 260)
 
 def direct_output_filename(font_path: Path, method: str, *, backend: str = 'cpu',
                            segments: int = 8, cell_size: int = 1) -> str:
@@ -114,17 +128,9 @@ def sidebar_tab_text(label: str) -> str:
     return '\n'.join(gui_theme.hud_label(word) for word in label.split())
 
 OUTPUT_MODE_LABELS = {
-    "modelbin": ("Custom Mesh (.modelbin)",
-                 "Experimental. The native files used for vinyls in Forza games. "
-                 "Requires either a catalog hijack or SQLite injection to integrate into the game. "
-                 "Cannot be opened in KFPS (it only reads its own JSON vinyl format, not .modelbin). "
-                 "The preview below in Outputs can confirm the file is structurally well-formed, but "
-                 "not that FH6 itself will render it — that still requires the live hijack test."),
-    "json": ("Shape Fitting (.json)",
-             "Analyzes each glyph and approximates it using Forza's full primitive-shape "
-             "library, with optional masks."),
-    "json_legacy": ("Pixel Tracing (.json)",
-                     "Rasterizes each glyph, then combines filled pixels into rectangular vinyl layers."),
+    "modelbin": (t("state.output_mode.modelbin.title"), t("state.output_mode.modelbin.description")),
+    "json": (t("state.output_mode.json.title"), t("state.output_mode.json.description")),
+    "json_legacy": (t("state.output_mode.json_legacy.title"), t("state.output_mode.json_legacy.description")),
 }
 
 def _read_fonts_key(root, key_path, base_dir):
@@ -147,7 +153,7 @@ def _read_fonts_key(root, key_path, base_dir):
             if not path.is_absolute():
                 path = base_dir / path
             if path.suffix.lower() in FONT_EXTENSIONS and path.exists():
-                # Registry names look like "Arial (TrueType)" — strip the tag.
+                # Registry names look like "Arial (TrueType)". Strip the tag.
                 display = re.sub(r'\s*\((?:TrueType|OpenType)\)\s*$', '', name)
                 yield display, path
     finally:

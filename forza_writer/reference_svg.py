@@ -19,7 +19,7 @@ from fontTools.ttLib import TTFont
 DEFAULT_CHARS_PER_ROW = 10
 DEFAULT_FONT_SIZE_PX = 192
 # Ratios derived from the real hand-made reference SVG (192px font, 240px
-# row pitch, ~106px left margin) — not exact font metrics, just enough to
+# row pitch, ~106px left margin), not exact font metrics, just enough to
 # keep the grid legible and unclipped; KFPS lets the reference image be
 # rescaled/repositioned after import regardless.
 _ROW_PITCH_RATIO = 1.25

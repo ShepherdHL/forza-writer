@@ -1,0 +1,41 @@
+{
+  "format": "forza_writer_plate_blank_v1",
+  "template_id": "gta-sa-passenger-fictional",
+  "decoration_signature": "108cf65b5e77ce0e",
+  "shapes": [
+    {
+      "type": 1048677,
+      "type_word": 101,
+      "data": [
+        0.0,
+        0.0,
+        2.372021,
+        1.18601,
+        0.0,
+        0.0,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "mask": false
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "bg",
+      "kind": "background",
+      "name_key": null,
+      "children": [],
+      "shape_indices": [
+        0
+      ],
+      "editable": false,
+      "deletable": true
+    }
+  ],
+  "warnings": []
+}

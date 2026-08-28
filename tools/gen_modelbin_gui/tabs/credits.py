@@ -2,13 +2,13 @@
 Forza Writer itself actually incorporates or drew on.
 
 Sourced from THIRD_PARTY_NOTICES.md and README.md's own "Attribution & prior
-art" section at the project root — the authoritative record of what this
+art" section at the project root: the authoritative record of what this
 project uses, not a copy of any other project's own credits page. Every
 entry here should trace back to one of those two files (or to code
 docstrings, e.g. forza_writer/manufacturer_colors.py) so this page can't
 drift from what's actually true of forza-writer's own codebase.
 
-Editorial conventions for CREDITS_SECTIONS — written as finished software
+Editorial conventions for CREDITS_SECTIONS: written as finished software
 attribution, not development narrative. Each entry states facts about the
 relationship between Forza Writer and the credited project; it does not
 describe how that relationship was discovered, discussed, or verified.
@@ -18,7 +18,7 @@ describe how that relationship was discovered, discussed, or verified.
   - "category" is a short Title Case label, optionally split on an em dash
     into a provenance term ("Directly Incorporated Code") and a specific
     subject ("Font Mapping and Text Layout").
-  - "description" is one declarative sentence, or a short list of them —
+  - "description" is one declarative sentence, or a short list of them,
     each answering only what the project is, what was used from it,
     whether it's bundled/incorporated/referenced-only, and any license or
     runtime distinction that matters. No narration of the research or
@@ -190,7 +190,7 @@ class CreditsTabMixin:
         """One credited project/source, always in the same order: name,
         a "by <author> · <license>" byline, a short category label,
         declarative description sentences, an optional monospace list of
-        the specific files/symbols involved, then reference links — so
+        the specific files/symbols involved, then reference links, so
         every entry on the page reads as one consistent, factual record
         rather than some looking like prose and others like raw notes."""
         d = gui_theme.density()
@@ -232,7 +232,7 @@ class CreditsTabMixin:
         return row
 
     def _build_credit_link(self, parent, text: str, url: str):
-        """One colored, underlined reference link — brightens on hover via
+        """One colored, underlined reference link that brightens on hover via
         ttk's 'active' pointer state, which plain ttk::label doesn't track
         on its own the way Button/Checkbutton do, so <Enter>/<Leave> set
         it by hand."""

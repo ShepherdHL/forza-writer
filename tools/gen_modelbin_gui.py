@@ -1,4 +1,4 @@
-"""Entry-point shim — the actual GUI now lives in tools/gen_modelbin_gui/
+"""Entry-point shim: the actual GUI lives in tools/gen_modelbin_gui/
 (see that package's app.py for the composed GeneratorGUI class).
 
 Kept as a thin top-level script, rather than folding this into the package,

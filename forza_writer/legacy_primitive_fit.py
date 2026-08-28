@@ -2,7 +2,7 @@
 
 A faithful port of the original text-vinyl generator (written by this
 project's author, using Cursor, and later contributed into bvzray's
-`forza-painter-fh6` where it shipped in v1.9.5) — kept here as a known,
+`forza-painter-fh6` where it shipped in v1.9.5), kept here as a known,
 independently-produced reference to compare against `primitive_fit.py`'s
 newer vector-outline fitter. Ported functions:
 
@@ -10,18 +10,18 @@ newer vector-outline fitter. Ported functions:
   `_render_horizontal_ltr_mask`
 - `_decompose_mask_to_rectangles` <- the same file's
   `decompose_mask_to_rectangles`, ported verbatim (the actual algorithm
-  worth preserving faithfully — everything else here is new glue).
+  worth preserving faithfully; everything else here is new glue).
 
 Where the two pipelines fundamentally differ: this one rasterizes the
 glyph with PIL (`ImageFont`/`ImageDraw`) and greedily merges filled grid
-cells into maximal rectangles — no font-outline extraction, no curve
+cells into maximal rectangles, with no font-outline extraction, no curve
 fitting, always Squares. That's a genuinely different algorithm from
 `primitive_fit.py`'s vector silhouette search, which is the point: a
 second, independently-tuned reference implementation, not a replacement.
 
 Only the plain default "custom" preset behavior from the original tool is
 ported (`cell_size=1`, `font_size=120`, no masks, no CJK/vertical-writing
-support) — that's the actual shipped Latin-text default, not a stripped-down
+support), that's the actual shipped Latin-text default, not a stripped-down
 approximation of it. See `THIRD_PARTY_NOTICES.md` for the full attribution.
 """
 
@@ -129,7 +129,7 @@ def fit_glyph_legacy(char: str, font_path: Path, font_size: int = DEFAULT_FONT_S
     """Rasterize `char` and decompose it into Square shapes, in the same
     real-unit convention `primitive_fit.placements_to_shapes` targets
     (glyph centred at the origin, longest ink-bbox dimension scaled to
-    `glyph_size`) — so the result composes correctly through
+    `glyph_size`), so the result composes correctly through
     `forza_writer/text_compose.py` exactly like every other strategy's
     output, with no special-casing needed there.
 

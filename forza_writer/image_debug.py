@@ -5,7 +5,7 @@ are invisible in its output: which pixels counted as ink (polarity and
 threshold), how those pixels were merged into rectangles (cell size), and
 where the result disagrees with the source. A saved copy of the intermediate
 mask would show the first and none of the rest, so these renderers exist to
-show the actual reasoning — most importantly the *disagreement*, which is what
+show the actual reasoning: most importantly the *disagreement*, which is what
 someone asking "why is that vinyl there?" is really looking at.
 
 Everything here is opt-in and purely diagnostic: nothing in this module feeds
@@ -31,9 +31,9 @@ DEBUG_LABELS: dict[str, str] = {
 
 # Palette chosen so the three heatmap states stay distinguishable in
 # greyscale as well as colour, since these get shared as screenshots.
-_INK_MATCHED = (86, 186, 116)     # covered ink — the trace got this right
+_INK_MATCHED = (86, 186, 116)     # covered ink: the trace got this right
 _INK_MISSED = (226, 78, 66)       # ink the trace failed to cover
-_INK_OVERSHOOT = (94, 132, 226)   # covered background — spill outside the ink
+_INK_OVERSHOOT = (94, 132, 226)   # covered background: spill outside the ink
 _BACKDROP = (26, 27, 30)
 _TRACE_OUTLINE = (232, 138, 63)
 _LABEL_FG = (238, 240, 244)
@@ -133,7 +133,7 @@ def render_heatmap(debug: ImageTraceDebug) -> Image.Image:
 
     The most diagnostic of the four: missed ink means the threshold or cell
     size dropped detail, while overshoot means rectangles are spilling past
-    the lettering — two very different fixes that look identical in the output
+    the lettering: two very different fixes that look identical in the output
     alone.
     """
     covered = debug.coverage()
@@ -208,7 +208,7 @@ _RENDERERS = {
 
 def render_debug(debug: ImageTraceDebug, mode: str = "combined") -> Image.Image:
     """Render one debug view. Unknown modes fall back to the combined sheet
-    rather than raising — a diagnostic aid must never be the thing that breaks
+    rather than raising: a diagnostic aid must never be the thing that breaks
     a generation the user actually wanted."""
     return _RENDERERS.get(mode, render_combined)(debug)
 
@@ -219,7 +219,7 @@ def write_debug_outputs(output_json_path, debug: ImageTraceDebug, *,
     """Write the opt-in companion files beside an Image-to-Text result.
 
     Named from the output's own stem so a source copy, a debug image and a
-    diagnostics file are all obviously the same run — `SIGN.json` becomes
+    diagnostics file are all obviously the same run: `SIGN.json` becomes
     `SIGN.source.png`, `SIGN.debug.png`, `SIGN.diagnostics.json`.
 
     Returns the paths actually written. Nothing is written unless asked for,

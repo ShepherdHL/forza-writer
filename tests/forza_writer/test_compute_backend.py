@@ -26,7 +26,7 @@ def test_auto_falls_back_to_cpu_when_cuda_is_unavailable(monkeypatch):
 
 def test_auto_never_selects_directml_even_when_available(monkeypatch):
     # DirectML is experimental and must be chosen explicitly (the GUI warns
-    # the user every time it's used) — 'auto' should never surface it, even
+    # the user every time it's used); 'auto' should never surface it, even
     # if a DirectML device happens to be present and CUDA is not.
     monkeypatch.setattr(
         compute_backend, "cuda_info",

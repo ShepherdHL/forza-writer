@@ -1,21 +1,16 @@
-"""Persistent per-glyph overrides — Configurator's backing store. Keyed by
+"""Persistent per-glyph overrides: Configurator's backing store. Keyed by
 font path (a font can be reselected across sessions and its per-glyph
 choices should come back), sparse (only entries that depart from the
 implicit "auto" default are stored). Same `%LOCALAPPDATA%/forza-writer/`
 directory and defensive load pattern as `gui_settings.py`: a missing or
 corrupt file falls back to `{}` rather than blocking the GUI from starting.
 
-Each glyph's override is a single choice, not independent axes — a
+Each glyph's override is a single choice, not independent axes: a
 manually-assigned file bypasses auto-fit entirely, so a mask mode doesn't
 apply to it alongside a file the way "force"/"never" apply within auto-fit:
 
     {"<font path>": {"<char>": {"mode": "force"},
                       "<char2>": {"mode": "manual", "file": "C:/path/glyph.json"}}}
-
-Supersedes the earlier `mask_overrides.py` (mask-mode-only, no manual-file
-support) — this is a breaking format change from that module's
-`mask_overrides.json`, acceptable since it's local machine state, not
-shipped/exported data.
 """
 
 from __future__ import annotations
@@ -24,7 +19,7 @@ import json
 import os
 from pathlib import Path
 
-# "auto" is the implicit default and is never stored — only an explicit
+# "auto" is the implicit default and is never stored. Only an explicit
 # per-glyph departure from it is worth persisting.
 VALID_MODES = ("force", "never", "manual")
 
@@ -66,7 +61,7 @@ def load_overrides_for_font(font_path: str | Path) -> dict[str, dict]:
 def save_overrides_for_font(font_path: str | Path, overrides: dict[str, dict]) -> None:
     """Persist `overrides` for `font_path`, merging into the existing store
     so other fonts' saved overrides are left untouched. Entries with an
-    "auto" mode (or anything else invalid — see `_is_valid_entry`) are
+    "auto" mode (or anything else invalid, see `_is_valid_entry`) are
     dropped rather than stored, since "auto" is the implicit default. If
     `overrides` has nothing left to store after that filtering, the font's
     entry is removed entirely rather than left as an empty dict."""

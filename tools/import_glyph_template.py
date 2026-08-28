@@ -6,7 +6,7 @@ glyph-local coordinates, and write per-glyph JSON files plus a manifest.json
 in the same shape gen_fontpack.py's generated packs use.
 
 Every glyph's shapes must be a single Editor Group in the Fabric Editor
-(File > Group, or equivalent) before exporting — ungrouped/stray shapes have
+(File > Group, or equivalent) before exporting. Ungrouped/stray shapes have
 no reliable way to be attributed to a cell and are recorded as skipped, not
 guessed at.
 
@@ -46,7 +46,7 @@ def _group_shapes(shapes: list[dict]) -> tuple[dict[str, list[dict]], list[dict]
 
 def _group_cell(shapes: list[dict], template: GlyphTemplate) -> tuple[int, int]:
     """Snap a group's shapes to the nearest grid cell using the centroid of
-    each shape's anchor position (data[0], data[1]) — the inverse of
+    each shape's anchor position (data[0], data[1]). This is the inverse of
     `GlyphTemplate.cell_center_world`, which is what actually placed these
     shapes (gen_forza_font_baseline.py) or what a hand-drawn shape's
     position is naturally expressed in (KFPS's own Y-up world space)."""
@@ -97,7 +97,7 @@ def import_project(project: dict, template: GlyphTemplate, prefix: str, out_dir:
 
         # Normalize to glyph-local coordinates by subtracting the same
         # world-space cell center gen_forza_font_baseline.py placed a native
-        # glyph at — the center, not cell_offset()'s template-space corner,
+        # glyph at (the center, not cell_offset()'s template-space corner),
         # since that's the reference point placement actually uses.
         center_x, center_y = template.cell_center_world(row, col)
         normalized = []

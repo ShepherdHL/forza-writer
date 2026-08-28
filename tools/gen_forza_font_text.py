@@ -1,12 +1,11 @@
 """
 Render arbitrary text in a native Forza Font (1-11) and export it as a
-KFPS-importable project. This wires forza_writer/layout.py's existing
-layout_forza_text into an actual runnable tool. That function already did
-the real work. It was never exposed to a user before this.
+KFPS-importable project, using forza_writer/layout.py's layout_forza_text
+to do the actual glyph layout.
 
-Output is real FH6 vinyl shapes. Not a template. Not a placeholder grid.
-Drop the result straight into KFPS and it renders as text, in that font,
-ready to move, recolor, or edit like any other layer.
+Output is real FH6 vinyl shapes, not a template or placeholder grid. Drop
+the result straight into KFPS and it renders as text, in that font, ready
+to move, recolor, or edit like any other layer.
 
 Usage:
     python tools/gen_forza_font_text.py --font 6 --text "TEST DRIVE" --out my_text.fabric-project.json

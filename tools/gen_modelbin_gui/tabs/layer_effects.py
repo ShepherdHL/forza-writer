@@ -19,7 +19,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
-from PIL import Image, ImageTk
+from PIL import ImageTk
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 import file_preview  # noqa: E402
@@ -27,19 +27,18 @@ import gui_theme  # noqa: E402
 import layer_effect_presets_store  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
-from forza_writer import forza_colors, layer_presets  # noqa: E402
+from forza_writer import layer_presets  # noqa: E402
 from forza_writer import layered_effects  # noqa: E402
 from forza_writer.layered_effects import EffectLayer, LayerOperation, LayerStack, new_layer_id  # noqa: E402
 from forza_writer.layered_effects_text import compose_layered_text  # noqa: E402
 from forza_writer.primitive_fit import fit_glyph  # noqa: E402
 from forza_writer.text_compose import compose_shape_map  # noqa: E402
 
-from ..state import LAYER_EFFECTS_PREVIEW_SIZE, _rgba_to_hex  # noqa: E402
+from ..color_picker_widget import ColorPickerWidget  # noqa: E402
+from ..state import LAYER_EFFECTS_PREVIEW_SIZE  # noqa: E402
 
 
 class LayerEffectsTabMixin:
-    _LE_SB_SIZE = 90
-    _LE_HUE_WIDTH = 14
     _LE_WIDE_THRESHOLD = 820
 
     def _build_layer_effects_page(self):
@@ -65,7 +64,6 @@ class LayerEffectsTabMixin:
         self._layer_effects_groups_by_char: dict = {}
         self._layer_effects_layer_status: dict = {}
         self._layer_effects_generate_generation = 0
-        self._layer_effects_picker_hue = 0.0
         self.layer_effects_row_vars: dict[str, tk.BooleanVar] = {}
         self.layer_effects_row_labels: dict[str, tk.Label] = {}
         self._layer_effects_source_choices: dict[str, str] = {}
@@ -126,7 +124,7 @@ class LayerEffectsTabMixin:
         ttk.Button(saved_row, text='Delete', command=self._delete_layer_effects_saved_preset).pack(
             side='left', padx=2)
 
-        # -- body: layer list + properties (left) / preview (right) -------
+        # -- body: layer list + properties (left) / color + preview (right) --
         body = ttk.Frame(content)
         body.pack(fill='both', expand=True, padx=8, pady=(2, 8))
         left_col = ttk.Frame(body)
@@ -151,7 +149,10 @@ class LayerEffectsTabMixin:
                    command=lambda: self._move_layer_effects_layer(1)).pack(side='left', padx=2)
 
         self._build_layer_effects_properties(left_col)
-        self._build_layer_effects_color_picker(left_col)
+
+        # Right-hand column, alongside Preview -- the same right-hand slot
+        # every page with a Color control uses.
+        self._build_layer_effects_color_picker(right_col)
 
         self.layer_effects_preview_canvas = tk.Canvas(
             right_col, width=LAYER_EFFECTS_PREVIEW_SIZE[0], height=LAYER_EFFECTS_PREVIEW_SIZE[1],
@@ -588,113 +589,21 @@ class LayerEffectsTabMixin:
         self.layer_effects_boolean_operand_var.set(
             next((lab for lab, lid in choices.items() if lid == layer.boolean_operand), ''))
 
-        self.layer_effects_hex_var.set(_rgba_to_hex(layer.color))
-        self.layer_effects_alpha_var.set(str(layer.color[3]))
-        self.layer_effects_color_swatch.configure(background=_rgba_to_hex(layer.color))
-        r, g, b, _a = layer.color
-        _hue, saturation, brightness = forza_colors.rgb_to_forza_hsb(r, g, b)
-        hue = self._layer_effects_picker_hue if saturation <= 0.01 else _hue
-        self._redraw_layer_effects_color_picker(hue, saturation, brightness)
+        self.layer_effects_color_picker.sync()
 
-    # -- color picker (reuses forza_writer.forza_colors' shared array math,
-    #    the same math tools/gen_modelbin_gui/tabs/color_picker.py's own
-    #    square/strip were pulled out of) --------------------------------
+    # -- color picker (tools/gen_modelbin_gui/color_picker_widget.py, the
+    #    same picker every other tab uses) --------------------------------
 
     def _build_layer_effects_color_picker(self, parent):
         panel = ttk.LabelFrame(parent, text=gui_theme.hud_label('Layer Color'))
         panel.pack(fill='x', pady=(8, 0))
-
-        row = ttk.Frame(panel)
-        row.pack(fill='x', padx=6, pady=(6, 4))
-        self.layer_effects_sb_canvas = tk.Canvas(
-            row, width=self._LE_SB_SIZE, height=self._LE_SB_SIZE, highlightthickness=1, cursor='crosshair')
-        self.layer_effects_sb_canvas.pack(side='left')
-        self.layer_effects_sb_canvas.bind('<Button-1>', self._on_layer_effects_sb_pick)
-        self.layer_effects_sb_canvas.bind('<B1-Motion>', self._on_layer_effects_sb_pick)
-
-        self.layer_effects_hue_canvas = tk.Canvas(
-            row, width=self._LE_HUE_WIDTH, height=self._LE_SB_SIZE, highlightthickness=1,
-            cursor='sb_v_double_arrow')
-        self.layer_effects_hue_canvas.pack(side='left', padx=(6, 0))
-        self.layer_effects_hue_canvas.bind('<Button-1>', self._on_layer_effects_hue_pick)
-        self.layer_effects_hue_canvas.bind('<B1-Motion>', self._on_layer_effects_hue_pick)
-        strip = forza_colors.hue_strip_array(self._LE_SB_SIZE, self._LE_HUE_WIDTH)
-        self._layer_effects_hue_photo = ImageTk.PhotoImage(Image.fromarray(strip, 'RGB'))
-        self.layer_effects_hue_canvas.create_image(0, 0, anchor='nw', image=self._layer_effects_hue_photo)
-
-        self.layer_effects_color_swatch = tk.Label(
-            row, width=6, height=3, relief='solid', borderwidth=1, background='#ffffff')
-        self.layer_effects_color_swatch.pack(side='left', padx=(10, 0))
-
-        fields = ttk.Frame(panel)
-        fields.pack(fill='x', padx=6, pady=(0, 6))
-        self.layer_effects_hex_var = tk.StringVar()
-        ttk.Label(fields, text='Hex').grid(row=0, column=0, sticky='w')
-        hex_entry = ttk.Entry(fields, textvariable=self.layer_effects_hex_var, width=9)
-        hex_entry.grid(row=0, column=1, sticky='w', padx=(4, 0))
-        hex_entry.bind('<Return>', self._commit_layer_effects_hex)
-        hex_entry.bind('<FocusOut>', self._commit_layer_effects_hex)
-        self.layer_effects_alpha_var = tk.StringVar(value='255')
-        ttk.Label(fields, text='Alpha').grid(row=0, column=2, sticky='w', padx=(8, 0))
-        alpha_entry = ttk.Entry(fields, textvariable=self.layer_effects_alpha_var, width=4)
-        alpha_entry.grid(row=0, column=3, sticky='w', padx=(4, 0))
-        alpha_entry.bind('<Return>', self._commit_layer_effects_hex)
-        alpha_entry.bind('<FocusOut>', self._commit_layer_effects_hex)
-
-    def _redraw_layer_effects_color_picker(self, hue: float, saturation: float, brightness: float):
-        self._layer_effects_picker_hue = hue
-        square = forza_colors.sb_square_array(hue, self._LE_SB_SIZE)
-        self._layer_effects_sb_photo = ImageTk.PhotoImage(Image.fromarray(square, 'RGB'))
-        self.layer_effects_sb_canvas.delete('all')
-        self.layer_effects_sb_canvas.create_image(0, 0, anchor='nw', image=self._layer_effects_sb_photo)
-        cx = saturation * self._LE_SB_SIZE
-        cy = (1.0 - brightness) * self._LE_SB_SIZE
-        radius = 4
-        self.layer_effects_sb_canvas.create_oval(
-            cx - radius, cy - radius, cx + radius, cy + radius, outline='#ffffff', width=2)
-        self.layer_effects_sb_canvas.create_oval(
-            cx - radius, cy - radius, cx + radius, cy + radius, outline='#000000', width=1)
-        self.layer_effects_hue_canvas.delete('marker')
-        hy = hue * self._LE_SB_SIZE
-        self.layer_effects_hue_canvas.create_line(
-            0, hy, self._LE_HUE_WIDTH, hy, fill='#ffffff', width=3, tags='marker')
-        self.layer_effects_hue_canvas.create_line(
-            0, hy, self._LE_HUE_WIDTH, hy, fill='#000000', width=1, tags='marker')
-
-    def _on_layer_effects_sb_pick(self, event):
-        layer = self._selected_layer_effects_layer()
-        if layer is None:
-            return
-        x = max(0, min(self._LE_SB_SIZE, event.x))
-        y = max(0, min(self._LE_SB_SIZE, event.y))
-        saturation = x / self._LE_SB_SIZE
-        brightness = 1.0 - y / self._LE_SB_SIZE
-        rgb = forza_colors.forza_hsb_to_rgb(self._layer_effects_picker_hue, saturation, brightness)
-        self._set_layer_effects_color((rgb.r, rgb.g, rgb.b, layer.color[3]))
-
-    def _on_layer_effects_hue_pick(self, event):
-        layer = self._selected_layer_effects_layer()
-        if layer is None:
-            return
-        y = max(0, min(self._LE_SB_SIZE, event.y))
-        hue = y / self._LE_SB_SIZE
-        self._layer_effects_picker_hue = hue
-        _hue, saturation, brightness = forza_colors.rgb_to_forza_hsb(*layer.color[:3])
-        rgb = forza_colors.forza_hsb_to_rgb(hue, saturation, brightness)
-        self._set_layer_effects_color((rgb.r, rgb.g, rgb.b, layer.color[3]))
-
-    def _commit_layer_effects_hex(self, _e=None):
-        layer = self._selected_layer_effects_layer()
-        if layer is None:
-            return
-        rgb = forza_colors.hex_to_rgb(self.layer_effects_hex_var.get())
-        if rgb is None:
-            return
-        try:
-            alpha = max(0, min(255, int(self.layer_effects_alpha_var.get())))
-        except (TypeError, ValueError):
-            alpha = 255
-        self._set_layer_effects_color((rgb.r, rgb.g, rgb.b, alpha))
+        self.layer_effects_color_picker = ColorPickerWidget(
+            panel,
+            get_color=lambda: getattr(self._selected_layer_effects_layer(), 'color', None),
+            on_change=self._set_layer_effects_color,
+            title='',
+        )
+        self.layer_effects_color_picker.pack(fill='x', padx=6, pady=6)
 
     def _set_layer_effects_color(self, rgba: tuple):
         layer = self._selected_layer_effects_layer()

@@ -1,0 +1,86 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "medge-city-passenger-fictional",
+  "display_name_key": "plates.template.medge_city_passenger_fictional",
+  "country": "MEDGE",
+  "jurisdiction": null,
+  "era": "fictional",
+  "plate_type": "passenger",
+  "width_mm": 520.0,
+  "height_mm": 110.0,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Reference for this template's layout and text came from screenshots the Forza Writer user supplied directly (in-game/in-editor captures), not from any file, image, or asset extracted or downloaded from the game itself or an official tool. Mirror's Edge (2008) doesn't give its city a confirmed on-screen name in the supplied reference, so `jurisdiction` is left unset here rather than guessing one. Sized 520x110mm (the real EU standard plate size, not this file's usual US-shaped PLATE_W/PLATE_H) since the developer (DICE, Stockholm) and the plates' own European/Nordic proportions in the reference screenshots both point to a European size reference being the closer fit, not an American one -- flagged as an explicit judgment call, not a confirmed in-game measurement. The passenger-car plate shows a green band down the left edge and a barcode filling nearly the whole remaining plate -- no separate readable text is visible at the supplied screenshot's resolution, so this template has no text field beyond the barcode itself. A third, police-vehicle plate variant exists in the game but the user hasn't been able to get a clear look at it yet (no screenshot supplied) -- not modeled here; add it once real reference exists rather than inventing one. The barcode is approximated as a run of '|' characters through the ordinary metrics-based layout pipeline (see glyph_resolve.py's module docstring), same as every other barcode-style template in this set.",
+    "contributors": [],
+    "reference_urls": [],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": null,
+  "fields": [
+    {
+      "field_id": "barcode",
+      "label_key": "plates.field.barcode",
+      "role": "decorative_text",
+      "x_mm": 26.0,
+      "y_mm": 8.0,
+      "width_mm": 488.0,
+      "height_mm": 94.0,
+      "alignment": "left",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.45,
+      "tracking": 2.0,
+      "line_spacing": 1.0,
+      "default_text": "||||||||||||||||",
+      "color": [
+        20,
+        20,
+        20,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [
+    {
+      "decoration_id": "left_band",
+      "kind": "jurisdiction_mark",
+      "x_mm": 0.0,
+      "y_mm": 0.0,
+      "width_mm": 18.0,
+      "height_mm": 110.0,
+      "color": [
+        45,
+        145,
+        70,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    }
+  ],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

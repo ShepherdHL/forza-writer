@@ -40,7 +40,7 @@ def test_rescan_with_a_nonexistent_font_path_shows_not_found(gui, tmp_path, monk
 @requires_font
 def test_rescan_populates_the_fonts_whole_charset(gui, tmp_path, monkeypatch):
     # Unlike Generator's checkboxes, Configurator shows every glyph the
-    # font has — it's for reviewing/overriding, not restricting what
+    # font has: it's for reviewing/overriding, not restricting what
     # generates (that stays Generator's job).
     monkeypatch.setattr('glyph_overrides.OVERRIDES_PATH', tmp_path / 'glyph_overrides.json')
     monkeypatch.setattr('glyph_overrides.OVERRIDES_DIR', tmp_path)
@@ -254,10 +254,10 @@ def test_configurator_pack_survives_kfps_export_without_a_font(tmp_path, monkeyp
 
 @requires_font
 def test_large_glyph_set_is_not_inserted_into_the_tree_in_one_synchronous_pass(gui, tmp_path, monkeypatch):
-    # The freeze this replaced: a font with thousands of glyphs (a CJK font,
-    # or here a synthetic stand-in so the test doesn't depend on an actual
-    # large font being installed) used to insert every row in one
-    # uninterrupted loop on the GUI thread. Immediately after kicking off the
+    # A font with thousands of glyphs (a CJK font, or here a synthetic
+    # stand-in so the test doesn't depend on an actual large font being
+    # installed) must not insert every row in one uninterrupted loop on the
+    # GUI thread, which would freeze it. Immediately after kicking off the
     # rescan -- before pumping the event loop at all -- only the first chunk
     # should exist.
     monkeypatch.setattr('glyph_overrides.OVERRIDES_PATH', tmp_path / 'glyph_overrides.json')
@@ -293,8 +293,8 @@ def test_large_glyph_set_eventually_finishes_populating(gui, tmp_path, monkeypat
 def test_a_second_rescan_started_mid_chunk_supersedes_the_first(gui, tmp_path, monkeypatch):
     # A user who reopens the workspace on a different font before the first
     # large font finishes inserting must see only the second font's glyphs,
-    # not a mix of both -- the same generation-check pattern the background
-    # fit-scan already relied on, now guarding row insertion too.
+    # not a mix of both. Row insertion guards against this with the same
+    # generation-check pattern the background fit-scan uses.
     monkeypatch.setattr('glyph_overrides.OVERRIDES_PATH', tmp_path / 'glyph_overrides.json')
     monkeypatch.setattr('glyph_overrides.OVERRIDES_DIR', tmp_path)
     _configure_configurator_font(gui)

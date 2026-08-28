@@ -37,14 +37,14 @@ def _in_script(char: str, script: str) -> bool:
 
 
 def _letters(text: str) -> list[str]:
-    """Just the letter-ish characters — spaces, digits and punctuation are
+    """Just the letter-ish characters: spaces, digits and punctuation are
     incidental to every sample and say nothing about its script."""
     return [c for c in text if unicodedata.category(c).startswith(("L", "M"))]
 
 
 def _all_option_pairs():
     """Every (script, label, text) triple across every script's every
-    sample option — the unit tests below run against, since PANGRAMS now
+    sample option, for the unit tests below to run against, since PANGRAMS
     holds a list of options per script rather than one string."""
     return [
         (script, label, text)
@@ -61,7 +61,7 @@ def test_every_pangram_key_is_a_real_script():
 
 def test_pangram_scripts_are_listed_in_canonical_script_order():
     # The GUI iterates PANGRAM_SCRIPTS so its buttons match the script tabs;
-    # dict order would drift from that the moment an entry is added.
+    # dict order would drift from that as soon as an entry is added.
     assert PANGRAM_SCRIPTS == [s for s in SCRIPTS if s in PANGRAMS]
 
 
@@ -111,7 +111,7 @@ def test_sample_text_is_written_in_its_own_script(script, label, text):
 @pytest.mark.parametrize("script,label,text", _all_option_pairs())
 def test_sample_text_is_long_enough_to_reveal_missing_glyphs(script, label, text):
     # Not every option needs to be an exhaustive pangram (see the Hebrew
-    # coverage tests below for that distinction) — but even a "does this
+    # coverage tests below for that distinction), but even a "does this
     # look right" preview needs more than a handful of characters to be
     # useful for spotting a font that's missing glyphs.
     assert len(set(_letters(text))) >= 10, f"{script}/{label}"
@@ -131,8 +131,9 @@ def test_japanese_sample_is_the_iroha_covering_each_base_kana_once():
 
 
 def test_both_chinese_variants_reuse_the_existing_structural_test_set():
-    # Chinese has no pangram — no small closed repertoire to exhaust — so the
-    # purpose-built structural set stands in rather than inventing one.
+    # Chinese has no pangram, since there is no small closed repertoire to
+    # exhaust, so the purpose-built structural set stands in rather than
+    # inventing one.
     assert pangram_for("Simplified Chinese") == CHINESE_STRUCTURAL_TEST
     assert pangram_for("Traditional Chinese") == CHINESE_STRUCTURAL_TEST
 
@@ -142,7 +143,7 @@ def test_both_chinese_variants_reuse_the_existing_structural_test_set():
 def test_korean_sample_uses_composed_syllables_the_jamo_alphabet_cannot_build():
     # Documents a real limitation rather than hiding it: ALPHABETS["Korean"]
     # offers individual Jamo because composing them into syllable blocks needs
-    # text shaping this tool doesn't do — but natural Korean text, including
+    # text shaping this tool doesn't do, but natural Korean text, including
     # this sample, is written in composed syllables. Generating from this
     # sample therefore needs a font whose cmap covers the syllables directly.
     syllables = {c for c in pangram_for("Korean") if 0xAC00 <= ord(c) <= 0xD7A3}
@@ -152,7 +153,7 @@ def test_korean_sample_uses_composed_syllables_the_jamo_alphabet_cannot_build():
 
 def test_scripts_with_a_curated_alphabet_still_have_one():
     # The samples are a rendering check, not a replacement for the generation
-    # alphabets — both must continue to exist independently.
+    # alphabets: both must continue to exist independently.
     for script in ("Cyrillic", "Greek", "Japanese", "Korean", "Thai", "Arabic", "Hebrew"):
         assert script in ALPHABETS
         assert script in PANGRAMS

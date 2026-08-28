@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "tools"))
+import gui_settings  # noqa: E402
 import gui_theme  # noqa: E402
 from gui_theme import (  # noqa: E402
     INDENT_PAD,
@@ -121,6 +122,49 @@ def test_accent_is_reserved_and_distinct_from_every_other_role():
     # if accent doesn't quietly collide with an unrelated semantic color.
     other_roles = {"warn", "danger", "success", "secondary_accent", "hint", "muted_fg"}
     assert PALETTE["accent"] not in {PALETTE[role] for role in other_roles}
+
+
+# --- Eurocorp ---------------------------------------------------------
+
+
+def test_eurocorp_is_registered_and_matches_the_shared_contract():
+    assert "eurocorp" in PALETTES
+    assert set(PALETTES["eurocorp"]) == EXPECTED_KEYS
+
+
+def test_eurocorp_select_fg_is_dark_on_its_solid_accent_fill():
+    # Charcoal/Slate's select_fg is cream because accent there is only ever
+    # a thin highlight edge. Eurocorp's accent is a broad solid fill
+    # (SOLID_SELECTED_ROW), so select_fg must stay dark — reusing the
+    # cream value here would silently regress into low-contrast text on a
+    # solid orange row, exactly what this test guards against.
+    eurocorp = PALETTES["eurocorp"]
+    fg_sum = sum(int(eurocorp["select_fg"][i:i + 2], 16) for i in (1, 3, 5))
+    assert fg_sum < 200  # near-black, not Charcoal/Slate's cream (~700)
+
+
+def test_eurocorp_opts_into_solid_selected_row_and_the_others_dont():
+    assert gui_theme.SOLID_SELECTED_ROW["eurocorp"] is True
+    assert gui_theme.SOLID_SELECTED_ROW["charcoal"] is False
+    assert gui_theme.SOLID_SELECTED_ROW["slate"] is False
+
+
+def test_configure_eurocorp_round_trips_and_resets_cleanly():
+    try:
+        configure("eurocorp", "balanced")
+        assert PALETTE == PALETTES["eurocorp"]
+        assert gui_theme.CURRENT_PALETTE == "eurocorp"
+    finally:
+        configure()  # restore the default so later tests see charcoal
+    assert PALETTE == PALETTES["charcoal"]
+
+
+def test_gui_settings_valid_palettes_matches_the_registry():
+    # gui_settings.py deliberately doesn't import gui_theme (see its own
+    # VALID_PALETTES comment), so the two name lists can silently drift —
+    # this is the test that keeps them honest, the same discipline KFPS
+    # uses for its own Python/QML supporter-flag agreement test.
+    assert gui_settings.VALID_PALETTES == set(PALETTES)
 
 
 # --- HUD label tracking --------------------------------------------------

@@ -5,6 +5,7 @@ tk.Tk() interpreter instances back-to-back in one process is flaky on Windows
 (intermittent Tcl init errors); a lightweight Toplevel per test (see gui) is
 the stable pattern instead.
 """
+import gc
 import json
 import sys
 import time
@@ -26,14 +27,28 @@ requires_assets = pytest.mark.skipif(
 tk = pytest.importorskip("tkinter")
 from tkinter import ttk  # noqa: E402
 
-@pytest.fixture(scope="package")
+@pytest.fixture(scope="module")
 def tk_root():
     # Creating/destroying many separate tk.Tk() interpreter instances
     # back-to-back in one process is flaky on Windows (intermittent Tcl
-    # init errors) — one Tk() for this whole test package (it used to be
-    # one file, hence module scope; now it's split across 8 files, so
-    # package scope keeps it at one Tk() total instead of one per file),
-    # lightweight Toplevels per test below, is the stable pattern.
+    # init errors) -- one Tk() per test module, reused by a lightweight
+    # Toplevel per test (see gui) below, is the stable pattern.
+    #
+    # This was briefly package-scoped (one Tk() for the whole 13-file
+    # package) as a simplification, but each GeneratorGUI instance the
+    # `gui` fixture below builds leaks real Windows GDI handles that
+    # neither window.destroy() nor gc.collect() can reclaim -- confirmed
+    # down to a specific, fixed number of handles per instance, from a
+    # source that resisted a fairly deep investigation (some of it was
+    # bind_all()-registered Tcl commands, now fixed in shell.py itself;
+    # the rest wasn't pinned down). Package-scoped, a full run's ~230
+    # tests sharing one interpreter accumulated enough to exceed Windows'
+    # per-process GDI object quota (~10k) and hard-crash the interpreter
+    # partway through. Back to module scope, each file's tests share only
+    # that file's interpreter, capping the worst case (the largest file
+    # has 55 tests) far below the quota. If this file grows enough to
+    # revisit that math, the real fix is finding what's still holding
+    # each GeneratorGUI instance alive, not further scope surgery.
     root = tk.Tk()
     root.withdraw()
     yield root
@@ -52,9 +67,35 @@ def gui(tk_root):
     # those geometry-dependent assertions.
     window.attributes('-alpha', 0.0)
     instance = GeneratorGUI(window)
+    # A fresh (or real, since settings.json isn't test-isolated) install
+    # now defaults to opening maximized -- see gui_settings.DEFAULT_SETTINGS
+    # ("window_maximized"). A maximized Tk window on Windows silently
+    # ignores a later plain .geometry() call (confirmed directly: state
+    # stays 'zoomed' and the size doesn't change), which every test that
+    # sets an explicit window size relies on. Reset to 'normal' before
+    # tests get the instance so window state is deterministic regardless
+    # of whatever the real settings.json on this machine happens to say.
+    try:
+        window.state('normal')
+    except tk.TclError:
+        pass
     tk_root.update()
     yield instance
     window.destroy()
+    # Tk PhotoImage objects hold their native image handle via a reference
+    # cycle (widget <-> bound-method callback), so CPython's refcounting
+    # alone won't free it the moment window.destroy() runs -- it waits for
+    # the cyclic collector, and even then `image delete` only *schedules*
+    # the native handle's release as a Tcl idle task rather than freeing it
+    # synchronously. Across a full test run -- 7 tabs each embedding their
+    # own ColorPickerWidget, times ~800 tests -- that's enough queued,
+    # never-flushed GDI handles to exceed Windows' per-process quota and
+    # hard-crash the interpreter (not a catchable Python exception) well
+    # before the suite finishes. Forcing a collection and then pumping the
+    # idle loop reclaims each test's handles immediately instead of letting
+    # them pile up.
+    gc.collect()
+    tk_root.update_idletasks()
 
 def _load_all_fonts_and_wait(gui, timeout=15):
     gui._load_all_fonts()

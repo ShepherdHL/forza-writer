@@ -69,13 +69,13 @@ class LayerOperation(str, Enum):
     """The layer's primary behavior, for UI labeling/defaults and to select
     built-in preset shapes. Geometry resolution (see `apply_operation`)
     always applies the full composable property set (amount, scale,
-    rotation, offset) regardless of `operation` -- e.g. the spec's own
-    "Highlight" custom-mode example is an INSET layer that *also* carries an
-    offset_x/offset_y, matching real vinyl-effect construction where a small
-    nudge often accompanies an inset. `operation` mainly distinguishes
-    INSET's sign convention (amount is always entered as a positive
-    magnitude, per the spec's "Inset 8" / "Outset 24" language) and the
-    BOOLEAN_* variants, which require a second layer as an operand."""
+    rotation, offset) regardless of `operation`: a "Highlight" custom effect,
+    for example, is an INSET layer that *also* carries an offset_x/offset_y,
+    matching real vinyl-effect construction where a small nudge often
+    accompanies an inset. `operation` mainly distinguishes INSET's sign
+    convention (amount is always entered as a positive magnitude, e.g.
+    "Inset 8" / "Outset 24") and the BOOLEAN_* variants, which require a
+    second layer as an operand."""
 
     ORIGINAL = "original"
     INSET = "inset"
@@ -103,10 +103,11 @@ def new_layer_id() -> str:
 class EffectLayer:
     """One entry in a `LayerStack`. `source` is either the literal string
     `"original"` or another layer's `id` that appears *earlier* in the same
-    stack -- forward-only references, so a stack always resolves
+    stack: forward-only references, so a stack always resolves
     deterministically in list order with no possibility of a dependency
-    cycle (the simpler of the two architectures the spec allows; see its
-    "layer dependency model" section)."""
+    cycle. This is the simpler of two possible dependency models (the
+    alternative being arbitrary references with cycle detection), chosen
+    to keep resolution order trivial to reason about."""
 
     id: str
     name: str
@@ -408,10 +409,10 @@ def generate_layered_glyph(
     non-collapsed layer's derived contours through the existing
     `primitive_fit.fit_placements` -> `placements_to_shapes` pipeline --
     the same pipeline a plain, non-layered glyph already uses. Returns one
-    `LayerShapeGroup` per layer, in stack order (back-to-front, matching the
-    spec's layer-ordering requirement), including disabled/collapsed layers
-    (with an empty `shapes` list) so the GUI's layer list can render every
-    row regardless of status."""
+    `LayerShapeGroup` per layer, in stack order (back-to-front, the order
+    layers must render in for correct compositing), including
+    disabled/collapsed layers (with an empty `shapes` list) so the GUI's
+    layer list can render every row regardless of status."""
     policy = policy or DEFAULT_POLICY
     results = resolve_layer_stack(contours_norm, stack)
     groups: list[LayerShapeGroup] = []
@@ -452,9 +453,9 @@ def group_shapes_by_layer(shapes: list[dict]) -> list[tuple[str, list[int]]]:
     are omitted -- callers get an empty/no-op groups list for those, so this
     is safe to call unconditionally. Matches
     `forza_writer.fabric_project.to_fabric_project`'s existing generic
-    `groups: list[tuple[name, [indices]]]` parameter directly -- an effect
-    layer becomes one KFPS editor group spanning every character's shapes
-    for that layer, per the spec's vinyl-layer-grouping example."""
+    `groups: list[tuple[name, [indices]]]` parameter directly, so each
+    effect layer becomes one KFPS editor group spanning every character's
+    shapes for that layer."""
     order: list[str] = []
     by_name: dict[str, list[int]] = {}
     for index, shape in enumerate(shapes):

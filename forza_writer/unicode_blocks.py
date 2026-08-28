@@ -2,7 +2,7 @@
 and a codepoint -> block-name lookup.
 
 Backed by fontTools.unicodedata's own bundled UCD block table (fontTools is
-already a hard dependency here) rather than a hand-maintained copy — 397
+already a hard dependency here) rather than a hand-maintained copy: 397
 real blocks, not a curated subset. For a narrower, curated block list built
 specifically for glyph-slot templates, see forza_writer.glyph_template's
 TEMPLATE_UNICODE_BLOCKS instead; that's a different, smaller thing from

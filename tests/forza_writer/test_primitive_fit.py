@@ -21,7 +21,7 @@ from forza_writer.primitive_shapes import PRIMITIVE_CATALOG
 from forza_writer.shapes import resource_to_shape_word, resource_to_typecode
 
 # No font ships in this repo (see README.md); font-dependent tests reuse this
-# session's verification font and skip gracefully where it isn't present.
+# repo's verification font and skip gracefully where it isn't present.
 AMARILLO_FONT = Path.home() / "Desktop" / "amarillo-usaf" / "amarurgt.ttf"
 requires_font = pytest.mark.skipif(not AMARILLO_FONT.exists(), reason="test font not present on this machine")
 
@@ -103,9 +103,9 @@ def test_rasterize_contours_true_nested_hole_is_subtracted():
 
 
 def test_rasterize_contours_nested_hole_is_order_independent():
-    # Same ring as above, but with the hole listed *first* — order must not
-    # matter, only geometric nesting (this is exactly what the old
-    # "contour 0 is always the outer boundary" rule got wrong).
+    # Same ring as above, but with the hole listed *first*: order must not
+    # matter, only geometric nesting. A rule like "contour 0 is always the
+    # outer boundary" would get this case wrong.
     outer = _square(0, 0, 90)
     hole = _square(0, 0, 30)
     mask_hole_first = rasterize_contours([hole, outer], DEFAULT_RESOLUTION)
@@ -116,11 +116,11 @@ def test_rasterize_contours_nested_hole_is_order_independent():
 def test_rasterize_contours_disjoint_components_both_fill():
     # Two separate, non-overlapping squares (e.g. a letter's main stroke
     # plus a disjoint decorative accent mark, as on real glyphs like
-    # Jokerman's 'K'/'E' — confirmed by hand: those glyphs have their
-    # decorative accent as contour 0, and the old "contour 0 = outer, rest
-    # = holes" rule subtracted the *real letterform* from the tiny accent,
-    # leaving almost nothing). Neither is nested in the other, so both must
-    # end up filled, regardless of which is listed first.
+    # Jokerman's 'K'/'E', where the decorative accent is contour 0). Filling
+    # by nesting rather than by "contour 0 = outer, rest = holes" matters
+    # here: the latter rule would subtract the real letterform from the tiny
+    # accent, leaving almost nothing. Neither square is nested in the other,
+    # so both must end up filled, regardless of which is listed first.
     left = _square(-60, 0, 20)
     right = _square(60, 0, 20)
     mask = rasterize_contours([left, right], DEFAULT_RESOLUTION)
@@ -156,7 +156,7 @@ def test_placements_to_shapes_centered_placement_is_near_origin():
 def test_placements_to_shapes_y_is_flipped_like_layout_py():
     # A placement in the top half of the canvas (small cy_px, "up" visually)
     # should produce a positive glyph-space y before negation, i.e. a
-    # negative final y in the exported data — matching layout.py's `-y`.
+    # negative final y in the exported data, matching layout.py's `-y`.
     top = PlacedShape(shape_id="circle", cx=DEFAULT_RESOLUTION / 2, cy=1.0,
                        scale_x=0.3, scale_y=0.3, rotation_deg=0.0)
     bottom = PlacedShape(shape_id="circle", cx=DEFAULT_RESOLUTION / 2, cy=DEFAULT_RESOLUTION - 1.0,
@@ -226,8 +226,9 @@ def _circle_contour(n=48, r=90.0):
 def test_rectilinear_glyph_routes_to_rect_decomposition():
     placements, strategy = fit_placements(_blocky_e_contour(), DEFAULT_RESOLUTION)
     assert strategy == "rect_decompose"
-    # The blocky 'E' is exactly four rectangles — the whole reason this path
-    # exists (the greedy search needed nine shapes and still missed).
+    # The blocky 'E' is exactly four rectangles. An unrouted primitive search
+    # would need far more shapes to approximate the same silhouette, which is
+    # why rect_decompose exists as a dedicated path for rectilinear glyphs.
     assert len(placements) == 4
     assert all(p.shape_id == "square" for p in placements)
 
@@ -256,12 +257,13 @@ def test_curved_glyph_does_not_explode_into_many_rectangles():
 
 def _comb_contour():
     """A 3-prong comb: direct-fills in 4 rectangles (1 bar + 3 prongs), but
-    only needs 1 background + 2 gap-cutouts as a stencil. Verified by hand:
-    this is the shape where stencil actually wins, unlike every real
-    Amarillo USAF glyph (there, stencil never beats or only ties direct —
-    see tests/test_rect_decompose.py's comb-mask test for the same result
-    at the mask level; this is the same shape as a real polygon contour, to
-    prove the routing works end-to-end from actual glyph geometry)."""
+    only needs 1 background + 2 gap-cutouts as a stencil. This is the shape
+    where stencil actually wins, unlike every real Amarillo USAF glyph
+    (there, stencil never beats or only ties direct: see
+    tests/test_rect_decompose.py's comb-mask test for the same result at
+    the mask level). Using it as a real polygon contour here, rather than
+    just a raster mask, proves the routing works end-to-end from actual
+    glyph geometry."""
     return [[(-50, -60), (50, -60), (50, 60), (30, 60), (30, -20), (10, -20),
              (10, 60), (-10, 60), (-10, -20), (-30, -20), (-30, 60), (-50, 60)]]
 
@@ -287,7 +289,7 @@ def test_stencil_cover_of_comb_glyph_is_exact():
 
 def test_mask_mode_never_forces_direct_even_when_stencil_would_win():
     # Same comb glyph as test_stencil_wins_end_to_end_on_a_comb_glyph,
-    # where stencil genuinely needs fewer shapes (3 vs 4) — mask_mode="never"
+    # where stencil genuinely needs fewer shapes (3 vs 4): mask_mode="never"
     # must still force the more-shapes direct fill.
     placements, strategy = fit_placements(_comb_contour(), DEFAULT_RESOLUTION, mask_mode="never")
     assert strategy == "rect_decompose"
@@ -302,7 +304,7 @@ def test_mask_mode_auto_is_the_default():
 
 def test_mask_mode_force_picks_stencil_even_on_a_tie():
     # 'I' ties at 1 shape either way (see test_direct_wins_ties_over_stencil,
-    # where "auto" prefers direct on the tie) — "force" must pick the
+    # where "auto" prefers direct on the tie); "force" must pick the
     # stencil cover regardless.
     i_contour = [[(-15, -100), (15, -100), (15, 100), (-15, 100)]]
     placements, strategy = fit_placements(i_contour, DEFAULT_RESOLUTION, mask_mode="force")
@@ -330,8 +332,8 @@ def test_curved_stencil_placements_returns_none_with_no_negative_space():
 
 
 def test_fit_placements_force_mode_on_curved_glyph_uses_stencil_search():
-    # Never possible before — a curved glyph forced into a mask cover via
-    # the negative-space search rather than an exact rectangle cover.
+    # A curved glyph forced into a mask cover via the negative-space search
+    # rather than an exact rectangle cover.
     placements, strategy = fit_placements(_circle_contour(), DEFAULT_RESOLUTION, mask_mode="force")
     assert strategy == "stencil_search"
     assert any(not p.is_mask for p in placements)
@@ -339,9 +341,8 @@ def test_fit_placements_force_mode_on_curved_glyph_uses_stencil_search():
 
 
 def test_fit_placements_auto_mode_never_runs_curved_stencil_search(monkeypatch):
-    # Performance guardrail: "auto" must stay exactly as cheap as it was
-    # before curved-glyph masking existed — it must never even attempt the
-    # extra negative-space search, only an explicit "force" may pay for it.
+    # Performance guardrail: "auto" must stay cheap. It must never attempt
+    # the extra negative-space search; only an explicit "force" may pay for it.
     def boom(*_args, **_kwargs):
         raise AssertionError("auto mode must not call _curved_stencil_placements")
 
@@ -360,7 +361,7 @@ def test_direct_wins_ties_over_stencil():
     # 'I' is the real-world tie case: direct decomposes to exactly 1 rect
     # (fills its own bbox completely), and stencil is background(1) +
     # cutouts(0, no negative space at all) = 1 too. Direct must be
-    # preferred — it needs no mask-layer semantics.
+    # preferred: it needs no mask-layer semantics.
     i_contour = [[(-15, -100), (15, -100), (15, 100), (-15, 100)]]
     placements, strategy = fit_placements(i_contour, DEFAULT_RESOLUTION)
     assert strategy == "rect_decompose"
@@ -390,9 +391,9 @@ def test_placements_to_shapes_non_mask_flag_unaffected():
 
 @requires_font
 def test_preview_glyph_mask_options_on_rectilinear_glyph_is_cheap_and_exact():
-    # Amarillo USAF's 'E' is rectilinear and stencil never wins there
-    # (measured elsewhere in this suite), but forcing it must still report
-    # an exact (IoU 1.0) cover, since the rectilinear path is exact either way.
+    # Amarillo USAF's 'E' is rectilinear and stencil never wins there (see
+    # elsewhere in this suite), but forcing it must still report an exact
+    # (IoU 1.0) cover, since the rectilinear path is exact either way.
     info = preview_glyph_mask_options("E", AMARILLO_FONT)
     assert info["rectilinear"] is True
     assert info["auto_strategy"] == "rect_decompose"
@@ -403,7 +404,7 @@ def test_preview_glyph_mask_options_on_rectilinear_glyph_is_cheap_and_exact():
 @requires_font
 def test_preview_glyph_mask_options_auto_never_reports_a_masked_curved_glyph():
     # A curved glyph's "auto" strategy is always primitive_search (no mask)
-    # by construction — the "force" fields describe a hypothetical, not what
+    # by construction; the "force" fields describe a hypothetical, not what
     # "auto" would actually produce.
     info = preview_glyph_mask_options("O", AMARILLO_FONT)
     if not info["rectilinear"]:

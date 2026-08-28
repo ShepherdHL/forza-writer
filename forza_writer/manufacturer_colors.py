@@ -1,10 +1,10 @@
 """Loads and searches the bundled GTPlanet Colour Creation Database
-(`assets/data/manufacturer_colors.json`, built by `tools/build_manufacturer_colors.py`
-— see THIRD_PARTY_NOTICES.md for the credit/usage note).
+(`assets/data/manufacturer_colors.json`, built by `tools/build_manufacturer_colors.py`;
+see THIRD_PARTY_NOTICES.md for the credit/usage note).
 
-Pure data-layer module, no Tk dependency — the Composer GUI's Manufacturer
-Colors pack is the only current caller, but this stays independently
-testable and reusable.
+Pure data-layer module with no Tk dependency, so it stays independently
+testable and reusable even though the Composer GUI's Manufacturer Colors
+pack is the only current caller.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ class ManufacturerColor:
     category: str  # "Vehicle" or "Wheel"
     hex1: str
     hex2: str  # "" when the entry has no second (two-tone) color
-    hue: str    # e.g. "0.53 L" — exact source slider-click notation
+    hue: str    # e.g. "0.53 L": exact source slider-click notation
     saturation: str
     brightness: str
 

@@ -94,6 +94,16 @@ class SettingsTabMixin:
                          'game asset — see README.md.')
         ref_frame.pack(fill='x', **gui_theme.SECTION_PAD)
 
+        self.settings_kfps_status_var = tk.StringVar()
+        kfps_frame, _kfps_entry, self.settings_kfps_status_lbl = self._build_path_setting(
+            content, label='KFPS Executable', variable=self.kfps_executable_var,
+            browse_command=self._pick_kfps_executable, status_var=self.settings_kfps_status_var,
+            description='Optional. Set this to enable the Plates tab\'s "Send to KFPS" button, which '
+                         'launches KFPS.exe with the generated plate\'s geometry .json file, same as '
+                         'dragging that file onto KFPS yourself. Leave blank to only ever write files, '
+                         'never launch anything.')
+        kfps_frame.pack(fill='x', **gui_theme.SECTION_PAD)
+
         # The four output-directory settings: full-width LabelFrames here
         # meant very long text fields and wasted space once the window was
         # maximized (see the gui-ux audit §1). A responsive 2-column grid
@@ -192,12 +202,16 @@ class SettingsTabMixin:
         palette_row = ttk.Frame(appearance_frame)
         palette_row.pack(fill='x', **gui_theme.ROW_PAD)
         ttk.Label(palette_row, text='Color palette:').pack(side='left')
-        for value, label in (('charcoal', 'Charcoal'), ('slate', 'Slate')):
-            ttk.Radiobutton(palette_row, text=label, value=value,
+        # Driven by the registry (gui_theme.PALETTE_ORDER/DISPLAY_NAMES)
+        # rather than a hardcoded list, so a new palette needs zero changes
+        # here — see docs/GUI_THEME_SYSTEM.md.
+        for value in gui_theme.PALETTE_ORDER:
+            ttk.Radiobutton(palette_row, text=gui_theme.DISPLAY_NAMES[value], value=value,
                             variable=self.palette_var,
                             command=self._preview_appearance).pack(side='left', padx=(10, 0))
-        ttk.Label(appearance_frame,
-                  text='Charcoal is the default softer neutral theme; Slate uses a cooler blue-grey cast.',
+        self.palette_description_var = tk.StringVar(
+            value=gui_theme.DESCRIPTIONS.get(self.palette_var.get(), ''))
+        ttk.Label(appearance_frame, textvariable=self.palette_description_var,
                   style='Hint.TLabel', wraplength=gui_theme.WRAP_MED,
                   justify='left').pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
 
@@ -209,7 +223,7 @@ class SettingsTabMixin:
                             variable=self.density_var,
                             command=self._preview_appearance).pack(side='left', padx=(10, 0))
         self.appearance_hint_var = tk.StringVar(
-            value='Changes preview immediately. Save settings to keep them for the next launch.')
+            value='Changes apply immediately and are saved automatically — no need to click Save settings.')
         ttk.Label(appearance_frame, textvariable=self.appearance_hint_var,
                   style='Hint.TLabel', wraplength=gui_theme.WRAP_MED,
                   justify='left').pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
@@ -322,7 +336,16 @@ class SettingsTabMixin:
     def _save_settings(self):
         policy = self._current_generation_policy()
         blob = policy_to_dict(policy)
-        gui_settings.save_settings({'reference_modelbin': self.ref_var.get(), 'output_dir': self.out_var.get(),
+        # update_settings, not save_settings: this form only ever names the
+        # fields it itself owns (paths, generation policy, image debug
+        # options) -- save_settings fills anything absent from what you pass
+        # it with the hardcoded default, so calling it directly here would
+        # silently reset window geometry, the color picker's saved/recent
+        # colors, and each tab's own last color back to defaults every time
+        # someone clicks this button.
+        gui_settings.update_settings({'reference_modelbin': self.ref_var.get(),
+                                    'kfps_executable': self.kfps_executable_var.get(),
+                                    'output_dir': self.out_var.get(),
                                     'modelbin_output_dir': self.modelbin_out_var.get(),
                                     'direct_output_dir': self.direct_out_var.get(),
                                     'image_output_dir': self.image_out_var.get(),
@@ -342,6 +365,11 @@ class SettingsTabMixin:
         chosen = filedialog.askdirectory(initialdir=self.direct_out_var.get())
         if chosen:
             self.direct_out_var.set(chosen)
+    def _pick_kfps_executable(self):
+        chosen = filedialog.askopenfilename(
+            filetypes=[('KFPS', 'KFPS.exe'), ('executable', '*.exe'), ('all files', '*.*')])
+        if chosen:
+            self.kfps_executable_var.set(chosen)
     def _pick_output_dir(self, variable):
         chosen = filedialog.askdirectory(initialdir=variable.get())
         if chosen:
@@ -448,5 +476,11 @@ class SettingsTabMixin:
         previous_spacing = gui_theme.spacing_snapshot()
         gui_theme.configure(self.palette_var.get(), self.density_var.get())
         gui_theme.reflow_spacing(self.root, previous_spacing)
+        self.palette_description_var.set(gui_theme.DESCRIPTIONS.get(self.palette_var.get(), ''))
         self._apply_theme()
         self.root.update_idletasks()
+        # Persisted immediately, the same way window geometry and the color
+        # picker's saved/recent colors already are -- picking a palette or
+        # density is itself the save action, not something that needs a
+        # separate trip to the "Save settings" button below.
+        gui_settings.update_settings({'palette': self.palette_var.get(), 'density': self.density_var.get()})

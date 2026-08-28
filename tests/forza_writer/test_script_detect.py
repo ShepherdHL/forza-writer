@@ -12,10 +12,10 @@ requires_amarillo = pytest.mark.skipif(not AMARILLO_FONT.exists(), reason="test 
 JOKERMAN_FONT = Path(r"C:\Windows\Fonts\JOKERMAN.TTF")
 requires_jokerman = pytest.mark.skipif(not JOKERMAN_FONT.exists(), reason="Jokerman not installed on this machine")
 
-# Real fonts confirmed present on this Windows machine (checked against
-# the registry via enumerate_installed_fonts during implementation) —
-# each guarded individually so the suite degrades gracefully on a
-# differently-provisioned machine rather than failing outright.
+# Real fonts present on a standard Windows machine (checked against the
+# registry via enumerate_installed_fonts), each guarded individually so
+# the suite degrades gracefully on a differently-provisioned machine
+# rather than failing outright.
 ARIAL_FONT = Path(r"C:\Windows\Fonts\arial.ttf")
 requires_arial = pytest.mark.skipif(not ARIAL_FONT.exists(), reason="Arial not installed on this machine")
 
@@ -62,8 +62,8 @@ def test_jokerman_detected_as_latin_only():
 
 @requires_arial
 def test_arial_detected_as_latin_cyrillic_greek_arabic():
-    # Confirmed empirically: modern Windows-shipped Arial carries full
-    # Cyrillic/Greek/Arabic cmap coverage, not just Latin.
+    # Modern Windows-shipped Arial carries full Cyrillic/Greek/Arabic cmap
+    # coverage, not just Latin.
     detected = detect_font_scripts(ARIAL_FONT, "Arial")
     assert {"Latin", "Cyrillic", "Greek", "Arabic"} <= detected
     assert "Thai" not in detected
@@ -72,8 +72,8 @@ def test_arial_detected_as_latin_cyrillic_greek_arabic():
 
 @requires_malgun
 def test_malgun_gothic_detected_as_korean_and_japanese():
-    # Real Korean UI font that also happens to carry full Hiragana/Katakana
-    # coverage (86-90%, measured) — genuinely usable for Japanese kana too.
+    # Real Korean UI font that also happens to carry roughly 86-90%
+    # Hiragana/Katakana coverage: genuinely usable for Japanese kana too.
     detected = detect_font_scripts(MALGUN_FONT, "Malgun Gothic")
     assert "Korean" in detected
     assert "Japanese" in detected

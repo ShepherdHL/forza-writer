@@ -1,0 +1,206 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "jp-private-passenger-current",
+  "display_name_key": "plates.template.jp_private_passenger_current",
+  "country": "JP",
+  "jurisdiction": null,
+  "era": "current",
+  "plate_type": "passenger",
+  "width_mm": 330.0,
+  "height_mm": 165.0,
+  "accuracy_status": "reference_based",
+  "provenance": {
+    "source_notes": "330mm x 165mm dimensions and the white-background/green-text private-passenger color scheme are well-documented and consistently reported. The two-line, four-field layout (region name + classification number / hiragana + serial) and the centered-dot leading-zero serial convention are consistently reported across enthusiast sources but not traced to a primary MLIT legal text in this pass -- flagged approximate. No confirmed distinct font name for the plate face; typography approximated with bundled fonts (Noto Sans CJK JP for kanji/hiragana, a Latin sans for digits). The rear-only stamped aluminum seal (fuin) covering the top-left mounting bolt is not modeled as a distinct decoration in this version -- the schema has no front/rear-face distinction yet; a placeholder seal decoration is included but shown regardless of plate face.",
+    "contributors": [],
+    "reference_urls": [],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": {
+    "decoration_id": "border",
+    "kind": "border",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      0,
+      110,
+      60,
+      255
+    ],
+    "asset_ref": null,
+    "editable": true
+  },
+  "fields": [
+    {
+      "field_id": "region_kanji",
+      "label_key": "plates.field.region_kanji",
+      "role": "region_code",
+      "x_mm": 15.0,
+      "y_mm": 8.0,
+      "width_mm": 170.0,
+      "height_mm": 45.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "NotoSansCJKjp-Regular.otf",
+        "fallback": null
+      },
+      "char_scale": 1.0,
+      "tracking": 2.0,
+      "line_spacing": 1.0,
+      "default_text": "品川",
+      "color": [
+        0,
+        110,
+        60,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "classification_number",
+      "label_key": "plates.field.classification_number",
+      "role": "classification",
+      "x_mm": 190.0,
+      "y_mm": 8.0,
+      "width_mm": 125.0,
+      "height_mm": 45.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 1.0,
+      "tracking": 2.0,
+      "line_spacing": 1.0,
+      "default_text": "530",
+      "color": [
+        0,
+        110,
+        60,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.jp.classification_hint",
+        "min_length": 3,
+        "max_length": 3,
+        "allowed_pattern": "[0-9]{3}",
+        "excluded_chars": [],
+        "custom_rule_id": null
+      },
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "hiragana",
+      "label_key": "plates.field.hiragana",
+      "role": "free_text",
+      "x_mm": 15.0,
+      "y_mm": 60.0,
+      "width_mm": 60.0,
+      "height_mm": 90.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "NotoSansCJKjp-Regular.otf",
+        "fallback": null
+      },
+      "char_scale": 0.48,
+      "tracking": 0.0,
+      "line_spacing": 1.0,
+      "default_text": "あ",
+      "color": [
+        0,
+        110,
+        60,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.jp.hiragana_hint",
+        "min_length": 1,
+        "max_length": 1,
+        "allowed_pattern": null,
+        "excluded_chars": [
+          "お",
+          "し",
+          "へ",
+          "ん",
+          "ゐ",
+          "ゑ"
+        ],
+        "custom_rule_id": null
+      },
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "serial",
+      "label_key": "plates.field.serial",
+      "role": "registration",
+      "x_mm": 90.0,
+      "y_mm": 60.0,
+      "width_mm": 225.0,
+      "height_mm": 90.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.62,
+      "tracking": 3.0,
+      "line_spacing": 1.0,
+      "default_text": "12-34",
+      "color": [
+        0,
+        110,
+        60,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.jp.serial_hint",
+        "min_length": 5,
+        "max_length": 5,
+        "allowed_pattern": "([0-9]|・)[0-9]-[0-9]{2}",
+        "excluded_chars": [],
+        "custom_rule_id": "jp_serial_leading_zero_as_dot"
+      },
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [
+    {
+      "decoration_id": "seal",
+      "kind": "seal",
+      "x_mm": 8.0,
+      "y_mm": 8.0,
+      "width_mm": 14.0,
+      "height_mm": 14.0,
+      "color": [
+        180,
+        30,
+        30,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    }
+  ],
+  "tags": [
+    "vanity-available"
+  ]
+}

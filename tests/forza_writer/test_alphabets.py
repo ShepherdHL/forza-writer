@@ -5,12 +5,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from forza_writer import alphabets  # noqa: E402
 
-# Expected group character counts — a regression pin so a future edit to
+# Expected group character counts: a regression pin so a future edit to
 # forza_writer/alphabets.py can't silently drop or duplicate a letter
-# without a test failing. Counts were verified against the standard
-# reference alphabet/syllabary/varnamala for each script (see the
-# module's own docstring for what's included and what's deliberately
-# left out, e.g. Devanagari matras, Thai positional vowel stacking).
+# without a test failing. Counts match the standard reference
+# alphabet/syllabary/varnamala for each script (see the module's own
+# docstring for what's included and what's deliberately left out, e.g.
+# Devanagari matras, Thai positional vowel stacking).
 EXPECTED_COUNTS = {
     "Cyrillic": {"Uppercase": 33, "Lowercase": 33},
     "Greek": {"Uppercase": 24, "Lowercase": 25},  # Lowercase includes word-final sigma
@@ -22,7 +22,7 @@ EXPECTED_COUNTS = {
     "Hebrew": {"Letters": 27, "Niqqud (vowel points)": 15},  # Letters: 22 base + 5 final (sofit) forms
 }
 
-# Unicode block each script's characters must fall within — catches a
+# Unicode block each script's characters must fall within: catches a
 # stray copy-pasted character from the wrong script/table.
 EXPECTED_BLOCKS = {
     "Cyrillic": [(0x0400, 0x04FF)],
@@ -72,7 +72,7 @@ def test_every_character_falls_within_the_expected_unicode_block():
 
 def test_every_character_has_visible_geometry():
     # categorize_char (forza_writer.charset) would skip anything in this
-    # set at generation time anyway — catches an accidental combining
+    # set at generation time anyway: catches an accidental combining
     # mark or format character with no ink of its own.
     for script, groups in alphabets.ALPHABETS.items():
         for label, letters in groups:
@@ -103,7 +103,7 @@ def test_shaping_caveats_only_cover_scripts_with_real_alphabets():
 
 def test_cyrillic_and_greek_have_no_shaping_caveat():
     # These two are structurally identical to Latin's own uppercase/
-    # lowercase model — nothing to caveat, unlike the other 5 scripts.
+    # lowercase model, unlike the other 5 scripts, so there is nothing to caveat.
     assert "Cyrillic" not in alphabets.SHAPING_CAVEATS
     assert "Greek" not in alphabets.SHAPING_CAVEATS
 

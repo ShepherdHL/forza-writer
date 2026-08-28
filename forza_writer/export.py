@@ -11,10 +11,9 @@ def to_json(shapes: list[dict]) -> dict[str, Any]:
         "source": "forza-writer",
         "shapes": [
             {
-                # Default first, shape's own value second — a shape that
-                # already sets mask (e.g. a stencil-mode cutout) must win.
-                # Doing this the other way around silently clobbers every
-                # mask:True back to False on export.
+                # Default first, shape's own value second: a shape that
+                # already sets mask (e.g. a stencil-mode cutout) must win,
+                # or every mask:True would be clobbered back to False.
                 "mask": False,
                 **shape,
             }

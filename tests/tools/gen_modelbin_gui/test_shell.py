@@ -102,7 +102,7 @@ def test_start_batch_without_a_font_logs_a_warn_tagged_line(gui):
 @pytest.mark.skipif(sys.platform != 'win32', reason='window icon verification is Windows-only')
 def test_window_icon_is_actually_applied(gui):
     # A missing/failed iconbitmap() call is swallowed silently by design
-    # (cosmetic, must never block the app) — so "no exception" alone
+    # (cosmetic, must never block the app), so "no exception" alone
     # doesn't prove the icon actually applied. WM_GETICON is the real
     # signal: it returns a null handle when no icon was set.
     import ctypes
@@ -138,7 +138,7 @@ def test_large_generation_requires_confirmation_before_start(gui, monkeypatch):
 
 def test_start_batch_confirms_before_generating_from_a_variable_font(gui, tmp_path, monkeypatch):
     # A variable font passed straight to the normal Generator gets whatever
-    # raw, un-instantiated master fontTools happens to extract — never a
+    # raw, un-instantiated master fontTools happens to extract, never a
     # style the user actually chose (only Advanced Generator pins one via
     # instantiate_font). This must be caught and confirmed before the batch
     # starts, not discovered afterward in the output.
@@ -191,8 +191,7 @@ def test_start_batch_skips_variable_font_confirmation_for_a_static_font(gui, tmp
 
 
 def test_fonts_load_automatically_at_startup(gui):
-    # The font list used to require an explicit "Load All Fonts" click —
-    # now __init__ kicks off the scan itself, so waiting on the queue
+    # __init__ kicks off the font scan itself, so waiting on the queue
     # (without calling _load_all_fonts again) is enough to see it land.
     deadline = time.time() + 15
     while not gui.fonts and time.time() < deadline:
@@ -306,14 +305,13 @@ def test_all_tabs_exist_after_ascii_art_addition():
     import gen_modelbin_gui as mod
     assert mod.TABS == [
         'forza_font_text', 'generator', 'advanced', 'direct', 'ascii_art', 'glyph_inspector',
-        'layer_effects', 'outputs', 'composer', 'settings', 'credits']
+        'layer_effects', 'outputs', 'composer', 'plates', 'settings', 'credits']
 
 
 def test_every_tab_has_its_own_primary_scroll_canvas(gui):
-    # Every page must own exactly one primary vertical scroll region —
-    # before this, only Generator had one at all, so Outputs/
-    # Composer/Settings content that didn't fit was just silently clipped
-    # with no way to reach it.
+    # Every page must own exactly one primary vertical scroll region, or
+    # content that doesn't fit (as on Outputs/Composer/Settings) would be
+    # silently clipped with no way to reach it.
     import gen_modelbin_gui as mod
     for name in mod.TABS:
         assert name in gui._page_scroll_canvas, f'{name} has no primary scroll canvas'
@@ -338,7 +336,7 @@ def test_scroll_position_survives_switching_tabs_away_and_back(gui):
 
 def test_expected_widgets_are_registered_as_independent_scroll_regions(gui):
     # The font list, font grid, Log, Outputs' two lists, and the Compose
-    # text box all scroll themselves — each must opt out of the page-level
+    # text box all scroll themselves; each must opt out of the page-level
     # wheel routing via _register_independent_scroll (see _on_mousewheel).
     expected = {
         gui.font_list, gui.grid_canvas, gui.log,
@@ -349,9 +347,9 @@ def test_expected_widgets_are_registered_as_independent_scroll_regions(gui):
 
 
 def test_mousewheel_over_font_list_scrolls_the_list_not_the_page(gui, monkeypatch):
-    # This is the exact bug a prior pass shipped: font_list was missing
-    # from the exclusion set, so hovering it and scrolling moved *both*
-    # the listbox and the outer Generator page canvas at once.
+    # font_list must be in the exclusion set: otherwise hovering it and
+    # scrolling would move *both* the listbox and the outer Generator page
+    # canvas at once.
     gui._show_tab('generator')
     monkeypatch.setattr(gui.root, 'winfo_containing', lambda x, y: gui.font_list)
     page_canvas = gui._page_scroll_canvas['generator']
@@ -435,7 +433,7 @@ def test_page_up_down_scrolls_the_current_tabs_canvas_by_pages(gui, monkeypatch)
 
 def test_page_up_down_does_not_hijack_focus_inside_an_independent_scroll_widget(gui, monkeypatch):
     # font_list has its own native Page Up/Down handling as a focusable
-    # Listbox — the page canvas must not also move underneath it.
+    # Listbox; the page canvas must not also move underneath it.
     gui._show_tab('generator')
     monkeypatch.setattr(gui.root, 'focus_get', lambda: gui.font_list)
     page_canvas = gui._page_scroll_canvas['generator']
@@ -448,7 +446,7 @@ def test_page_up_down_does_not_hijack_focus_inside_an_independent_scroll_widget(
 
 
 def test_home_end_are_not_globally_rebound(gui):
-    # Deliberately not implemented at the root level — Entry/Text widgets
+    # Deliberately not implemented at the root level: Entry/Text widgets
     # already use Home/End to jump the text cursor, and rebinding them
     # globally would fire both the page-scroll and the text-cursor jump
     # on every press while typing.
@@ -501,7 +499,7 @@ def test_show_tab_packs_only_the_selected_page(gui):
 def test_show_tab_highlights_selected_sidebar_label(gui):
     # The active tab is signaled by a left-edge accent indicator strip +
     # a lifted row background, not a full solid-accent fill across the
-    # row (that reads as a button, not nav chrome) — see _style_sidebar.
+    # row (that reads as a button, not nav chrome). See _style_sidebar.
     import gui_theme
     p = gui_theme.palette()
     gui._show_tab('outputs')

@@ -2,24 +2,26 @@
 Unicode block (see forza_writer/font_info.py, forza_writer/unicode_blocks.py),
 and inspect one at large scale against the font's own metrics.
 
-Phase 1: font enumeration, the categorized/searchable tile grid, and the
-Reference view (the glyph rendered straight from the font's outline, with
-ascender/cap-height/x-height/baseline/descender guides).
+Font enumeration feeds a categorized/searchable tile grid and three
+per-glyph views:
 
-Phase 2: Generated — runs the real generation pipeline
+Reference: the glyph rendered straight from the font's outline, with
+ascender/cap-height/x-height/baseline/descender guides.
+
+Generated: runs the real generation pipeline
 (forza_writer.primitive_fit.fit_glyph_with_strategy, the same call Direct
 Generator uses), cached per (font, char, compute backend) like
 Configurator's own fit cache.
 
-Phase 3: Compare — diffs Generated against a target mask, either the font's
-own outline (forza_writer.glyph_quality.assess_glyph's approach) or a
+Compare: diffs Generated against a target mask, either the font's own
+outline (forza_writer.glyph_quality.assess_glyph's approach) or a
 hand-loaded single-glyph shape file. The hand-made file must be the same
 single-glyph, origin-centered `{"shapes": [...]}` format Configurator's
-manual per-glyph overrides already use — not an arbitrary multi-glyph
-design export (a whole KFPS project spans many glyphs in one shared
+manual per-glyph overrides already use, not an arbitrary multi-glyph
+design export: a whole KFPS project spans many glyphs in one shared
 coordinate space with no reliable, universal way to tell which shapes
-belong to which character; asking the user to export/isolate one glyph's
-shapes first keeps this reliable instead of guessing).
+belong to which character, so the user exports/isolates one glyph's
+shapes first to keep this reliable instead of guessing.
 """
 
 import json
@@ -55,18 +57,17 @@ class GlyphInspectorTabMixin:
     # Body width (px) below which the detail/preview panel stacks under
     # the glyph grid. Below ~892px, pack's layout math cannot give the
     # panel its full natural width (396px, driven by the 380px preview
-    # canvas) without help — the tile grid's own claim on the cavity left
+    # canvas) without help: the tile grid's own claim on the cavity leaves
     # too little, silently compressing the panel down to as little as
-    # 343px, clipping the preview canvas itself. The original 820 sat
-    # squarely inside that squeeze zone (empirically swept in 20px steps
-    # to find the true ~892px crossover — the same class of bug as
-    # Composer's Color panel, caught by the same 1920x1080 resize audit).
+    # 343px, clipping the preview canvas itself. 900 sits safely above
+    # that ~892px crossover, matching the threshold Composer's own Color
+    # panel uses for the same reason.
     _GLYPH_INSPECTOR_WIDE_THRESHOLD = 900
     # A large font's tile grid can hold thousands of already-rendered
     # tiles (measured ~4,400 for a CJK font); re-gridding all of them
     # (~23ms) on every intermediate width during a live resize-drag stalls
     # the UI. Debounced like Composer's own resize handler, not applied
-    # eagerly on every <Configure> — see `_on_glyph_inspector_grid_canvas_configure`.
+    # eagerly on every <Configure>: see `_on_glyph_inspector_grid_canvas_configure`.
     _GRID_RELAYOUT_DEBOUNCE_MS = 120
 
     def _build_glyph_inspector_page(self):
@@ -186,10 +187,9 @@ class GlyphInspectorTabMixin:
             detail_col, width=GLYPH_PREVIEW_SIZE[0], height=GLYPH_PREVIEW_SIZE[1], highlightthickness=1)
         self.glyph_inspector_preview_canvas.pack(padx=6, pady=6)
 
-        # Compare-only: a real legend for the diff overlay's colors — exact
-        # hex values match forza_writer.glyph_quality.diff_overlay_image's
-        # own fill colors — instead of a sentence glued onto the status
-        # label below (see the gui-ux audit's Glyph Inspector example).
+        # Compare-only: a real legend for the diff overlay's colors, with
+        # exact hex values matching forza_writer.glyph_quality.diff_overlay_image's
+        # own fill colors, instead of a sentence glued onto the status label below.
         self.glyph_inspector_compare_legend = gui_theme.build_legend(
             detail_col,
             [('#F5F5F5', 'Match'),
@@ -227,8 +227,10 @@ class GlyphInspectorTabMixin:
             body, self.glyph_inspector_list_col, self.glyph_inspector_detail_col,
             threshold=self._GLYPH_INSPECTOR_WIDE_THRESHOLD, state_attr='_glyph_inspector_layout_wide')
 
-        self.root.bind_all('<Left>', self._on_glyph_inspector_key)
-        self.root.bind_all('<Right>', self._on_glyph_inspector_key)
+        # Appended to shell.py's _global_bind_funcids so _on_root_destroy
+        # can free these too -- see that method's docstring.
+        self._global_bind_funcids.append(self.root.bind_all('<Left>', self._on_glyph_inspector_key))
+        self._global_bind_funcids.append(self.root.bind_all('<Right>', self._on_glyph_inspector_key))
 
     # -- font selection ---------------------------------------------------
     def _use_selected_font_in_glyph_inspector(self):
@@ -251,7 +253,7 @@ class GlyphInspectorTabMixin:
             return
         font_path = Path(raw)
         if self._glyph_inspector_font == font_path:
-            return  # already loaded (or loading) this exact path — FocusOut fires on every tab-away
+            return  # already loaded (or loading) this exact path; FocusOut fires on every tab-away
         self._load_glyph_inspector_font(font_path)
 
     def _load_glyph_inspector_font(self, font_path: Path):
@@ -433,7 +435,7 @@ class GlyphInspectorTabMixin:
         needle = self.glyph_inspector_search_var.get().strip().lower()
         matched = [g for g in info.glyphs_by_category[category] if self._matches_glyph_search(g, needle)]
         already_shown = self._glyph_inspector_category_shown.get(category, 0)
-        # Grow by one bounded step rather than the full remainder — see
+        # Grow by one bounded step rather than the full remainder: see
         # GLYPH_CATEGORY_HARD_CAP in state.py for why an unbounded expansion
         # of a huge CJK category is unsafe (Tk PhotoImage/GDI exhaustion).
         step_end = min(len(matched), already_shown + GLYPH_CATEGORY_EXPAND_STEP, GLYPH_CATEGORY_HARD_CAP)
@@ -590,14 +592,14 @@ class GlyphInspectorTabMixin:
         self.glyph_inspector_detail_status_var.set(
             "Reference — rendered directly from the font's outline.")
 
-    # -- Phase 2: Generated -------------------------------------------------
+    # -- Generated ------------------------------------------------------------
     def _glyph_inspector_generated_cache_key(self, char: str, font_path: Path) -> tuple:
         return (str(font_path), char, self.compute_backend_var.get())
 
     def _ensure_glyph_inspector_generated(self, glyph: GlyphInfo, info: FontInfo) -> dict | None:
         """Return the cached fit result for `glyph`, or `None` and kick off a
         background worker if it isn't ready yet. Cached per (font, char,
-        compute backend) — same idea as Configurator's `_configurator_fit_cache`,
+        compute backend), same idea as Configurator's `_configurator_fit_cache`,
         since re-running the fitter on every Left/Right keypress would be
         wasteful. The caller re-checks the cache once the worker's completion
         message re-triggers `_refresh_glyph_inspector_detail`."""
@@ -649,7 +651,7 @@ class GlyphInspectorTabMixin:
             f"Generated — {len(result['shapes'])} shape(s), {mask_count} mask cutout(s), "
             f"strategy {result['strategy']} ({result['backend'].resolved.upper()}).")
 
-    # -- Phase 3: Compare -----------------------------------------------------
+    # -- Compare ----------------------------------------------------------------
     def _load_glyph_inspector_handmade_file(self) -> None:
         glyph = self._glyph_inspector_selected_glyph
         if glyph is None:
@@ -719,7 +721,7 @@ class GlyphInspectorTabMixin:
             f"vs {target_label} — IoU {metrics['iou']:.3f} · boundary F1 {metrics['boundary_f1']:.3f} · "
             f"{metrics['verdict'].upper()} · components {metrics['components_generated']}/"
             f"{metrics['components_expected']} · holes {metrics['holes_generated']}/{metrics['holes_expected']}")
-        # The legend above the canvas now explains the overlay's colors —
-        # this status line matches Reference/Generated's own "Mode — what
-        # you're looking at" phrasing instead of repeating that explanation.
+        # The legend above the canvas explains the overlay's colors, so this
+        # status line matches Reference/Generated's own "Mode: what you're
+        # looking at" phrasing instead of repeating that explanation.
         self.glyph_inspector_detail_status_var.set(f'Compare — diff overlay against {target_label}.')

@@ -92,7 +92,7 @@ class MemoryDiffWatcher:
 
     def add_layer_regions(self, layer_count: int, max_seconds: float = 45.0) -> dict[str, Any]:
         """Locate the active vinyl group and watch each layer's shape-id (0x7A)
-        and resource-pointer (0xA8) fields — the bytes the pipeline sets."""
+        and resource-pointer (0xA8) fields, the bytes the pipeline sets."""
         located = probe.locate_vinyl_group(self.handle, layer_count, max_seconds=max_seconds)
         group = probe.parse_address(located["group"])
         table = probe.parse_address(located["table"])

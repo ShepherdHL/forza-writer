@@ -2,11 +2,11 @@
 spreadsheet -> assets/data/manufacturer_colors.json.
 
 Source: "Forza Colour Sheet (Est. 2019)", catalogued by Mitcho2001, JaCor653,
-and MadaraxUchiha —
+and MadaraxUchiha:
 https://www.gtplanet.net/forum/threads/forza-horizon-4-colour-creation-database-constant-work-in-progress-read-first-post.384407/#post-12589813
 (see THIRD_PARTY_NOTICES.md for the full credit/usage note). Used with
 permission from the repo owner, who has direct visibility into the GTPlanet
-community's norms around this data — not an independently verified license.
+community's norms around this data, not an independently verified license.
 
 The source files themselves are not checked into this repo (only the JSON
 this script produces is); point this script at your own copies:
@@ -16,12 +16,12 @@ this script produces is); point this script at your own copies:
         "Forza Colour Sheet (Est. 2019).xlsx"
 
 `openpyxl` is a dependency of *this script only* (to read the xlsx's Wheel
-Colours sheet, which has no CSV export) — it is not added to
+Colours sheet, which has no CSV export); it is not added to
 requirements.txt since the shipped app never reads .xlsx files. Install it
 once with `pip install openpyxl` before running this.
 
 Each row's HUE/SATURATION/BRIGHTNESS cells are recorded like "0.53 L" or
-"0.99 R" — a normalized Forza H,S,B value (see forza_writer/forza_colors.py)
+"0.99 R": a normalized Forza H,S,B value (see forza_writer/forza_colors.py)
 plus an "L"/"R" marker for which exact slider-click position (of two that
 round to the same displayed value) reproduces the color precisely in-game.
 That notation is preserved as-is in the output for players who want the
