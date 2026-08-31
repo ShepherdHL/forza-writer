@@ -8,7 +8,7 @@ the dev machine is not test-isolated (see conftest.py's `gui` fixture).
 """
 import pytest
 
-from conftest import tk  # noqa: E402
+from .conftest import tk  # noqa: E402
 
 import gui_settings  # noqa: E402
 from gen_modelbin_gui.color_picker_widget import ColorPickerWidget  # noqa: E402

@@ -1,0 +1,63 @@
+/* License Plates tab: library selector, breadcrumb, and the browser/
+   preview/fields three-column layout. The Tkinter tab reflows these three
+   columns at two pixel-width thresholds via JS; a CSS grid with its own
+   breakpoints does the same job more simply in a browser. */
+
+.pl-library-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.pl-library-row .btn.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+
+.pl-breadcrumb {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+  font-size: 12px; color: var(--muted); margin-bottom: 10px;
+}
+.pl-breadcrumb .crumb { color: var(--fg); cursor: pointer; }
+.pl-breadcrumb .crumb:hover { text-decoration: underline; }
+.pl-breadcrumb .crumb.current { color: var(--muted); cursor: default; text-decoration: none; }
+.pl-breadcrumb .sep { color: var(--disabled); }
+
+.pl-columns { display: grid; grid-template-columns: 260px 1fr 340px; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .pl-columns { grid-template-columns: 1fr; } }
+
+.pl-browser-list { height: 420px; }
+
+.pl-mode-row { display: flex; gap: 16px; align-items: center; margin-bottom: 6px; }
+
+.pl-field-group-title {
+  font-family: var(--display); font-weight: 600; font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); margin: 10px 0 4px;
+}
+.pl-field-group-title:first-child { margin-top: 0; }
+.pl-field-row { margin-bottom: 10px; }
+.pl-field-row label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 3px; }
+.pl-field-hint { color: var(--flag); font-size: 11px; line-height: 1.4; margin-top: 3px; white-space: pre-line; }
+
+.pl-preview-panel {
+  width: 100%; aspect-ratio: 640 / 260; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--entry-bg); display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.pl-preview-panel img { width: 100%; height: 100%; object-fit: contain; }
+
+/* Placeholder Font: a custom picker, not a plain <select> -- a native
+   <option> can't show an image, and each font's real "ABC123" showcase is
+   the whole point (see handlers/plates.py's get_placeholder_fonts). */
+.pl-font-picker { position: relative; margin-bottom: 4px; }
+.pl-font-trigger {
+  width: 100%; display: flex; align-items: center; gap: 10px; cursor: pointer;
+  text-align: left; font-family: var(--body-font, inherit); font-size: 12.5px;
+}
+.pl-font-trigger span:first-of-type { flex: 1; }
+.pl-font-chevron { color: var(--muted); flex: none; }
+.pl-font-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 30;
+  max-height: 320px; overflow-y: auto;
+  background: var(--entry-bg); border: 1px solid var(--border); border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.pl-font-row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; cursor: pointer; }
+.pl-font-row:hover { background: var(--frame-light); }
+.pl-font-row.active { background: var(--accent); color: var(--accent-fg); }
+.pl-font-thumb {
+  width: 72px; height: 24px; object-fit: contain; flex: none;
+  background: #000; border: 1px solid var(--border); border-radius: 2px;
+}
+.pl-font-thumb-empty { background: transparent; border-color: transparent; }

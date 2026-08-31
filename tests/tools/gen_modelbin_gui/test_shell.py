@@ -4,11 +4,13 @@ sidebar/tab switching, scroll shell, log panel, and batch start/halt/abort.
 import json
 import sys
 import time
+import types
 from pathlib import Path
 
 import pytest
 
-from conftest import (  # noqa: E402
+import gui_settings  # noqa: E402
+from .conftest import (  # noqa: E402
     AMARILLO_FONT, AMARILLO_FONTPACK, REFERENCE_MODELBIN, requires_assets, requires_font,
     requires_fontpack, tk, ttk, _configure_configurator_font, _configure_single_char_batch,
     _load_all_fonts_and_wait, _profiled_gui_pack_dir, _wait_for_configurator_detail,
@@ -305,7 +307,7 @@ def test_all_tabs_exist_after_ascii_art_addition():
     import gen_modelbin_gui as mod
     assert mod.TABS == [
         'forza_font_text', 'generator', 'advanced', 'direct', 'ascii_art', 'glyph_inspector',
-        'layer_effects', 'outputs', 'composer', 'plates', 'settings', 'credits']
+        'glyph_template', 'layer_effects', 'outputs', 'composer', 'plates', 'settings', 'credits']
 
 
 def test_every_tab_has_its_own_primary_scroll_canvas(gui):
@@ -474,6 +476,196 @@ def test_log_has_both_vertical_and_horizontal_scrollbars(gui):
     scrollbars = [w for w in siblings if isinstance(w, ttk.Scrollbar)]
     orients = {str(sb.cget('orient')) for sb in scrollbars}
     assert orients == {'vertical', 'horizontal'}
+
+
+def _isolate_settings_disk(monkeypatch, tmp_path):
+    """Point gui_settings at a throwaway path for the rest of the test.
+    The `gui` fixture doesn't isolate this itself (see conftest.py), so
+    anything that actually persists settings -- like the Log panel's
+    collapse/detach toggles -- would otherwise write to the real, shared
+    %LOCALAPPDATA%\\forza-writer\\settings.json and leak state into
+    whichever test happens to build a `gui` next."""
+    path = tmp_path / "settings.json"
+    monkeypatch.setattr(gui_settings, "SETTINGS_PATH", path)
+    monkeypatch.setattr(gui_settings, "SETTINGS_DIR", path.parent)
+
+
+def test_log_mirrors_every_line_into_the_detached_window(gui):
+    # Tk can't reparent self.log into a Toplevel after creation, so the
+    # detached window is a second Text widget kept in sync -- whichever
+    # container is actually visible must always have the full history.
+    gui._log('a mirrored line', tag='hint')
+    assert 'a mirrored line' in gui.log.get('1.0', 'end')
+    assert 'a mirrored line' in gui.log_detached.get('1.0', 'end')
+    line_start = gui.log_detached.search('a mirrored line', '1.0', 'end')
+    assert 'hint' in gui.log_detached.tag_names(line_start)
+
+
+def test_log_collapse_hides_body_without_losing_history(gui, monkeypatch, tmp_path):
+    _isolate_settings_disk(monkeypatch, tmp_path)
+    gui._log('kept across collapse')
+    gui.root.update_idletasks()
+    assert gui._log_body_frame.winfo_ismapped()
+    gui._toggle_log_collapsed()
+    gui.root.update_idletasks()
+    assert gui._log_collapsed is True
+    assert not gui._log_body_frame.winfo_ismapped()
+    # History survives -- collapsing only affects what's packed, not the
+    # Text widget's own content.
+    assert 'kept across collapse' in gui.log.get('1.0', 'end')
+    gui._toggle_log_collapsed()
+    gui.root.update_idletasks()
+    assert gui._log_collapsed is False
+    assert gui._log_body_frame.winfo_ismapped()
+
+
+def test_log_detach_shows_toplevel_and_dock_back_restores_docked_panel(gui, monkeypatch, tmp_path):
+    _isolate_settings_disk(monkeypatch, tmp_path)
+    gui.root.update_idletasks()
+    assert not gui._log_toplevel.winfo_ismapped()
+    assert gui.log_frame.winfo_ismapped()
+
+    gui._toggle_log_detached()
+    gui.root.update_idletasks()
+    assert gui._log_detached is True
+    assert gui._log_toplevel.winfo_ismapped()
+    assert not gui.log_frame.winfo_ismapped()
+
+    gui._toggle_log_detached()
+    gui.root.update_idletasks()
+    assert gui._log_detached is False
+    assert not gui._log_toplevel.winfo_ismapped()
+    assert gui.log_frame.winfo_ismapped()
+
+
+def test_log_detach_clears_a_prior_collapsed_state(gui, monkeypatch, tmp_path):
+    _isolate_settings_disk(monkeypatch, tmp_path)
+    gui._toggle_log_collapsed()
+    assert gui._log_collapsed is True
+    gui._toggle_log_detached()
+    assert gui._log_detached is True
+    assert gui._log_collapsed is False
+    # The docked body's own pack state is left expanded (not forgotten),
+    # ready to show correctly the instant it's docked back, rather than
+    # reappearing still-collapsed. winfo_ismapped() itself would read
+    # False here regardless -- log_frame, its ancestor, is pack_forget()n
+    # while detached, so nothing inside it can be "mapped" on screen
+    # until docking restores the ancestor chain.
+    assert gui._log_body_frame.winfo_manager() == 'pack'
+
+
+def test_log_toplevel_close_button_docks_back_instead_of_destroying(gui, monkeypatch, tmp_path):
+    _isolate_settings_disk(monkeypatch, tmp_path)
+    # There's nowhere else for the detached log's content to go, so its
+    # window-close button must dock back rather than fall through to Tk's
+    # default destroy behavior.
+    gui._toggle_log_detached()
+    assert gui._log_detached is True
+    handler = gui._log_toplevel.protocol('WM_DELETE_WINDOW')
+    assert handler  # a real handler is registered, not Tk's unset default
+    gui._log_toplevel.tk.call(handler)  # invoke it exactly as the window manager would
+    assert gui._log_detached is False
+    assert gui._log_toplevel.winfo_exists()
+    assert not gui._log_toplevel.winfo_ismapped()
+
+
+def test_backdrop_animation_starts_only_for_eurocorp(gui):
+    # Explicitly forced to charcoal first rather than assumed -- the `gui`
+    # fixture doesn't isolate the real on-disk settings file, so whatever
+    # palette a concurrently-running session last saved is what a freshly
+    # built instance actually starts on.
+    import gui_theme
+    try:
+        gui_theme.configure('charcoal', 'balanced')
+        gui.root.update_idletasks()
+        gui._refresh_sidebar_backdrop()  # charcoal has no backdrop -- no animation
+        assert gui.sidebar_backdrop not in gui._backdrop_after_ids
+
+        gui_theme.configure('eurocorp', 'balanced')
+        gui.root.update_idletasks()
+        gui._refresh_sidebar_backdrop()
+        assert gui.sidebar_backdrop in gui._backdrop_after_ids
+    finally:
+        gui_theme.configure()
+
+
+def test_backdrop_animation_tick_reuses_one_photoimage_via_paste(gui, monkeypatch):
+    # The one non-negotiable rule this loop exists to satisfy, given this
+    # app's own prior GDI-handle crash from repeated PhotoImage creation:
+    # a tick must call photo.paste(...) and must never construct a new
+    # ImageTk.PhotoImage.
+    import gui_theme
+    from PIL import ImageTk
+    try:
+        gui_theme.configure('eurocorp', 'balanced')
+        gui.root.update_idletasks()
+        gui._refresh_sidebar_backdrop()
+
+        canvas = gui.sidebar_backdrop
+        photo = gui._sidebar_backdrop_image
+        assert photo is not None
+        frames = gui_theme.backdrop_frames(canvas.winfo_width(), canvas.winfo_height())
+        assert frames is not None and len(frames) > 1
+
+        construct_calls = []
+        real_photoimage_cls = ImageTk.PhotoImage
+
+        def spy_construct(*a, **kw):
+            construct_calls.append(1)
+            return real_photoimage_cls(*a, **kw)
+
+        monkeypatch.setattr(ImageTk, 'PhotoImage', spy_construct)
+        paste_calls = []
+        real_paste = photo.paste
+
+        def spy_paste(*a, **kw):
+            paste_calls.append(1)
+            return real_paste(*a, **kw)
+
+        monkeypatch.setattr(photo, 'paste', spy_paste)
+
+        gui._tick_backdrop_animation(canvas, photo, frames)
+
+        assert paste_calls == [1]
+        assert construct_calls == []
+    finally:
+        gui_theme.configure()
+
+
+def test_backdrop_animation_after_ids_are_cancelled_on_destroy(gui):
+    import gui_theme
+    try:
+        gui_theme.configure('eurocorp', 'balanced')
+        gui.root.update_idletasks()
+        gui._refresh_sidebar_backdrop()
+        canvas = gui.sidebar_backdrop
+        after_id = gui._backdrop_after_ids[canvas]
+
+        fake_event = types.SimpleNamespace(widget=gui.root)
+        gui._on_root_destroy(fake_event)  # must not raise
+
+        assert gui._backdrop_after_ids == {}
+        # `after info` (no id argument) lists every still-pending after()
+        # callback in this interpreter -- confirms the id was actually
+        # cancelled, not just forgotten from our own bookkeeping dict.
+        pending = canvas.tk.splitlist(canvas.tk.call('after', 'info'))
+        assert after_id not in pending
+    finally:
+        gui_theme.configure()
+
+
+def test_on_root_destroy_tears_down_the_log_toplevel_even_if_never_popped_out(gui):
+    # _on_root_destroy must tear down the detached-log Toplevel
+    # unconditionally, whether or not it was ever popped out this session.
+    # Invoked directly with a synthetic event (rather than really
+    # destroying gui.root) so this test doesn't race the `gui` fixture's
+    # own teardown destroy() of the same window.
+    assert not gui._log_detached
+    log_toplevel = gui._log_toplevel
+    assert log_toplevel.winfo_exists()
+    fake_event = types.SimpleNamespace(widget=gui.root)
+    gui._on_root_destroy(fake_event)  # must not raise
+    assert not log_toplevel.winfo_exists()
 
 
 def test_scrollable_widgets_have_a_gutter_before_their_scrollbar(gui):

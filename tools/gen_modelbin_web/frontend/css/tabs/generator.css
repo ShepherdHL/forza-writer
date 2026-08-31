@@ -1,0 +1,108 @@
+/* Generator tab: vinyl shape tile grid, alphabet groups, and the
+   indeterminate run progress bar -- nothing else here needs a dedicated
+   class beyond app.css's generic .section/.checkbox-row/.radio-group. */
+
+.gen-shape-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.gen-shape-tile { border: none; background: none; padding: 0; cursor: pointer; border-radius: 4px; overflow: hidden; line-height: 0; }
+.gen-shape-tile img { display: block; }
+
+.gen-region-title {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 6px;
+}
+.gen-region-title:first-child { margin-top: 0; }
+
+.gen-alphabet-grid {
+  /* auto-fit/minmax responds to this grid's own rendered width, not the
+     browser viewport -- a viewport-relative @media breakpoint here was
+     wrong because the sidebar nav eats a fixed chunk of the window width
+     first: at some window sizes the viewport was still above the
+     breakpoint while the actual content column left for this grid was
+     already too narrow for 3 cards, so a card ran past the visible edge
+     instead of wrapping. */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 4px;
+}
+
+.gen-alphabet-group {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  /* Grid items default to min-width: auto, so a nowrap button's intrinsic
+     text width (e.g. "Select only Traditional Chinese", longer than its
+     "Simplified" sibling) was forcing this one card wider than its column,
+     breaking the equal-width grid -- let it shrink like every other card. */
+  min-width: 0;
+}
+.gen-alphabet-title {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--fg);
+  margin-bottom: 6px;
+}
+.gen-alphabet-group .checkbox-row { display: flex; margin: 0 0 4px 0; }
+
+.cs-select-only-script {
+  display: block;
+  width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.gen-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--entry-bg);
+  overflow: hidden;
+  margin-top: 8px;
+  display: none;
+}
+.gen-progress.active { display: block; }
+.gen-progress-bar {
+  height: 100%;
+  width: 30%;
+  background: var(--accent);
+  border-radius: 3px;
+  animation: gen-progress-slide 1.1s ease-in-out infinite;
+}
+@keyframes gen-progress-slide {
+  0% { margin-left: -30%; }
+  100% { margin-left: 100%; }
+}
+
+.gen-live-preview { display: flex; gap: 14px; align-items: flex-start; }
+
+/* Per-Glyph Overrides (Configurator), embedded in Generator's own page --
+   see frontend/js/tabs/generator.js's Configurator section. */
+.cfg-columns { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.cfg-list-col { flex: 1 1 420px; min-width: 320px; }
+.cfg-detail-col { flex: 0 0 200px; }
+
+.cfg-glyph-table-wrap {
+  height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--entry-bg);
+}
+.cfg-glyph-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.cfg-glyph-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--panel); color: var(--muted);
+  font-family: var(--display); font-weight: 600; font-size: 10.5px;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border);
+}
+.cfg-glyph-table td { padding: 4px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cfg-glyph-table tbody tr { cursor: pointer; }
+.cfg-glyph-table tbody tr:hover { background: var(--frame-light); }
+.cfg-glyph-table tbody tr.active { background: var(--accent); color: var(--accent-fg); }

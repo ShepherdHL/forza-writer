@@ -33,6 +33,7 @@ from gen_fontpack import (  # noqa: E402
 from gen_fabric_project import build_fabric_project, save_project  # noqa: E402
 import file_preview  # noqa: E402
 import font_preview  # noqa: E402
+import game_locator  # noqa: E402
 import gui_settings  # noqa: E402
 import gui_theme  # noqa: E402
 import glyph_overrides as glyph_overrides_store  # noqa: E402
@@ -89,19 +90,23 @@ class SettingsTabMixin:
         self.settings_ref_status_var = tk.StringVar()
         ref_frame, self.ref_entry, self.settings_ref_status_lbl = self._build_path_setting(
             content, label='Reference Modelbin', variable=self.ref_var, browse_command=self._pick_ref,
+            detect_command=self._detect_reference_modelbin,
             status_var=self.settings_ref_status_var,
             description='Needed only for the Custom Mesh (.modelbin) output mode. An extracted FH6 '
-                         'game asset — see README.md.')
+                         'game asset, see README.md, or click Detect to locate an installed copy of '
+                         'Forza Horizon 6 (Xbox app, Microsoft Store, or Steam) and extract it '
+                         'automatically.')
         ref_frame.pack(fill='x', **gui_theme.SECTION_PAD)
 
         self.settings_kfps_status_var = tk.StringVar()
         kfps_frame, _kfps_entry, self.settings_kfps_status_lbl = self._build_path_setting(
             content, label='KFPS Executable', variable=self.kfps_executable_var,
-            browse_command=self._pick_kfps_executable, status_var=self.settings_kfps_status_var,
+            browse_command=self._pick_kfps_executable, detect_command=self._detect_kfps,
+            status_var=self.settings_kfps_status_var,
             description='Optional. Set this to enable the Plates tab\'s "Send to KFPS" button, which '
                          'launches KFPS.exe with the generated plate\'s geometry .json file, same as '
                          'dragging that file onto KFPS yourself. Leave blank to only ever write files, '
-                         'never launch anything.')
+                         'never launch anything. Click Detect to search common install locations.')
         kfps_frame.pack(fill='x', **gui_theme.SECTION_PAD)
 
         # The four output-directory settings: full-width LabelFrames here
@@ -370,6 +375,31 @@ class SettingsTabMixin:
             filetypes=[('KFPS', 'KFPS.exe'), ('executable', '*.exe'), ('all files', '*.*')])
         if chosen:
             self.kfps_executable_var.set(chosen)
+    def _detect_reference_modelbin(self):
+        zip_path = game_locator.find_fh6_vinyls_zip()
+        if zip_path is None:
+            messagebox.showinfo(
+                'Detect Reference Modelbin',
+                'No Forza Horizon 6 install found (checked Xbox app, Microsoft Store, and Steam). '
+                'Use Browse to set it manually, see README.md.')
+            return
+        dest = Path(__file__).resolve().parent.parent.parent.parent / 'user-assets' / game_locator.REFERENCE_MODELBIN_NAME
+        try:
+            game_locator.extract_reference_modelbin(dest, zip_path)
+        except FileNotFoundError as exc:
+            messagebox.showinfo('Detect Reference Modelbin', str(exc))
+            return
+        self.ref_var.set(str(dest))  # the existing trace on ref_var refreshes the status label
+    def _detect_kfps(self):
+        path = game_locator.find_kfps_executable()
+        if path is None:
+            messagebox.showinfo(
+                'Detect KFPS',
+                'No KFPS install found in common locations. Use Browse to set it manually.')
+            return
+        self.kfps_executable_var.set(str(path))
+        self.settings_kfps_status_var.set(f'✓ found: {path}')
+        self.settings_kfps_status_lbl.configure(style='Success.TLabel')
     def _pick_output_dir(self, variable):
         chosen = filedialog.askdirectory(initialdir=variable.get())
         if chosen:
@@ -407,7 +437,7 @@ class SettingsTabMixin:
             if any(key in selected for key in ('modelbin', 'fontpacks', 'advgen', 'dgen', 'direct', 'image')):
                 font_preview.clear_cache()
             self.cleanup_status_var.set(
-                f'Clean slate ready — removed {removed.files:,} file(s), '
+                f'Clean slate ready, removed {removed.files:,} file(s), '
                 f'{removed.bytes / (1024 * 1024):.1f} MB.')
             self._refresh_outputs_pack_list()
             self._refresh_cleanup_sizes()

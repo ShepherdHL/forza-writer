@@ -41,24 +41,6 @@ CREDITS_SECTIONS = [
         "Ported & Adapted Code",
         [
             {
-                "name": "Kloudy's Forza Painter Suite (KFPS)",
-                "author": "heyitshestia",
-                "license": "MIT",
-                "category": "Directly Incorporated Code — Font Mapping and Text Layout",
-                "description": [
-                    "Font-mapping and text-layout logic is adapted from KFPS and incorporated "
-                    "into Forza Writer.",
-                    "Forza Writer's implementation reproduces KFPS-compatible output for "
-                    "equivalent input.",
-                ],
-                "implementation": [
-                    "forza_writer/shapes.py", "forza_writer/layout.py", "data/fh6_font_registry.json",
-                ],
-                "links": [
-                    ("Project repository", "https://github.com/heyitshestia/kloudys-forza-painter-suite"),
-                ],
-            },
-            {
                 "name": "bvzrays' forza-painter-fh6",
                 "author": "bvzrays",
                 "license": "MIT",
@@ -77,6 +59,24 @@ CREDITS_SECTIONS = [
                 "implementation": ["forza_writer/legacy_primitive_fit.py", "forza_writer/forza_colors.py"],
                 "links": [
                     ("Project repository", "https://github.com/bvzrays/forza-painter-fh6"),
+                ],
+            },
+            {
+                "name": "Kloudy's Forza Painter Suite (KFPS)",
+                "author": "heyitshestia",
+                "license": "MIT",
+                "category": "Directly Incorporated Code — Font Mapping and Text Layout",
+                "description": [
+                    "Font-mapping and text-layout logic is adapted from KFPS and incorporated "
+                    "into Forza Writer.",
+                    "Forza Writer's implementation reproduces KFPS-compatible output for "
+                    "equivalent input.",
+                ],
+                "implementation": [
+                    "forza_writer/shapes.py", "forza_writer/layout.py", "data/fh6_font_registry.json",
+                ],
+                "links": [
+                    ("Project repository", "https://github.com/heyitshestia/kloudys-forza-painter-suite"),
                 ],
             },
         ],
@@ -199,7 +199,7 @@ class CreditsTabMixin:
         row.pack(fill='x', padx=gui_theme.ROW_PAD['padx'], pady=(step * 2, step * 2))
 
         ttk.Label(row, text=entry['name'],
-                  font=('Segoe UI Semibold', d['body'] + 1)).pack(anchor='w')
+                  font=(gui_theme.display_font_family(self.root), d['body'] + 1)).pack(anchor='w')
 
         byline = f"by {entry['author']}" if entry.get('author') else ''
         if entry.get('license'):

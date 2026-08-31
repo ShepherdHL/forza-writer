@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import (  # noqa: E402
+from .conftest import (  # noqa: E402
     AMARILLO_FONT, AMARILLO_FONTPACK, REFERENCE_MODELBIN, requires_assets, requires_font,
     requires_fontpack, tk, ttk, _configure_configurator_font, _configure_single_char_batch,
     _load_all_fonts_and_wait, _profiled_gui_pack_dir, _wait_for_configurator_detail,

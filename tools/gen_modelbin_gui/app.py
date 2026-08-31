@@ -28,6 +28,7 @@ from .tabs.advanced import AdvancedTabMixin
 from .tabs.direct import DirectTabMixin
 from .tabs.ascii_art import AsciiArtTabMixin
 from .tabs.glyph_inspector import GlyphInspectorTabMixin
+from .tabs.glyph_template import GlyphTemplateTabMixin
 from .tabs.layer_effects import LayerEffectsTabMixin
 from .tabs.composer import ComposerTabMixin
 from .tabs.color_picker import ColorPickerMixin
@@ -46,6 +47,7 @@ class GeneratorGUI(
     DirectTabMixin,
     AsciiArtTabMixin,
     GlyphInspectorTabMixin,
+    GlyphTemplateTabMixin,
     LayerEffectsTabMixin,
     ComposerTabMixin,
     ColorPickerMixin,

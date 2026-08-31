@@ -1,5 +1,11 @@
 psutil>=5.9
 
+# pywebview-based UI (tools/gen_modelbin_web/), migrating off Tkinter one
+# tab at a time -- see the migration plan. Embeds the OS's WebView2
+# (Chromium) runtime already present on most Windows 10/11 installs;
+# tools/gen_modelbin_gui/ (Tkinter) remains the primary app until parity.
+pywebview>=6.0
+
 # Font/mesh generation (tools/gen_modelbin.py, tools/gen_fontpack.py,
 # forza_writer/primitive_fit.py) — already hard dependencies, previously
 # undeclared here.

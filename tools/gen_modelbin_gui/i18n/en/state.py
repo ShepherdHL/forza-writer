@@ -7,6 +7,7 @@ STRINGS: dict[str, str] = {
     'state.tab.direct': 'Direct Generator',
     'state.tab.ascii_art': 'ASCII Art',
     'state.tab.glyph_inspector': 'Glyph Inspector',
+    'state.tab.glyph_template': 'Glyph Template',
     'state.tab.layer_effects': 'Layer Effects',
     'state.tab.outputs': 'Output',
     'state.tab.composer': 'Composer',

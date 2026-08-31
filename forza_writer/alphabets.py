@@ -15,8 +15,9 @@ out explicitly rather than silently:
 
 - Arabic normally connects each letter to its neighbors; this offers
   isolated letterforms only (`SHAPING_CAVEATS`).
-- Devanagari/Thai vowel signs and Thai tone marks normally stack
-  above/below/around a consonant; here they're flat standalone glyphs.
+- Devanagari/Thai/Khmer/Tamil vowel signs and Thai tone marks normally
+  stack above/below/before/around a consonant; here they're flat
+  standalone glyphs.
 - Korean is offered as individual Jamo (the 19 consonants + 21 vowels;
   Korean genuinely is alphabetic at that level), not composed syllable
   blocks, since composing e.g. ㅎ+ㅏ+ㄴ into 한 needs real text shaping
@@ -42,6 +43,12 @@ ALPHABETS: dict[str, list[tuple[str, str]]] = {
     "Cyrillic": [
         ("Uppercase", "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"),
         ("Lowercase", "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"),
+        # Mongolian Cyrillic reuses the Russian alphabet above verbatim,
+        # plus these 2 letters Russian doesn't have (front/back rounded
+        # vowels) -- a separate group so "Select only Cyrillic" still
+        # covers a Mongolian pack without implying these 2 are part of
+        # standard Russian Cyrillic.
+        ("Mongolian additions", "ӨөҮү"),
     ],
     "Greek": [
         ("Uppercase", "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"),
@@ -86,6 +93,44 @@ ALPHABETS: dict[str, list[tuple[str, str]]] = {
         # below a base letter; here they render as flat standalone glyphs,
         # same caveat as Devanagari/Thai (see SHAPING_CAVEATS below).
         ("Niqqud (vowel points)", "ְֱֲֳִֵֶַָֹֻּֽׁׂ"),
+    ],
+    # Consonants (35) and independent vowels (17) are standalone letters,
+    # same flat model as everything above. Vowel signs (16) are combining
+    # marks normally positioned above/below/before/around a consonant --
+    # flat standalone glyphs here instead (SHAPING_CAVEATS). Excludes
+    # Khmer's subscript-forming COENG sign, register-shift marks, and
+    # native digits/punctuation: none of those are simple standalone
+    # characters this tool's flat model can represent correctly.
+    "Khmer": [
+        ("Consonants", "កខគឃងចឆជឈញដឋឌឍណតថទធនបផពភមយរលវឝឞសហឡអ"),
+        ("Independent vowels", "ឣឤឥឦឧឨឩឪឫឬឭឮឯឰឱឲឳ"),
+        ("Vowel signs", "ាិីឹឺុូួើឿៀេែៃោៅ"),
+    ],
+    # Vowels (12, plus aytham/visarga -- traditionally counted alongside
+    # the vowels) and consonants (23, including the grantha loan letters
+    # ja/sha/ssa/ha standard in the modern Tamil Unicode block) are
+    # standalone letters. Vowel signs (11) are combining marks -- some
+    # visually appear *before* the consonant they logically follow, not
+    # just after/above/below like the other scripts above, but the same
+    # "flat standalone" mismatch applies (SHAPING_CAVEATS). Excludes
+    # virama, the AU length mark, and native digits/numerals/symbols.
+    "Tamil": [
+        ("Vowels", "அஆஇஈஉஊஎஏஐஒஓஔஃ"),
+        ("Consonants", "கஙசஜஞடணதநனபமயரறலளழவஶஷஸஹ"),
+        ("Vowel signs", "ாிீுூெேைொோௌ"),
+    ],
+    # Vietnamese's base 26 letters are plain ASCII, already covered by the
+    # Latin uppercase/lowercase checkboxes above -- these two groups are
+    # only the extra characters Vietnamese needs beyond that: 7 extra base
+    # letters (ăâđêôơư) plus every tone-marked vowel (5 tones x 12
+    # vowel letters, both cases). Unlike Arabic/Devanagari/Thai/Hebrew
+    # above, none of this needs a shaping caveat -- Vietnamese's
+    # diacritics are precomposed standalone Unicode codepoints (NFC), the
+    # same "one glyph per character, no combining" model Latin/Cyrillic/
+    # Greek already use, not marks this tool would need to stack itself.
+    "Vietnamese": [
+        ("Uppercase", "ĂÂĐÊÔƠƯÀÁẢÃẠẰẮẲẴẶẦẤẨẪẬÈÉẺẼẸỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌỒỐỔỖỘỜỚỞỠỢÙÚỦŨỤỪỨỬỮỰỲÝỶỸỴ"),
+        ("Lowercase", "ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ"),
     ],
 }
 
@@ -259,6 +304,15 @@ SHAPING_CAVEATS: dict[str, str] = {
                "stacked above/below a letter the way real pointed Hebrew text does. "
                "The base letters (including final forms) are unaffected by this: "
                "those are already distinct standalone characters, not combined."),
+    "Khmer": ("Vowel signs are placed as flat standalone marks, not stacked "
+              "above/below/before/around a consonant the way real Khmer text combines "
+              "them. Consonants and independent vowels are unaffected by this: those "
+              "are already distinct standalone characters, not combined."),
+    "Tamil": ("Vowel signs are placed as flat standalone marks, not combined with a "
+              "consonant the way real Tamil text does -- some vowel signs visually "
+              "appear before the consonant they belong to, not just after/above/below. "
+              "Vowels and consonants are unaffected by this: those are already "
+              "distinct standalone characters, not combined."),
 }
 
 

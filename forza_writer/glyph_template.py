@@ -18,6 +18,7 @@ from __future__ import annotations
 import base64
 import json
 import math
+import re
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -384,9 +385,30 @@ def build_blank_overlay_svg(template: GlyphTemplate) -> str:
 _FONT_MIME = {"otf": "font/otf", "ttf": "font/ttf", "woff": "font/woff", "woff2": "font/woff2"}
 _FONT_FORMAT = {"otf": "opentype", "ttf": "truetype", "woff": "woff", "woff2": "woff2"}
 
+# The traced letterform's default fill -- a light, low-contrast gray chosen
+# so it reads as a *guide* to draw over rather than competing with the
+# user's own strokes once traced in KFPS. build_font_traced_overlay_svg's
+# text_color lets a caller override this per the same reasoning in reverse:
+# a low-contrast guide can be hard to see against some backgrounds/vinyl
+# colors, so a bolder or more distinct color can make it easier to trace.
+DEFAULT_TRACE_TEXT_COLOR = "#e6e6e6"
+
+_HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+
+def validate_hex_color(color: str) -> str:
+    """Return `color` unchanged if it's a well-formed `#rgb`/`#rrggbb` hex
+    string, else raise ValueError. Guards against embedding anything else
+    into the SVG's `fill="..."` attribute -- this value is written straight
+    into the generated markup, not escaped like element text content."""
+    if not _HEX_COLOR_RE.match(color):
+        raise ValueError(f"not a #rgb or #rrggbb hex color: {color!r}")
+    return color
+
 
 def build_font_traced_overlay_svg(template: GlyphTemplate, font_path: str | Path,
-                                   font_size_ratio: float = 0.62) -> tuple[str, list[str]]:
+                                   font_size_ratio: float = 0.62,
+                                   text_color: str = DEFAULT_TRACE_TEXT_COLOR) -> tuple[str, list[str]]:
     """Grid overlay with each cell's actual letterform rendered from a real,
     locally-held font file: the font itself is embedded as a base64
     `@font-face` so it renders correctly in KFPS regardless of whether it's
@@ -398,12 +420,16 @@ def build_font_traced_overlay_svg(template: GlyphTemplate, font_path: str | Path
     for; the caller is responsible for that, this function just draws it.
 
     Characters the font's cmap doesn't cover fall back to a label-only cell,
-    same as `build_blank_overlay_svg`. Returns (svg_text, missing_chars).
+    same as `build_blank_overlay_svg`. `text_color` is the traced letterform's
+    fill (`#rgb`/`#rrggbb`); the missing-glyph fallback and cell/codepoint
+    chrome keep their own fixed colors regardless, since they're UI, not the
+    traced reference. Returns (svg_text, missing_chars).
     """
     font_path = Path(font_path)
     ext = font_path.suffix.lower().lstrip(".")
     if ext not in _FONT_MIME:
         raise ValueError(f"unsupported font file type: {font_path.suffix!r} (expected otf/ttf/woff/woff2)")
+    validate_hex_color(text_color)
     font_b64 = base64.b64encode(font_path.read_bytes()).decode("ascii")
     family = "GlyphTemplateTraceFont"
 
@@ -435,7 +461,7 @@ def build_font_traced_overlay_svg(template: GlyphTemplate, font_path: str | Path
             parts.append(
                 f'<text x="{x + cell * 0.5:.2f}" y="{y + cell * 0.62:.2f}" '
                 f'font-size="{font_size:.1f}" text-anchor="middle" '
-                f'fill="#e6e6e6" font-family="{family}">{_xml_escape(slot.char)}</text>'
+                f'fill="{text_color}" font-family="{family}">{_xml_escape(slot.char)}</text>'
             )
         else:
             missing.append(slot.char)

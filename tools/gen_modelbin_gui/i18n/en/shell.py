@@ -7,7 +7,12 @@ STRINGS: dict[str, str] = {
     'shell.button.select_all': 'Select All',
     'shell.button.clear': 'Clear',
     'shell.button.browse': 'Browse...',
+    'shell.button.detect': 'Detect',
     'shell.button.insert': 'Insert',
+    'shell.button.log_collapse': 'Collapse',
+    'shell.button.log_expand': 'Expand',
+    'shell.button.log_popout': 'Open in window',
+    'shell.button.log_dock': 'Dock to window',
     'shell.label.sample_text': 'Sample Text:',
     'shell.hint.sample_text': (
         'Sample text exercises most of the script. Some scripts offer multiple options, such '

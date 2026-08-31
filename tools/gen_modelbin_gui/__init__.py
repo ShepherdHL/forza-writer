@@ -17,9 +17,14 @@ already-partially-initialized package at their own import time.
 """
 import sys
 from pathlib import Path
-from tkinter import filedialog, messagebox
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from tcl_library_fix import ensure_tcl_tk_library_env  # noqa: E402
+
+ensure_tcl_tk_library_env()  # must run before the first `import tkinter` anywhere below
+
+from tkinter import filedialog, messagebox  # noqa: E402
+
 from gen_fontpack import build_fontpack  # noqa: E402
 
 from forza_writer import script_detect  # noqa: E402

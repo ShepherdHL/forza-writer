@@ -167,3 +167,22 @@ def _wait_for_configurator_detail(gui, timeout=20):
         time.sleep(0.05)
     gui._poll_queue()
     gui.root.update()
+
+def _wait_for_glyph_template_font(gui, timeout=20):
+    deadline = time.time() + timeout
+    while gui._glyph_template_font_info is None and time.time() < deadline:
+        gui._poll_queue()
+        gui.root.update()
+        time.sleep(0.05)
+    gui._poll_queue()
+    gui.root.update()
+
+def _wait_for_glyph_template_worker(gui, timeout=20):
+    deadline = time.time() + timeout
+    while (gui._glyph_template_worker is not None and gui._glyph_template_worker.is_alive()
+           and time.time() < deadline):
+        gui._poll_queue()
+        gui.root.update()
+        time.sleep(0.05)
+    gui._poll_queue()
+    gui.root.update()

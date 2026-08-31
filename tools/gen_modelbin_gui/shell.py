@@ -87,6 +87,12 @@ class ShellMixin:
     _LOG_HEIGHT_DEBOUNCE_MS = 120
 
     _DEFAULT_WINDOW_GEOMETRY = '1000x780'
+    # Sidebar backdrop flip-book cadence -- deliberately slow (~1.4 fps),
+    # matching the approved plan's "ambient drift, not fluid motion"
+    # tradeoff. This app has no compositor and a documented prior GDI-
+    # handle crash from repeated PhotoImage creation; every tick reuses one
+    # persistent PhotoImage via .paste(), never constructs a new one.
+    _BACKDROP_ANIMATION_MS = 700
 
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -206,6 +212,18 @@ class ShellMixin:
         self._glyph_inspector_compare_target_var = tk.StringVar(value='font')
         self._glyph_inspector_handmade_shapes: dict[str, list] = {}
         self._glyph_inspector_handmade_path: dict[str, str] = {}
+        # Glyph Template: its own font selection (independent of every
+        # other tab's, same convention as Glyph Inspector/Configurator/
+        # Advanced above). _glyph_template_covered_blocks is the font's
+        # full Unicode-block inventory at min_chars=1, computed once per
+        # font load; the Split-mode checklist re-filters it locally as the
+        # "Min glyphs/block" spinbox changes, without re-scanning the font.
+        self._glyph_template_font: Path | None = None
+        self._glyph_template_font_info: FontInfo | None = None
+        self._glyph_template_load_generation = 0
+        self._glyph_template_covered_blocks: list[tuple] = []
+        self._glyph_template_prefix_edited = False
+        self._glyph_template_worker: threading.Thread | None = None
         # Every widget that scrolls itself (a Listbox/Text/Canvas with its
         # own Scrollbar) registers here via _register_independent_scroll()
         # at construction time, so _on_mousewheel can route the wheel to
@@ -219,6 +237,11 @@ class ShellMixin:
         self._wheel_after_id = None
         self._wheel_canvas = None
         self._debounce_after_ids: dict[str, str] = {}
+        # Sidebar backdrop flip-book animation state, keyed by canvas (only
+        # one such canvas exists today, but this mirrors _debounce_after_ids'
+        # own shape rather than assuming there's only ever one).
+        self._backdrop_after_ids: dict[tk.Canvas, str] = {}
+        self._backdrop_frame_index: dict[tk.Canvas, int] = {}
 
         # Loaded once at startup; Settings' Save button persists whatever's
         # in self.out_var/self.direct_out_var/self.ref_var back to disk.
@@ -286,6 +309,81 @@ class ShellMixin:
         # repainting rather than restyling.
         if hasattr(self, '_redraw_shape_tiles'):
             self._redraw_shape_tiles()
+    def _sync_page_scrollregion(self, canvas: tk.Canvas) -> None:
+        """Recompute a page canvas's scrollregion from its content's current
+        bbox. The scrollregion property itself is updated immediately here
+        (cheap, purely descriptive, doesn't move anything visually); the
+        actual view-clamp is debounced onto `_clamp_page_scroll_view` below
+        rather than run synchronously in this same callback -- see that
+        method's docstring for why.
+        """
+        region = canvas.bbox('all')
+        canvas.configure(scrollregion=region)
+        if region is None:
+            return
+        # Keyed per canvas (not one shared key) so two tabs' pages don't
+        # cancel each other's pending clamp; `id(canvas)` is stable for the
+        # widget's lifetime, which outlives any one debounce window.
+        self._debounce(f'page_scrollregion_clamp_{id(canvas)}', self._WHEEL_FRAME_MS,
+                        lambda c=canvas: self._clamp_page_scroll_view(c))
+
+    def _clamp_page_scroll_view(self, canvas: tk.Canvas) -> None:
+        """Snap the view back inside the scrollregion if it's landed past
+        the bottom (or, in principle, before the top).
+
+        `yscrollincrement` (set on every page canvas in `_build_scroll_shell`,
+        for smooth fixed-size wheel steps) quantizes the canvas's internal
+        y-offset to multiples of itself. Tk's own `yview_scroll`/auto-reclamp
+        can snap that offset to the increment multiple *past* the true
+        bottom of a scrollregion whose height isn't itself a multiple of the
+        increment: up to `_PAGE_SCROLL_INCREMENT - 1` px of blank canvas
+        below the real content, worse right after content shrinks (a mode
+        toggle, a rebuilt list) while the view was already scrolled near the
+        bottom, since the stale offset gets re-quantized against the new,
+        shorter region rather than recomputed from scratch. Confirmed
+        directly: scrolled to bottom, then shrinking the region left the
+        view's bottom edge several px past the new scrollregion's actual
+        bottom.
+
+        Debounced from `_sync_page_scrollregion` (not called inline there)
+        because content resizes fire `<Configure>` constantly during normal
+        layout, including mid-flight of `_flush_page_scroll`'s own
+        `yview_scroll` for an active wheel gesture; repositioning the view a
+        second time in that same tick produced a visible double-paint of
+        the page for a frame (seen directly: a control briefly rendered
+        twice, at its old and new position, while scrolling). Running this
+        one debounce window later lets whichever scroll operation is
+        already in flight finish first.
+        """
+        region = canvas.bbox('all')
+        if region is None:
+            return
+        _left, _top, _right, bottom = region
+        if bottom <= 0:
+            return
+        max_top = max(0, bottom - canvas.winfo_height())
+        # yview_moveto's target still gets quantized to yscrollincrement by
+        # Tk internally, same as yview_scroll -- asking for the exact
+        # fractional max_top can still round *up* past it (confirmed
+        # directly: requesting the precise clamp left a few px of overshoot
+        # regardless). Floor to the increment below first so the quantized
+        # result can only land at or under the true bottom, never past it.
+        max_top = (max_top // self._PAGE_SCROLL_INCREMENT) * self._PAGE_SCROLL_INCREMENT
+        current_top = canvas.canvasy(0)
+        if current_top > max_top or current_top < 0:
+            canvas.yview_moveto(max_top / bottom)
+            # On Windows, the embedded content Frame is a real child HWND
+            # (canvas.create_window, not owner-drawn), so moving the view
+            # repositions that HWND immediately but doesn't guarantee the
+            # bitmap left at its old position gets erased before the next
+            # natural repaint tick. Caught directly on camera: for one
+            # frame, the page's top section painted at both its old and
+            # new position, 64px apart (8x yscrollincrement) -- a stale
+            # ghost, not a real duplicate widget. Forcing the repaint here,
+            # synchronously, closes that window instead of leaving it to
+            # whatever the next idle tick happens to be.
+            canvas.update_idletasks()
+
     def _build_scroll_shell(self, parent, tab_name: str):
         """The one primary vertical scroll region for a tab page. Every
         `_build_*_page()` wraps its content in this, so there's exactly
@@ -314,7 +412,7 @@ class ShellMixin:
 
         content = ttk.Frame(canvas)
         window = canvas.create_window((0, 0), window=content, anchor='nw')
-        content.bind('<Configure>', lambda _e, c=canvas: c.configure(scrollregion=c.bbox('all')))
+        content.bind('<Configure>', lambda _e, c=canvas: self._sync_page_scrollregion(c))
         canvas.bind(
             '<Configure>',
             lambda e, c=canvas, w=window, body=content:
@@ -403,6 +501,10 @@ class ShellMixin:
             return
         self._wheel_pending_pixels -= steps * self._PAGE_SCROLL_INCREMENT
         canvas.yview_scroll(steps, 'units')
+        # See _clamp_page_scroll_view's comment on the same call: forces
+        # the moved embedded-window HWND's stale old-position bitmap to
+        # clear before this tick ends, instead of risking a ghost frame.
+        canvas.update_idletasks()
     def _on_page_key(self, event):
         # Page Up/Down for the current tab's primary scroll canvas. A
         # Canvas-based scroll region doesn't get this for free the way a
@@ -501,6 +603,46 @@ class ShellMixin:
         self._sidebar_backdrop_image = image  # keep a reference or Tk garbage-collects it
         if image is not None:
             canvas.create_image(0, 0, anchor='nw', image=image, tags='backdrop')
+        self._restart_backdrop_animation(canvas, image, width, height)
+
+    def _restart_backdrop_animation(self, canvas: tk.Canvas, photo, width: int, height: int) -> None:
+        """(Re)start this canvas's flip-book tick loop against the PhotoImage
+        `_refresh_sidebar_backdrop` just (re)built. Always cancels whatever
+        was already running first -- a resize rebuilds both the frame list
+        and the persistent PhotoImage at the new size, so a stale pending
+        tick would otherwise end up pasting a wrong-sized frame into a
+        photo it no longer matches."""
+        after_id = self._backdrop_after_ids.pop(canvas, None)
+        if after_id is not None:
+            try:
+                canvas.after_cancel(after_id)
+            except tk.TclError:
+                pass
+        if photo is None:
+            return
+        frames = gui_theme.backdrop_frames(width, height)
+        if not frames or len(frames) < 2:
+            return  # nothing to animate between
+        self._backdrop_frame_index[canvas] = 0
+        self._tick_backdrop_animation(canvas, photo, frames)
+
+    def _tick_backdrop_animation(self, canvas: tk.Canvas, photo, frames: list) -> None:
+        if not canvas.winfo_exists():
+            self._backdrop_after_ids.pop(canvas, None)
+            return
+        index = (self._backdrop_frame_index.get(canvas, 0) + 1) % len(frames)
+        self._backdrop_frame_index[canvas] = index
+        try:
+            # The one non-negotiable rule this loop exists to satisfy: reuse
+            # the same PhotoImage every tick via .paste(), never construct a
+            # new ImageTk.PhotoImage here -- this app has already crashed
+            # once from Windows GDI-handle exhaustion caused by exactly that.
+            photo.paste(frames[index])
+        except tk.TclError:
+            self._backdrop_after_ids.pop(canvas, None)
+            return
+        self._backdrop_after_ids[canvas] = canvas.after(
+            self._BACKDROP_ANIMATION_MS, self._tick_backdrop_animation, canvas, photo, frames)
     def _style_sidebar(self):
         p = gui_theme.palette()
         d = gui_theme.density()
@@ -517,7 +659,7 @@ class ShellMixin:
             self._tab_rows[name].configure(bg=row_bg)
             self._tab_labels[name].configure(background=row_bg,
                                               foreground=label_fg,
-                                              font=('Segoe UI Semibold', d['body']),
+                                              font=(gui_theme.display_font_family(self.root), d['body']),
                                               padx=9 + d['body'] // 4, pady=3 + d['body'])
             self._tab_indicators[name].configure(bg=p['accent'] if selected else p['bg'])
         self._refresh_sidebar_backdrop()
@@ -559,6 +701,7 @@ class ShellMixin:
         self._build_direct_page()
         self._build_ascii_art_page()
         self._build_glyph_inspector_page()
+        self._build_glyph_template_page()
         self._build_layer_effects_page()
         self._build_outputs_page()
         self._build_composer_page()
@@ -626,17 +769,48 @@ class ShellMixin:
             except (tk.TclError, ValueError):
                 pass
             self._wheel_after_id = None
+        # Matching _poll_queue_after_id's own cancellation convention: the
+        # sidebar backdrop's flip-book tick loop must not fire again once
+        # this window (and the canvas/PhotoImage it's animating) is gone.
+        for canvas, after_id in list(self._backdrop_after_ids.items()):
+            try:
+                canvas.after_cancel(after_id)
+            except tk.TclError:
+                pass
+        self._backdrop_after_ids.clear()
+        # The detached-log Toplevel is a second real window, not a child
+        # widget destroy() would already reach -- it needs its own explicit
+        # teardown regardless of whether it was ever popped out.
+        log_toplevel = getattr(self, '_log_toplevel', None)
+        if log_toplevel is not None:
+            try:
+                if log_toplevel.winfo_exists():
+                    log_toplevel.destroy()
+            except tk.TclError:
+                pass
     def _build_log_panel(self, parent):
         # Chrome tier, not the workspace panel_alt tier: a console
         # readout, monospaced, the darkest thing on screen.
-        log_frame = ttk.LabelFrame(parent, text=gui_theme.hud_label(t('shell.log.panel_title')),
-                                    style='Chrome.TLabelframe')
-        log_frame.pack(side='bottom', fill='x', padx=10, pady=(0, 10))
+        self.log_frame = ttk.LabelFrame(parent, text=gui_theme.hud_label(t('shell.log.panel_title')),
+                                         style='Chrome.TLabelframe')
+        self.log_frame.pack(side='bottom', fill='x', padx=10, pady=(0, 10))
+
+        # A slim always-visible controls row, separate from the collapsible
+        # body below -- collapsing the Log still needs somewhere for the
+        # Expand/pop-out controls to live.
+        controls = ttk.Frame(self.log_frame)
+        controls.pack(fill='x', padx=6, pady=(6, 0))
+        self.log_popout_btn = ttk.Button(controls, text=t('shell.button.log_popout'),
+                                          command=self._toggle_log_detached)
+        self.log_popout_btn.pack(side='right')
+        self.log_collapse_btn = ttk.Button(controls, command=self._toggle_log_collapsed)
+        self.log_collapse_btn.pack(side='right', padx=(0, 6))
 
         # grid, not pack, for the classic 2D text+scrollbars layout: the
         # Text widget top-left, a vertical scrollbar to its right, a
         # horizontal one below it. pack can't express that cleanly.
-        log_body = ttk.Frame(log_frame)
+        self._log_body_frame = ttk.Frame(self.log_frame)
+        log_body = self._log_body_frame
         log_body.pack(fill='both', expand=True, padx=6, pady=6)
         log_body.columnconfigure(0, weight=1)
         log_body.rowconfigure(0, weight=1)
@@ -657,6 +831,101 @@ class ShellMixin:
 
         self._log_compact = False
         self.root.bind('<Configure>', self._on_root_configure)
+
+        self._build_log_detached_window()
+
+        # Restore last session's collapsed/detached state. Detached implies
+        # not-collapsed (see gui_settings._validated) so this order is safe
+        # regardless of which combination was actually saved.
+        self._log_collapsed = bool(self.settings.get('log_collapsed', False))
+        self._log_detached = bool(self.settings.get('log_detached', False))
+        self._update_log_collapse_button_text()
+        if self._log_collapsed:
+            self._log_body_frame.pack_forget()
+        if self._log_detached:
+            self.log_frame.pack_forget()
+            self._log_toplevel.deiconify()
+
+    def _build_log_detached_window(self) -> None:
+        """A second Text widget in its own Toplevel, kept withdrawn until
+        popped out. Tk can't reparent a widget to a different master after
+        creation, so this -- not moving `self.log` -- is how "detach into
+        a separate window" actually has to work; `_log()` mirrors every
+        line into both."""
+        self._log_toplevel = tk.Toplevel(self.root)
+        self._log_toplevel.title(t('shell.log.panel_title'))
+        self._log_toplevel.geometry('560x220')
+        self._log_toplevel.withdraw()
+        # Closing the window docks the log back rather than destroying its
+        # only Toplevel -- there's nowhere else for its content to go.
+        self._log_toplevel.protocol('WM_DELETE_WINDOW', self._toggle_log_detached)
+
+        header = ttk.Frame(self._log_toplevel)
+        header.pack(fill='x', padx=6, pady=6)
+        ttk.Button(header, text=t('shell.button.log_dock'),
+                   command=self._toggle_log_detached).pack(side='right')
+
+        body = ttk.Frame(self._log_toplevel)
+        body.pack(fill='both', expand=True, padx=6, pady=(0, 6))
+        body.columnconfigure(0, weight=1)
+        body.rowconfigure(0, weight=1)
+
+        self.log_detached = tk.Text(body, state='disabled', wrap='none',
+                                     font=('Consolas', 9), borderwidth=0, highlightthickness=0)
+        self.log_detached.grid(row=0, column=0, sticky='nsew')
+        vscroll = gui_theme.AutoHideScrollbar(body, orient='vertical', command=self.log_detached.yview)
+        vscroll.grid(row=0, column=1, sticky='ns', padx=(gui_theme.SCROLLBAR_GUTTER, 0))
+        hscroll = gui_theme.AutoHideScrollbar(body, orient='horizontal', command=self.log_detached.xview)
+        hscroll.grid(row=1, column=0, sticky='ew', pady=(gui_theme.SCROLLBAR_GUTTER, 0))
+        self.log_detached.configure(yscrollcommand=vscroll.set, xscrollcommand=hscroll.set)
+        gui_theme.configure_text_tags(self.log_detached)
+        # Same reasoning as the docked self.log: without this, the
+        # interpreter-wide <MouseWheel> bind_all in _on_mousewheel would
+        # try to scroll the *main* window's page canvas whenever the
+        # pointer is over this separate Toplevel.
+        self._register_independent_scroll(self.log_detached)
+
+    def _update_log_collapse_button_text(self) -> None:
+        self.log_collapse_btn.configure(
+            text=t('shell.button.log_expand') if self._log_collapsed else t('shell.button.log_collapse'))
+
+    def _toggle_log_collapsed(self) -> None:
+        self._log_collapsed = not self._log_collapsed
+        if self._log_collapsed:
+            self._log_body_frame.pack_forget()
+        else:
+            self._log_body_frame.pack(fill='both', expand=True, padx=6, pady=6)
+        self._update_log_collapse_button_text()
+        self._persist_log_state()
+
+    def _toggle_log_detached(self) -> None:
+        self._log_detached = not self._log_detached
+        if self._log_detached:
+            # A collapsed-and-detached combination isn't a meaningful UI
+            # state (there'd be nothing to expand back into on the docked
+            # side) -- detaching always clears it instead of special-
+            # casing that combination everywhere else.
+            self._log_collapsed = False
+            self._update_log_collapse_button_text()
+            self._log_body_frame.pack(fill='both', expand=True, padx=6, pady=6)
+            self.log_frame.pack_forget()
+            self._log_toplevel.deiconify()
+        else:
+            self.log_frame.pack(side='bottom', fill='x', padx=10, pady=(0, 10))
+            self._log_toplevel.withdraw()
+        self._persist_log_state()
+
+    def _persist_log_state(self) -> None:
+        # Reload-fresh-then-save, matching _on_close: never blind-write
+        # the in-memory settings snapshot, which could silently revert
+        # something the Settings tab itself saved mid-session.
+        try:
+            current = gui_settings.load_settings()
+            current['log_collapsed'] = self._log_collapsed
+            current['log_detached'] = self._log_detached
+            gui_settings.save_settings(current)
+        except Exception:
+            pass
 
     def _on_root_configure(self, event) -> None:
         """Shrink the Log to a compact line count once the window gets
@@ -700,6 +969,8 @@ class ShellMixin:
                         lambda: self._apply_log_height(height))
 
     def _apply_log_height(self, window_height: int) -> None:
+        if self._log_collapsed:
+            return
         compact = window_height < self._LOG_COMPACT_HEIGHT_THRESHOLD
         if compact == self._log_compact:
             return
@@ -1007,7 +1278,8 @@ class ShellMixin:
 
     # -- shared path/directory setting row --------------------------------
     def _build_path_setting(self, parent, *, label: str, variable: tk.StringVar, browse_command,
-                             status_var: tk.StringVar | None = None, description: str | None = None
+                             status_var: tk.StringVar | None = None, description: str | None = None,
+                             detect_command=None
                              ) -> tuple[ttk.LabelFrame, ttk.Entry, ttk.Label | None]:
         """A directory/reference-path setting: a titled LabelFrame holding
         an Entry+Browse row, an optional status line, and an optional
@@ -1027,6 +1299,8 @@ class ShellMixin:
         row.pack(fill='x', **gui_theme.ROW_PAD)
         entry = ttk.Entry(row, textvariable=variable)
         entry.pack(side='left', fill='x', expand=True, padx=4)
+        if detect_command is not None:
+            ttk.Button(row, text=t('shell.button.detect'), command=detect_command).pack(side='left', padx=2)
         ttk.Button(row, text=t('shell.button.browse'), command=browse_command).pack(side='left', padx=2)
         status_lbl = None
         if status_var is not None:
@@ -1042,10 +1316,20 @@ class ShellMixin:
         # 'warn'/'success'/'hint') so a terminal outcome (batch done,
         # export written, a blocked action) reads as that outcome instead
         # of every line looking the same regardless of what happened.
+        tags = (tag,) if tag else ()
         self.log.configure(state='normal')
-        self.log.insert('end', line + '\n', (tag,) if tag else ())
+        self.log.insert('end', line + '\n', tags)
         self.log.see('end')
         self.log.configure(state='disabled')
+        # Mirrored into the detached window's own Text widget too -- Tk
+        # widgets can't be reparented after creation, so the detached log
+        # is a second widget kept in sync rather than the same one moved.
+        # Whichever container (docked or detached) is actually visible
+        # then always has the full history.
+        self.log_detached.configure(state='normal')
+        self.log_detached.insert('end', line + '\n', tags)
+        self.log_detached.see('end')
+        self.log_detached.configure(state='disabled')
     def _log_startup_elevation_notice(self):
         """Explain unexpected elevation without interrupting startup."""
         if gen_modelbin_gui.is_running_as_administrator():
@@ -1479,6 +1763,18 @@ class ShellMixin:
                     self._glyph_inspector_generated_cache[cache_key] = {'error': error}
                     if generation == self._glyph_inspector_generate_generation:
                         self._refresh_glyph_inspector_detail()
+                elif item[0] == 'glyph_template_font_loaded':
+                    _, generation, info, covered = item
+                    if generation == self._glyph_template_load_generation:
+                        self._apply_glyph_template_font_loaded(info, covered)
+                elif item[0] == 'glyph_template_font_error':
+                    _, generation, error = item
+                    if generation == self._glyph_template_load_generation:
+                        self.glyph_template_font_status_var.set(f"Couldn't load font: {error}")
+                        self.glyph_template_blocks_status_var.set('')
+                elif item[0] == 'glyph_template_done':
+                    _, tag, line = item
+                    self._apply_glyph_template_done(tag, line)
                 elif item[0] == 'layer_effects_generate_ready':
                     _, generation, shapes, warnings, groups_by_char, compare_shapes = item
                     if generation == self._layer_effects_generate_generation:

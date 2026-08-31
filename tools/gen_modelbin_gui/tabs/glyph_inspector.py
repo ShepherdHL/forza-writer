@@ -41,6 +41,7 @@ import font_preview  # noqa: E402
 import glyph_reference_preview  # noqa: E402
 import gui_theme  # noqa: E402
 from gen_modelbin import extract_contours, normalize_to_128  # noqa: E402
+from gui_theme import gauges  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 from forza_writer import glyph_quality  # noqa: E402
@@ -51,6 +52,15 @@ from forza_writer.primitive_fit import fit_glyph_with_strategy, rasterize_contou
 from ..state import (  # noqa: E402
     GLYPH_CATEGORY_EXPAND_STEP, GLYPH_CATEGORY_HARD_CAP, GLYPH_CATEGORY_TILE_CAP, GLYPH_GRID_HEIGHT,
     GLYPH_PREVIEW_SIZE, GLYPH_TILE_GAP, GLYPH_TILE_SIZE)
+
+# Compare mode's four metrics, in filmstrip/ledger display order. 'iou'/
+# 'boundary_f1' are percentage metrics (rendered as a ring gauge);
+# 'components'/'holes' are exact-count metrics (rendered as a count pill)
+# read from compare_masks()'s own f'{key}_generated'/f'{key}_expected' keys.
+_COMPARE_METRIC_ORDER = ('iou', 'boundary_f1', 'components', 'holes')
+_COMPARE_METRIC_LABELS = {
+    'iou': 'IoU', 'boundary_f1': 'Bnd F1', 'components': 'Comps', 'holes': 'Holes',
+}
 
 
 class GlyphInspectorTabMixin:
@@ -196,10 +206,39 @@ class GlyphInspectorTabMixin:
              ('#2D7DFF', 'Missing from generated glyph'),
              ('#F54646', 'Extra generated ink')])
 
-        self.glyph_inspector_compare_metrics_var = tk.StringVar(value='')
-        self.glyph_inspector_compare_metrics_label = ttk.Label(
-            detail_col, textvariable=self.glyph_inspector_compare_metrics_var, style='Hint.TLabel',
-            wraplength=GLYPH_PREVIEW_SIZE[0], justify='left')
+        # Compare-only: the focused metric's ring gauge / count pill, a
+        # filmstrip of 4 cards to switch which metric is focused, and an
+        # always-visible ledger of all 4 plus the overall verdict. Colors
+        # are applied per palette in _render_glyph_inspector_compare_focus/
+        # _ledger, not baked in here.
+        self.glyph_inspector_compare_focus_label = ttk.Label(detail_col, anchor='center')
+        self._glyph_inspector_compare_focus_photo = None
+
+        self.glyph_inspector_compare_filmstrip = ttk.Frame(detail_col)
+        self._glyph_inspector_compare_cards: dict[str, tk.Label] = {}
+        for key in _COMPARE_METRIC_ORDER:
+            card = tk.Label(self.glyph_inspector_compare_filmstrip, text=_COMPARE_METRIC_LABELS[key],
+                             cursor='hand2', padx=4, pady=4, borderwidth=1, relief='solid')
+            card.pack(side='left', fill='x', expand=True, padx=2)
+            card.bind('<Button-1>', lambda _e, k=key: self._set_glyph_inspector_compare_focus(k))
+            self._glyph_inspector_compare_cards[key] = card
+
+        self.glyph_inspector_compare_ledger = ttk.Frame(detail_col)
+        self._glyph_inspector_compare_ledger_labels: dict[str, tk.Label] = {}
+        for key in _COMPARE_METRIC_ORDER:
+            row = ttk.Frame(self.glyph_inspector_compare_ledger)
+            row.pack(fill='x')
+            ttk.Label(row, text=f'{_COMPARE_METRIC_LABELS[key]}:', style='Hint.TLabel',
+                      width=8, anchor='w').pack(side='left')
+            value_lbl = tk.Label(row, text='—', anchor='w', borderwidth=0)
+            value_lbl.pack(side='left', fill='x', expand=True)
+            self._glyph_inspector_compare_ledger_labels[key] = value_lbl
+        self.glyph_inspector_compare_verdict = tk.Label(
+            self.glyph_inspector_compare_ledger, text='', anchor='w', borderwidth=0)
+        self.glyph_inspector_compare_verdict.pack(fill='x', pady=(4, 0))
+
+        self._glyph_inspector_compare_focus_index = 0
+        self._glyph_inspector_compare_metrics: dict | None = None
 
         meta = ttk.Frame(detail_col)
         self.glyph_inspector_meta_frame = meta
@@ -501,6 +540,16 @@ class GlyphInspectorTabMixin:
         focused = self.root.focus_get()
         if isinstance(focused, (tk.Entry, ttk.Entry)):
             return  # typing in the search box or the font path field
+        step = -1 if event.keysym == 'Left' else 1
+        # Compare mode's filmstrip cards are plain Labels, not real Tk
+        # focus targets (matching this file's own existing tile-grid
+        # convention: click sets a selected-state variable, keyboard nav
+        # is global and reads that state, rather than giving individual
+        # tiles real focus) -- so this branches on the active mode instead
+        # of on what widget currently holds focus.
+        if self.glyph_inspector_mode_var.get() == 'compare':
+            self._step_glyph_inspector_compare_focus(step)
+            return
         glyphs = self._glyph_inspector_ordered_glyphs
         if not glyphs:
             return
@@ -509,7 +558,6 @@ class GlyphInspectorTabMixin:
             index = glyphs.index(current) if current is not None else -1
         except ValueError:
             index = -1
-        step = -1 if event.keysym == 'Left' else 1
         new_index = max(0, min(len(glyphs) - 1, index + step)) if index >= 0 else 0
         self._select_glyph_inspector_glyph(glyphs[new_index])
 
@@ -523,13 +571,19 @@ class GlyphInspectorTabMixin:
                 fill='x', padx=6, pady=(0, 2), after=self.glyph_inspector_mode_row)
             self.glyph_inspector_compare_legend.pack(
                 fill='x', padx=6, pady=(0, 4), after=self.glyph_inspector_preview_canvas)
-            self.glyph_inspector_compare_metrics_label.pack(
+            self.glyph_inspector_compare_focus_label.pack(
+                pady=(0, 4), after=self.glyph_inspector_compare_legend)
+            self.glyph_inspector_compare_filmstrip.pack(
+                fill='x', padx=6, pady=(0, 4), after=self.glyph_inspector_compare_focus_label)
+            self.glyph_inspector_compare_ledger.pack(
                 fill='x', padx=6, pady=(0, 4), before=self.glyph_inspector_meta_frame)
         else:
             self.glyph_inspector_compare_row.pack_forget()
             self.glyph_inspector_compare_legend.pack_forget()
-            self.glyph_inspector_compare_metrics_label.pack_forget()
-            self.glyph_inspector_compare_metrics_var.set('')
+            self.glyph_inspector_compare_focus_label.pack_forget()
+            self.glyph_inspector_compare_filmstrip.pack_forget()
+            self.glyph_inspector_compare_ledger.pack_forget()
+            self._glyph_inspector_compare_metrics = None
 
     def _refresh_glyph_inspector_detail(self):
         glyph = self._glyph_inspector_selected_glyph
@@ -717,11 +771,82 @@ class GlyphInspectorTabMixin:
         self.glyph_inspector_preview_canvas.create_image(0, 0, anchor='nw',
                                                           image=self._glyph_inspector_preview_photo)
 
-        self.glyph_inspector_compare_metrics_var.set(
-            f"vs {target_label} — IoU {metrics['iou']:.3f} · boundary F1 {metrics['boundary_f1']:.3f} · "
-            f"{metrics['verdict'].upper()} · components {metrics['components_generated']}/"
-            f"{metrics['components_expected']} · holes {metrics['holes_generated']}/{metrics['holes_expected']}")
+        self._glyph_inspector_compare_metrics = metrics
+        self._render_glyph_inspector_compare_focus()
+        self._render_glyph_inspector_compare_ledger()
         # The legend above the canvas explains the overlay's colors, so this
         # status line matches Reference/Generated's own "Mode: what you're
         # looking at" phrasing instead of repeating that explanation.
         self.glyph_inspector_detail_status_var.set(f'Compare — diff overlay against {target_label}.')
+
+    def _glyph_inspector_compare_metric_shortfall(self, key: str) -> bool:
+        """True only for the two exact-count metrics when generated falls
+        short of expected -- an exact integer comparison, never a
+        fabricated threshold. IoU/boundary F1 are never individually
+        flagged; see gauges.render_ring_gauge's own docstring for why."""
+        metrics = self._glyph_inspector_compare_metrics
+        if metrics is None or key not in ('components', 'holes'):
+            return False
+        return metrics[f'{key}_generated'] < metrics[f'{key}_expected']
+
+    def _render_glyph_inspector_compare_focus(self) -> None:
+        metrics = self._glyph_inspector_compare_metrics
+        if metrics is None:
+            return
+        p = gui_theme.palette()
+        key = _COMPARE_METRIC_ORDER[self._glyph_inspector_compare_focus_index]
+        if key in ('iou', 'boundary_f1'):
+            image = gauges.render_ring_gauge(metrics[key], GLYPH_PREVIEW_SIZE[0], p)
+        else:
+            image = gauges.render_count_pill(
+                metrics[f'{key}_generated'], metrics[f'{key}_expected'],
+                (GLYPH_PREVIEW_SIZE[0], 90), p)
+        self._glyph_inspector_compare_focus_photo = ImageTk.PhotoImage(image)
+        self.glyph_inspector_compare_focus_label.configure(image=self._glyph_inspector_compare_focus_photo)
+
+        for card_key, card in self._glyph_inspector_compare_cards.items():
+            selected = card_key == key
+            shortfall = self._glyph_inspector_compare_metric_shortfall(card_key)
+            card.configure(
+                bg=p['accent'] if selected else p['panel_alt'],
+                fg=p['select_fg'] if selected else (p['danger'] if shortfall else p['fg']))
+
+    def _render_glyph_inspector_compare_ledger(self) -> None:
+        metrics = self._glyph_inspector_compare_metrics
+        if metrics is None:
+            return
+        p = gui_theme.palette()
+        for key, label_widget in self._glyph_inspector_compare_ledger_labels.items():
+            if key in ('iou', 'boundary_f1'):
+                text, color = f'{metrics[key]:.3f}', p['fg']
+            else:
+                generated, expected = metrics[f'{key}_generated'], metrics[f'{key}_expected']
+                text = f'{generated} / {expected}'
+                color = p['danger'] if generated < expected else p['fg']
+            label_widget.configure(text=text, fg=color, bg=p['panel_alt'])
+
+        verdict = metrics['verdict']
+        if verdict == 'pass':
+            self.glyph_inspector_compare_verdict.configure(text='VERDICT: PASS', fg=p['success'])
+        elif verdict == 'review':
+            self.glyph_inspector_compare_verdict.configure(text='VERDICT: REVIEW', fg=p['warn'])
+        else:
+            # compare_masks() only ever returns "pass"/"review" -- silently
+            # falling back to one of them here would misreport a result the
+            # data doesn't actually support.
+            raise ValueError(f'unrecognized compare verdict: {verdict!r}')
+        self.glyph_inspector_compare_verdict.configure(bg=p['panel_alt'])
+
+    def _set_glyph_inspector_compare_focus(self, key: str) -> None:
+        try:
+            self._glyph_inspector_compare_focus_index = _COMPARE_METRIC_ORDER.index(key)
+        except ValueError:
+            return
+        self._render_glyph_inspector_compare_focus()
+
+    def _step_glyph_inspector_compare_focus(self, step: int) -> None:
+        if self._glyph_inspector_compare_metrics is None:
+            return
+        count = len(_COMPARE_METRIC_ORDER)
+        self._glyph_inspector_compare_focus_index = (self._glyph_inspector_compare_focus_index + step) % count
+        self._render_glyph_inspector_compare_focus()

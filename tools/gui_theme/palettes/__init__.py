@@ -35,6 +35,10 @@ PALETTE_ORDER: list[str] = []
 DISPLAY_NAMES: dict[str, str] = {}
 DESCRIPTIONS: dict[str, str] = {}
 SOLID_SELECTED_ROW: dict[str, bool] = {}
+# A palette's preferred display-font Tk family name, or None. Optional by
+# design (see DISPLAY_FONT_FAMILY's docstring in eurocorp.py) -- absent
+# from the token contract so most palettes simply don't set it.
+DISPLAY_FONT_FAMILY: dict[str, str | None] = {}
 
 for _slug, _module in _REGISTRY:
     _palette = _module.PALETTE
@@ -49,5 +53,6 @@ for _slug, _module in _REGISTRY:
     DISPLAY_NAMES[_slug] = _module.DISPLAY_NAME
     DESCRIPTIONS[_slug] = _module.DESCRIPTION
     SOLID_SELECTED_ROW[_slug] = _module.SOLID_SELECTED_ROW
+    DISPLAY_FONT_FAMILY[_slug] = getattr(_module, "DISPLAY_FONT_FAMILY", None)
 
 del _slug, _module, _palette, _missing, _extra

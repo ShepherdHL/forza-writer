@@ -33,23 +33,34 @@ Editor.
 
 ## Quick start (GUI)
 
-Double-click `Forza Writer.bat` in the repo root. It launches the fontpack
-generator GUI using whatever Python is on your PATH, no command line needed.
-It prefers the repo's `.venv` when present.
+Forza Writer has two GUIs over the same Python backend and the same
+`data/`/`user-assets/`/settings files, so switching between them mid-project
+is safe:
+
+- `Forza Writer.bat`: the original Tkinter GUI. Full feature set.
+- `Forza Writer (Web).bat`: a newer pywebview-based GUI (WebView2), actively
+  being migrated toward replacing the Tkinter one. All 13 tabs are ported.
+  A handful of secondary cross-tab shortcuts and convenience buttons
+  haven't caught up yet, since the web app doesn't share live state across
+  tabs the way the Tkinter app's single object graph does. If something's
+  missing there, the Tkinter app still has it.
+
+Either one launches using whatever Python is on your PATH, no command line
+needed, and prefers the repo's `.venv` when present.
 
 1. `pip install -r requirements.txt` once, beforehand.
 2. NVIDIA users can additionally run
    `pip install "cupy-cuda12x[ctk]>=14.1,<15"` to enable the CUDA path (the
    same line is in `requirements.txt`, commented out).
-3. Launch `Forza Writer.bat`.
+3. Launch `Forza Writer.bat` or `Forza Writer (Web).bat`.
 
-No administrator rights are required for the GUI or generation features (the
-separate command-line FH6 process-memory diagnostics tool is the one
+No administrator rights are required for either GUI or generation features
+(the separate command-line FH6 process-memory diagnostics tool is the one
 exception, since Windows may require elevation for it to inspect the game
 process).
 
 Everything below this point is the command-line path, for scripting and
-automation or anything not yet exposed in the GUI.
+automation or anything not yet exposed in either GUI.
 
 ## Features
 
@@ -114,6 +125,12 @@ install:
    `<FH6 install dir>\media\Livery\Vinyls.zip`
 2. Extract `S_01.modelbin` from that archive.
 3. Copy it into this repo at `user-assets/S_01.modelbin`.
+
+Both GUIs' Settings tab can do all three steps for you: click Detect next to
+Reference Modelbin to search an Xbox app, Microsoft Store, or Steam install
+for `Vinyls.zip` and extract `S_01.modelbin` automatically (see
+`tools/game_locator.py`). The Settings tab also offers Detect for the KFPS
+executable path, searching common install locations for `KFPS.exe`.
 
 Once in place, `gen_modelbin.py` picks it up automatically via
 `--reference-modelbin` (default `user-assets/S_01.modelbin`), or point it at

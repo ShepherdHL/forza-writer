@@ -26,6 +26,26 @@ from PIL import ImageTk
 from . import backdrops
 from .indicators import apply_custom_indicators
 from .output_accents import apply_output_option_styles
+from .palettes import DISPLAY_FONT_FAMILY
+
+
+def _resolve_font_family(root: tk.Misc, preferred: str | None, fallback: str) -> str:
+    """`preferred` if it's actually registered with Tk on this machine,
+    else `fallback`. A palette's DISPLAY_FONT_FAMILY may name a font that's
+    only installed on the machine that set it up (e.g. a personal license)
+    -- every other install must degrade cleanly rather than erroring or
+    silently rendering with Tk's own default substitution, which can look
+    arbitrarily different from the intended fallback. `root` is passed
+    explicitly (rather than relying on tkfont's implicit default root) since
+    this codebase routinely runs multiple Tk() interpreters in one process
+    (see tests/tools/gen_modelbin_gui/conftest.py's tk_root fixture).
+    Queries tkfont.families() fresh each call rather than caching -- this
+    only runs once per theme application (startup, or a palette switch),
+    never in a hot loop, so there's no real cost to staying simple and
+    trivially mockable in tests."""
+    if not preferred:
+        return fallback
+    return preferred if preferred in tkfont.families(root) else fallback
 
 # ---------------------------------------------------------------------------
 # Classic tk widgets (not ttk) that need direct color configuration. Each
@@ -93,10 +113,77 @@ class AutoHideScrollbar(ttk.Scrollbar):
     it manages its own visibility from there.
     """
 
+    # Coalescing window for thumb-drag scrolling, matched to shell.py's own
+    # `_WHEEL_FRAME_MS` (the mouse-wheel path already batches to one canvas
+    # move per display frame instead of one per notch) -- see
+    # `_throttle_command`'s docstring for why the wheel path alone wasn't
+    # enough. Kept as a plain class attribute (not shell.py's `_debounce`)
+    # since this widget has no access to that mixin and the coalescing
+    # rule here is simpler: always fire, just no more than once per window.
+    _DRAG_FRAME_MS = 16
+
     def __init__(self, *args, **kwargs):
+        command = kwargs.pop('command', None)
+        if command is not None:
+            kwargs['command'] = self._throttle_command(command)
         super().__init__(*args, **kwargs)
         self._geo_manager: str | None = None
         self._geo_kwargs: dict | None = None
+
+    def _throttle_command(self, command):
+        """Coalesce thumb-drag scrolling the same way shell.py's mouse-wheel
+        handling already coalesces wheel notches -- dragging a scrollbar
+        thumb fires many 'moveto' calls per second (one per pointer-motion
+        event), each a synchronous, unbatched `canvas.yview(...)` straight
+        through ttk's own C-level scrollbar/scrollcommand wiring. On a page
+        with enough child widgets for a full canvas repaint to be non-trivial
+        (a long font list, a tile grid, ...), firing that many real repaints
+        back-to-back is what produced the torn/partial repaints and stale
+        doubled-up geometry caught on camera during a fast scrollbar drag,
+        from Tk queuing another `yview` before the previous one's redraw had
+        actually finished. `command=` mouse-wheel scrolling already avoids
+        this (see `_flush_page_scroll`); plain thumb-drag scrolling had no
+        equivalent and bypassed it entirely.
+
+        Only 'moveto' calls (thumb drag) are coalesced -- keep just the
+        latest target fraction and drop superseded ones, exactly like the
+        wheel path keeps only the latest pending offset. 'scroll' calls
+        (arrow/trough clicks) are relative, not absolute, and already
+        low-frequency (one per OS key-repeat tick, well under this window),
+        so they're passed straight through un-coalesced -- flushing any
+        pending 'moveto' first so ordering stays correct.
+        """
+        state = {'after_id': None, 'pending': None}
+
+        def flush():
+            state['after_id'] = None
+            args = state['pending']
+            state['pending'] = None
+            if args is not None:
+                command(*args)
+                # See shell.py's _clamp_page_scroll_view for why this
+                # matters: on Windows, moving a canvas-embedded content
+                # Frame's HWND doesn't guarantee its old-position bitmap
+                # is erased before the next idle tick, which can leave a
+                # stale ghost of it on screen for a frame. update_idletasks
+                # is interpreter-wide (not canvas-specific), so calling it
+                # here on the scrollbar itself closes that window exactly
+                # like calling it on the canvas would.
+                self.update_idletasks()
+
+        def throttled(*call_args):
+            if call_args and call_args[0] == 'moveto':
+                state['pending'] = call_args
+                if state['after_id'] is None:
+                    state['after_id'] = self.after(self._DRAG_FRAME_MS, flush)
+            else:
+                if state['after_id'] is not None:
+                    self.after_cancel(state['after_id'])
+                    flush()
+                command(*call_args)
+                self.update_idletasks()
+
+        return throttled
 
     def pack(self, **kwargs):
         self._geo_manager, self._geo_kwargs = "pack", kwargs
@@ -176,8 +263,18 @@ def apply_theme(root: tk.Misc, style: ttk.Style, tk_widgets: list[tk.Widget], *,
     d = density
     style.theme_use("clam")
 
-    heading_font = tkfont.Font(family="Segoe UI Semibold", size=d["body"])
-    accent_button_font = tkfont.Font(family="Segoe UI Semibold", size=d["body"])
+    # Display weight: headings/titles/accent-button text. Palettes may
+    # name a preferred family here (Eurocorp's DINPro-Medium, a homage to
+    # Syndicate (2012)'s condensed HUD type); _resolve_font_family degrades
+    # to Segoe UI Semibold wherever that font isn't actually installed, so
+    # every other palette (and every machine without the font) is
+    # unaffected. Body/detail text below deliberately stays plain Segoe UI
+    # regardless of palette -- this is a display-only accent, not a
+    # wholesale typography swap.
+    display_family = _resolve_font_family(
+        root, DISPLAY_FONT_FAMILY.get(palette_key), "Segoe UI Semibold")
+    heading_font = tkfont.Font(family=display_family, size=d["body"])
+    accent_button_font = tkfont.Font(family=display_family, size=d["body"])
     button_font = tkfont.Font(family="Segoe UI", size=d["body"])
     body_font = tkfont.Font(family="Segoe UI", size=d["body"])
     # One size step down from body text — secondary/status text reads as
@@ -188,7 +285,7 @@ def apply_theme(root: tk.Misc, style: ttk.Style, tk_widgets: list[tk.Widget], *,
     # primary thing in its panel by size alone, well above heading_font —
     # this is the one role in the type scale that's larger than body text,
     # not smaller.
-    title_font = tkfont.Font(family="Segoe UI Semibold", size=d["body"] + 9)
+    title_font = tkfont.Font(family=display_family, size=d["body"] + 9)
 
     style.configure(".", background=p["panel_alt"], foreground=p["fg"],
                      fieldbackground=p["entry_bg"])
@@ -239,7 +336,7 @@ def apply_theme(root: tk.Misc, style: ttk.Style, tk_widgets: list[tk.Widget], *,
     # Font Mapping and Text Layout") — full-strength text at a small
     # semibold weight, one step stronger than the muted byline/description
     # around it without reaching for a new color the way Link/Badge do.
-    category_font = tkfont.Font(family="Segoe UI Semibold", size=d["detail"])
+    category_font = tkfont.Font(family=display_family, size=d["detail"])
     style.configure("Category.TLabel", background=p["panel_alt"], foreground=p["fg"], font=category_font)
     # Small inline chip — e.g. a license tag sitting next to a credited
     # project's name — one step lighter than the surface so it reads as a
@@ -429,13 +526,25 @@ def backdrop_photo_image(theme_key: str, width: int, height: int, palette: dict[
                           master: tk.Misc) -> "ImageTk.PhotoImage | None":
     """Return a cached PhotoImage of `theme_key`'s backdrop at this size,
     or None if that theme has no backdrop (see backdrops/__init__.py) or
-    the size isn't real yet (before Tk has laid the canvas out)."""
+    the size isn't real yet (before Tk has laid the canvas out).
+
+    Cache key includes id(master): a bare (theme_key, width, height) key
+    would let a *different* interpreter's request at a coincidentally
+    matching size reuse a PhotoImage tied to some other, possibly already-
+    destroyed, Tk interpreter -- confirmed directly (a cross-test-file
+    pytest run hit exactly this: "image ... doesn't exist" from a stale
+    cached PhotoImage). id() rather than the widget itself so the cache
+    never holds a live reference keeping old, destroyed widgets from being
+    garbage-collected -- this module-level cache is never cleared, and
+    this app's own test suite alone constructs hundreds of GeneratorGUI
+    instances (and therefore Canvases) over a full run.
+    """
     if width <= 0 or height <= 0:
         return None
     builder = backdrops.get_backdrop(theme_key)
     if builder is None:
         return None
-    cache_key = (theme_key, width, height)
+    cache_key = (theme_key, width, height, id(master))
     cached = _BACKDROP_CACHE.get(cache_key)
     if cached is not None:
         return cached
@@ -443,3 +552,30 @@ def backdrop_photo_image(theme_key: str, width: int, height: int, palette: dict[
     photo = ImageTk.PhotoImage(image, master=master)
     _BACKDROP_CACHE[cache_key] = photo
     return photo
+
+
+_BACKDROP_FRAMES_CACHE: dict[tuple[str, int, int], list] = {}
+
+
+def backdrop_frames(theme_key: str, width: int, height: int, palette: dict[str, str]) -> list | None:
+    """Return `theme_key`'s cached backdrop animation flip-book at this
+    size, or None if that theme has no animated backdrop (or a static-only
+    one -- see backdrops.get_backdrop_frames) or the size isn't real yet.
+    Built once per (theme, size) and cached exactly like
+    backdrop_photo_image's single frame -- the caller is responsible for
+    actually animating (mutating one persistent PhotoImage via `.paste()`
+    per tick; see shell.py's sidebar backdrop for the reference
+    implementation and why a fresh PhotoImage per tick is never
+    acceptable here)."""
+    if width <= 0 or height <= 0:
+        return None
+    builder = backdrops.get_backdrop_frames(theme_key)
+    if builder is None:
+        return None
+    cache_key = (theme_key, width, height)
+    cached = _BACKDROP_FRAMES_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+    frames = builder((width, height), palette)
+    _BACKDROP_FRAMES_CACHE[cache_key] = frames
+    return frames

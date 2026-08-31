@@ -12,7 +12,9 @@ from forza_writer import alphabets  # noqa: E402
 # docstring for what's included and what's deliberately left out, e.g.
 # Devanagari matras, Thai positional vowel stacking).
 EXPECTED_COUNTS = {
-    "Cyrillic": {"Uppercase": 33, "Lowercase": 33},
+    # Mongolian additions: the 2 extra letters (Өө, Үү) Mongolian Cyrillic
+    # needs beyond the Russian alphabet above, both cases.
+    "Cyrillic": {"Uppercase": 33, "Lowercase": 33, "Mongolian additions": 4},
     "Greek": {"Uppercase": 24, "Lowercase": 25},  # Lowercase includes word-final sigma
     "Japanese": {"Hiragana": 75, "Katakana": 76},  # Katakana also carries the long-vowel mark ー
     "Korean": {"Consonants": 19, "Vowels": 21},
@@ -20,6 +22,14 @@ EXPECTED_COUNTS = {
     "Thai": {"Consonants": 44, "Vowels": 15, "Tone marks": 4},
     "Arabic": {"Letters": 36},
     "Hebrew": {"Letters": 27, "Niqqud (vowel points)": 15},  # Letters: 22 base + 5 final (sofit) forms
+    # 7 extra base letters (ăâđêôơư) + 5 tones x 12 tone-taking vowel
+    # letters, both cases: 7 + 60 = 67 per case.
+    "Vietnamese": {"Uppercase": 67, "Lowercase": 67},
+    "Khmer": {"Consonants": 35, "Independent vowels": 17, "Vowel signs": 16},
+    # Vowels: 12 independent vowels + aytham (traditionally counted
+    # alongside them). Consonants: 23, including the grantha loan letters
+    # (ja/sha/ssa/ha) standard in the modern Tamil Unicode block.
+    "Tamil": {"Vowels": 13, "Consonants": 23, "Vowel signs": 11},
 }
 
 # Unicode block each script's characters must fall within: catches a
@@ -33,6 +43,14 @@ EXPECTED_BLOCKS = {
     "Thai": [(0x0E00, 0x0E7F)],
     "Arabic": [(0x0600, 0x06FF)],
     "Hebrew": [(0x0590, 0x05FF)],
+    # Vietnamese's precomposed diacritics are spread across every Latin
+    # extension block: Latin-1 Supplement (â/ê/ô and grave/acute à/á/...),
+    # Latin Extended-A (ă/đ), Latin Extended-B (ơ/ư), and Latin Extended
+    # Additional (every hook-above/tilde/dot-below tone combination, which
+    # none of the earlier three blocks can represent).
+    "Vietnamese": [(0x0080, 0x024F), (0x1E00, 0x1EFF)],
+    "Khmer": [(0x1780, 0x17FF)],
+    "Tamil": [(0x0B80, 0x0BFF)],
 }
 
 

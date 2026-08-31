@@ -22,6 +22,15 @@ DESCRIPTION = "Syndicate (2012)'s black/orange HUD, worn openly."
 
 SOLID_SELECTED_ROW = True
 
+# Optional: not part of the palette token contract (EXPECTED_KEYS), since
+# Charcoal/Slate don't define it. A condensed, technical display face for
+# this palette's headings/titles, matching the reference HUD's typography;
+# apply.py falls back to Segoe UI Semibold wherever this exact Tk font
+# family isn't registered on the current machine (verified registered name
+# via tkinter.font.families() -- Windows lists this file's family as
+# "DINPro-Medium", not "DIN Pro Medium").
+DISPLAY_FONT_FAMILY = "DINPro-Medium"
+
 PALETTE = {
     "bg": "#0a0a0b",
     "fg": "#f5f3ee",

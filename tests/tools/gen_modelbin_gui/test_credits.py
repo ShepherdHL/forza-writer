@@ -1,7 +1,7 @@
 """Credits tab: attribution list for third-party code/data forza-writer
 itself actually uses.
 """
-from conftest import tk, ttk  # noqa: E402
+from .conftest import tk, ttk  # noqa: E402
 
 
 def test_credits_tab_is_registered_in_sidebar(gui):

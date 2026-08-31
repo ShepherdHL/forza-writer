@@ -1,4 +1,5 @@
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,7 @@ from gui_theme import (  # noqa: E402
 )
 
 tk = pytest.importorskip("tkinter")
+from tkinter import font as tkfont  # noqa: E402
 from tkinter import ttk  # noqa: E402
 
 EXPECTED_KEYS = {
@@ -157,6 +159,131 @@ def test_configure_eurocorp_round_trips_and_resets_cleanly():
     finally:
         configure()  # restore the default so later tests see charcoal
     assert PALETTE == PALETTES["charcoal"]
+
+
+def test_display_font_family_registry_is_eurocorp_only():
+    # Charcoal/Slate deliberately have no preferred display font -- only
+    # Eurocorp's DIN Pro homage opts in. Not part of EXPECTED_KEYS, so this
+    # is its own explicit assertion rather than folded into the token-
+    # contract test.
+    from gui_theme.palettes import DISPLAY_FONT_FAMILY
+    assert DISPLAY_FONT_FAMILY["eurocorp"] == "DINPro-Medium"
+    assert DISPLAY_FONT_FAMILY["charcoal"] is None
+    assert DISPLAY_FONT_FAMILY["slate"] is None
+
+
+def test_display_font_family_resolves_when_registered(monkeypatch):
+    root = tk.Tk()
+    try:
+        root.withdraw()
+        monkeypatch.setattr(gui_theme._apply.tkfont, "families",
+                             lambda *_a, **_kw: ("DINPro-Medium", "Segoe UI"))
+        try:
+            configure("eurocorp", "balanced")
+            assert gui_theme.display_font_family(root) == "DINPro-Medium"
+        finally:
+            configure()
+    finally:
+        root.destroy()
+
+
+def test_display_font_family_falls_back_when_not_installed(monkeypatch):
+    # The whole point of resolving through tkfont.families() rather than
+    # trusting the palette blindly: a machine without this personally-
+    # installed font must degrade to the same look every other palette has,
+    # not error or silently hand Tk an unknown family to substitute for.
+    root = tk.Tk()
+    try:
+        root.withdraw()
+        monkeypatch.setattr(gui_theme._apply.tkfont, "families", lambda *_a, **_kw: ("Segoe UI",))
+        try:
+            configure("eurocorp", "balanced")
+            assert gui_theme.display_font_family(root) == "Segoe UI Semibold"
+        finally:
+            configure()
+    finally:
+        root.destroy()
+
+
+def test_display_font_family_ignores_charcoal_and_slate_even_if_installed(monkeypatch):
+    root = tk.Tk()
+    try:
+        root.withdraw()
+        monkeypatch.setattr(gui_theme._apply.tkfont, "families", lambda *_a, **_kw: ("DINPro-Medium",))
+        for name in ("charcoal", "slate"):
+            try:
+                configure(name, "balanced")
+                assert gui_theme.display_font_family(root) == "Segoe UI Semibold"
+            finally:
+                configure()
+    finally:
+        root.destroy()
+
+
+def _spy_on_font_construction(monkeypatch):
+    """Record the `family` kwarg of every tkfont.Font(...) apply.py
+    constructs, without disturbing real construction. Avoids relying on
+    ttk's post-hoc font-name lookup + tkfont.Font(exists=True) rebinding,
+    which is fragile here: apply.py's Font objects are local variables that
+    can be garbage-collected (deleting their underlying Tcl named font)
+    before a test gets around to re-resolving the name ttk stored."""
+    seen = []
+    real_font_cls = tkfont.Font
+
+    def spy(*args, **kwargs):
+        seen.append(kwargs.get("family"))
+        return real_font_cls(*args, **kwargs)
+
+    monkeypatch.setattr(gui_theme._apply.tkfont, "Font", spy)
+    return seen
+
+
+def test_apply_theme_headings_actually_use_the_resolved_display_family(monkeypatch):
+    # Regression guard: apply_theme()'s own heading/title/accent-button/
+    # category fonts must use the resolved family, not just the standalone
+    # display_font_family() helper agreeing with itself -- and body/detail/
+    # button/log text must stay untouched (a display-only accent, not a
+    # wholesale typography swap).
+    root = tk.Tk()
+    try:
+        root.withdraw()
+        style = ttk.Style(root)
+        monkeypatch.setattr(gui_theme._apply.tkfont, "families",
+                             lambda *_a, **_kw: ("DINPro-Medium", "Segoe UI"))
+        seen = _spy_on_font_construction(monkeypatch)
+        try:
+            configure("eurocorp", "balanced")
+            apply_theme(root, style)
+        finally:
+            configure()
+        assert "DINPro-Medium" in seen
+        assert "Segoe UI" in seen  # body/detail/button/link untouched
+        assert "Consolas" in seen  # the inline-code font untouched
+    finally:
+        root.destroy()
+
+
+def test_apply_theme_charcoal_and_slate_fonts_unchanged_by_the_feature(monkeypatch):
+    # Even with the font available on-machine, Charcoal/Slate must never
+    # construct a DINPro-Medium font -- this is opt-in per palette, not
+    # global, and must fall back to the exact prior literal.
+    root = tk.Tk()
+    try:
+        root.withdraw()
+        style = ttk.Style(root)
+        monkeypatch.setattr(gui_theme._apply.tkfont, "families",
+                             lambda *_a, **_kw: ("DINPro-Medium", "Segoe UI"))
+        for name in ("charcoal", "slate"):
+            seen = _spy_on_font_construction(monkeypatch)
+            try:
+                configure(name, "balanced")
+                apply_theme(root, style)
+            finally:
+                configure()
+            assert "DINPro-Medium" not in seen
+            assert "Segoe UI Semibold" in seen
+    finally:
+        root.destroy()
 
 
 def test_gui_settings_valid_palettes_matches_the_registry():
@@ -510,6 +637,84 @@ def test_autohide_scrollbar_supports_grid_geometry_too():
 
 def test_scrollbar_gutter_is_a_small_positive_pixel_value():
     assert 0 < SCROLLBAR_GUTTER <= 10
+
+
+# --- design system: AutoHideScrollbar thumb-drag throttling ----------------
+# Mouse-wheel scrolling was already coalesced to one canvas move per display
+# frame (shell.py's _flush_page_scroll); a fast scrollbar thumb-drag had no
+# equivalent and called straight through to the real yview command on every
+# pointer-motion event, which is what produced the torn/partial repaints and
+# stale doubled-up geometry caught on camera during a fast drag. These test
+# the coalescing logic directly (bypassing real Tcl scrollbar events, which
+# `winfo_ismapped`-style tests above already establish work) since what
+# matters here is the call-batching behavior, not Tk's own drag mechanics.
+
+def test_thumb_drag_moveto_calls_coalesce_to_one_with_the_latest_fraction():
+    root = _offscreen_tk_root()
+    try:
+        calls = []
+        scrollbar = AutoHideScrollbar(root, orient="vertical", command=lambda *a: calls.append(a))
+        throttled = scrollbar._throttle_command(lambda *a: calls.append(a))
+        for i in range(20):
+            throttled("moveto", str(i / 20.0))
+        root.update()
+        assert calls == []  # nothing fires until the coalescing window elapses
+        time.sleep(scrollbar._DRAG_FRAME_MS / 1000 + 0.03)
+        root.update()
+        assert calls == [("moveto", "0.95")]
+    finally:
+        root.destroy()
+
+
+def test_arrow_click_scroll_calls_pass_through_immediately_uncoalesced():
+    root = _offscreen_tk_root()
+    try:
+        calls = []
+        scrollbar = AutoHideScrollbar(root, orient="vertical", command=lambda *a: calls.append(a))
+        throttled = scrollbar._throttle_command(lambda *a: calls.append(a))
+        throttled("scroll", 1, "units")
+        throttled("scroll", 1, "units")
+        root.update()
+        assert calls == [("scroll", 1, "units"), ("scroll", 1, "units")]
+    finally:
+        root.destroy()
+
+
+def test_pending_moveto_flushes_before_a_following_scroll_call():
+    root = _offscreen_tk_root()
+    try:
+        calls = []
+        scrollbar = AutoHideScrollbar(root, orient="vertical", command=lambda *a: calls.append(a))
+        throttled = scrollbar._throttle_command(lambda *a: calls.append(a))
+        throttled("moveto", "0.5")
+        throttled("scroll", 1, "units")
+        root.update()
+        assert calls == [("moveto", "0.5"), ("scroll", 1, "units")]
+    finally:
+        root.destroy()
+
+
+def test_scrollbar_still_wired_to_a_throttled_command_end_to_end():
+    # Confirms __init__ actually wraps the constructor's command= argument
+    # (not just that _throttle_command works in isolation): invoking the
+    # widget's own registered Tcl command name directly -- exactly how Tk's
+    # C-level scrollbar drag machinery invokes -command, no synthetic mouse
+    # events needed -- must go through the same coalescing.
+    root = _offscreen_tk_root()
+    try:
+        calls = []
+        scrollbar = AutoHideScrollbar(root, orient="vertical", command=lambda *a: calls.append(a))
+        root.update()
+        tcl_command_name = scrollbar.cget("command")
+        for i in range(10):
+            scrollbar.tk.call(tcl_command_name, "moveto", str(i / 10.0))
+        root.update()
+        assert calls == []  # coalesced, not yet flushed
+        time.sleep(scrollbar._DRAG_FRAME_MS / 1000 + 0.03)
+        root.update()
+        assert calls == [("moveto", "0.9")]
+    finally:
+        root.destroy()
 
 
 # --- design system: Text-widget semantic tags ---------------------------

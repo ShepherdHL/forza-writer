@@ -68,12 +68,12 @@ def test_load_settings_ignores_unknown_keys():
     # not silently persist arbitrary extra keys a future caller might pass.
     assert set(gui_settings.DEFAULT_SETTINGS.keys()) == {
         "reference_modelbin", "kfps_executable", "output_dir", "modelbin_output_dir",
-        "direct_output_dir", "image_output_dir",
+        "direct_output_dir", "image_output_dir", "glyph_template_output_dir",
         "palette", "density", "compute_backend",
         "generation_preset", "generation_allowed_shapes", "generation_preferred_shapes",
         "generation_fallback", "generation_allow_exact_cover",
         "image_save_source", "image_save_debug", "image_debug_mode",
-        "window_geometry", "window_maximized",
+        "window_geometry", "window_maximized", "log_collapsed", "log_detached",
         "saved_colors", "recent_colors", "color_ascii_art", "color_forza_font_text",
         "color_generator", "color_advanced", "color_direct",
     }
@@ -89,6 +89,46 @@ def test_invalid_enum_values_fall_back_to_defaults(tmp_path, monkeypatch):
     assert loaded["palette"] == "charcoal"
     assert loaded["density"] == "balanced"
     assert loaded["compute_backend"] == "auto"
+
+
+def test_log_collapsed_and_detached_round_trip(tmp_path, monkeypatch):
+    path = tmp_path / "settings.json"
+    monkeypatch.setattr(gui_settings, "SETTINGS_PATH", path)
+    monkeypatch.setattr(gui_settings, "SETTINGS_DIR", path.parent)
+
+    gui_settings.save_settings({"log_collapsed": True, "log_detached": False})
+    reloaded = gui_settings.load_settings()
+    assert reloaded["log_collapsed"] is True
+    assert reloaded["log_detached"] is False
+
+
+def test_log_collapsed_and_detached_default_to_false():
+    assert gui_settings.DEFAULT_SETTINGS["log_collapsed"] is False
+    assert gui_settings.DEFAULT_SETTINGS["log_detached"] is False
+
+
+def test_log_state_invalid_types_fall_back_to_false(tmp_path, monkeypatch):
+    path = tmp_path / "settings.json"
+    path.write_text('{"log_collapsed": "yes", "log_detached": null}', encoding="utf-8")
+    monkeypatch.setattr(gui_settings, "SETTINGS_PATH", path)
+    loaded = gui_settings.load_settings()
+    # bool("yes") is True in Python -- this asserts the *coercion* behavior
+    # actually in place (truthy strings become True), not that it's
+    # rejected outright; only real type errors (e.g. None) fall to False.
+    assert loaded["log_collapsed"] is True
+    assert loaded["log_detached"] is False
+
+
+def test_log_detached_implies_not_collapsed(tmp_path, monkeypatch):
+    # A collapsed-and-detached combination isn't a meaningful UI state --
+    # the docked panel is entirely hidden while detached, so "collapsed"
+    # (just its header showing) has nothing to apply to.
+    path = tmp_path / "settings.json"
+    path.write_text('{"log_collapsed": true, "log_detached": true}', encoding="utf-8")
+    monkeypatch.setattr(gui_settings, "SETTINGS_PATH", path)
+    loaded = gui_settings.load_settings()
+    assert loaded["log_detached"] is True
+    assert loaded["log_collapsed"] is False
 
 
 def test_save_settings_drops_unknown_keys(tmp_path, monkeypatch):

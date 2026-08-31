@@ -1,0 +1,129 @@
+/* Shared color-picker component, the web counterpart to
+   tools/gen_modelbin_gui/color_picker_widget.py. Used by any tab that lets
+   the user choose a color (ASCII Art, Forza Font Text, Composer, Layer
+   Effects) via window.ForzaColorPicker.create(). */
+
+.cp-title {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.cp-main { display: flex; align-items: flex-start; gap: 10px; }
+
+.cp-sb {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  border: 1px solid var(--border);
+  cursor: crosshair;
+  flex: 0 0 auto;
+}
+.cp-sb.disabled { cursor: default; opacity: 0.5; }
+.cp-sb-marker {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #000;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.cp-hue {
+  position: relative;
+  width: 18px;
+  height: 130px;
+  border: 1px solid var(--border);
+  cursor: ns-resize;
+  flex: 0 0 auto;
+  background: linear-gradient(to bottom,
+    #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+.cp-hue.disabled { cursor: default; opacity: 0.5; }
+.cp-hue-marker {
+  position: absolute;
+  left: 0; right: 0;
+  height: 3px;
+  background: #fff;
+  box-shadow: 0 0 0 1px #000;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.cp-swatch-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.cp-swatch { width: 70px; height: 42px; border: 1px solid var(--border); border-radius: 3px; }
+.cp-native-btn { font-size: 10px; padding: 5px 8px; }
+
+.cp-fields { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0; }
+.cp-fields label { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.cp-fields input[type="text"] {
+  background: var(--entry-bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+
+.cp-readout {
+  display: grid;
+  grid-template-columns: auto repeat(3, 52px);
+  justify-content: start;
+  column-gap: 6px;
+  row-gap: 4px;
+  align-items: baseline;
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.cp-readout-label { color: var(--muted); }
+.cp-readout > span:not(.cp-readout-label) {
+  color: var(--fg);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cp-presets { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.cp-swatch-btn {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: "Segoe UI", sans-serif;
+  cursor: pointer;
+  min-width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.2;
+}
+.cp-swatch-name { font-size: 10px; font-weight: 600; }
+.cp-swatch-hex { font-size: 8.5px; font-family: var(--mono); opacity: 0.75; }
+.cp-swatch-btn-sm { min-width: 0; padding: 4px 6px; font-size: 10px; }
+
+.cp-section-label {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 10px 0 4px;
+}
+.cp-save-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.cp-save-row input[type="text"] {
+  background: var(--entry-bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 5px 8px;
+  font-size: 11.5px;
+}
+.cp-saved-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+.cp-recent-row { display: flex; flex-wrap: wrap; gap: 4px; }

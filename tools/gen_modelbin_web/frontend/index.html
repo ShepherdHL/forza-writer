@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Forza Writer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="css/font-face.css">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/tabs/glyph-inspector.css">
+<link rel="stylesheet" href="css/color-picker.css">
+<link rel="stylesheet" href="css/font-search.css">
+<link rel="stylesheet" href="css/tabs/layer-effects.css">
+<link rel="stylesheet" href="css/tabs/generator.css">
+<link rel="stylesheet" href="css/tabs/plates.css">
+</head>
+<body>
+
+<div class="glow" aria-hidden="true"></div>
+<canvas id="bgCanvas" aria-hidden="true"></canvas>
+
+<div class="app">
+  <div class="frame">
+    <!-- ============================================================ sidebar -->
+    <nav class="sidebar" aria-label="Forza Writer tabs">
+      <div class="sidebar-mark">FORZA WRITER<span>TOOLS</span></div>
+      <div class="nav" id="nav"><!-- populated by shell.js from api.get_tabs() --></div>
+    </nav>
+
+    <!-- ============================================================== main -->
+    <main class="main">
+      <div class="topbar">
+        <h1 id="pageTitle">&nbsp;</h1>
+      </div>
+      <div class="rule"></div>
+      <div class="page-content" id="pageContent"></div>
+    </main>
+  </div>
+
+  <!-- ================================================================ log -->
+  <div class="logbar" id="logbar">
+    <div class="logbar-resize-handle" id="logResizeHandle" title="Drag to resize"></div>
+    <div class="logbar-head" id="logToggle">
+      <div class="logbar-title">
+        <span class="chevron">&#9662;</span>
+        <span>Log</span>
+        <span class="count" id="logCount">0 lines</span>
+      </div>
+      <div class="logbar-controls">
+        <button type="button" class="icon-btn" id="logPopout" title="Open in a separate window" aria-label="Open log in a separate window">&#10689;</button>
+      </div>
+    </div>
+    <div class="log-body" id="logBody"></div>
+    <button type="button" class="log-jump-btn" id="logJumpBtn">New &#8595;</button>
+  </div>
+</div>
+
+<div class="log-float" id="logFloat">
+  <div class="logbar-head">
+    <div class="logbar-title">
+      <span>Log</span>
+      <span class="count">detached</span>
+    </div>
+    <div class="logbar-controls">
+      <button type="button" class="icon-btn" id="logDock" title="Dock back to the main window" aria-label="Dock log back to the main window">&#10688;</button>
+    </div>
+  </div>
+  <div class="log-body" id="logBodyFloat"></div>
+  <button type="button" class="log-jump-btn" id="logJumpBtnFloat">New &#8595;</button>
+</div>
+
+<script src="js/events.js"></script>
+<script src="js/color-picker.js"></script>
+<script src="js/font-search.js"></script>
+<script src="js/character-selector.js"></script>
+<script src="js/vinyl-shapes.js"></script>
+<script src="js/tabs/glyph-inspector.js"></script>
+<script src="js/tabs/credits.js"></script>
+<script src="js/tabs/settings.js"></script>
+<script src="js/tabs/forza-font-text.js"></script>
+<script src="js/tabs/ascii-art.js"></script>
+<script src="js/tabs/glyph-template.js"></script>
+<script src="js/tabs/outputs.js"></script>
+<script src="js/tabs/composer.js"></script>
+<script src="js/tabs/direct.js"></script>
+<script src="js/tabs/layer-effects.js"></script>
+<script src="js/tabs/generator.js"></script>
+<script src="js/tabs/advanced.js"></script>
+<script src="js/tabs/plates.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/backdrop.js"></script>
+</body>
+</html>

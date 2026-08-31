@@ -93,6 +93,7 @@ from . import context_menu as _context_menu
 from .output_accents import GENERATION_METHOD_STYLES, OUTPUT_ACCENTS
 from .palettes import (
     DESCRIPTIONS,
+    DISPLAY_FONT_FAMILY,
     DISPLAY_NAMES,
     PALETTE_ORDER,
     PALETTES,
@@ -234,8 +235,24 @@ def apply_title_bar_theme(root: tk.Misc) -> None:
     return _apply.apply_title_bar_theme(root, PALETTE)
 
 
+def display_font_family(root: tk.Misc, fallback: str = "Segoe UI Semibold") -> str:
+    """The active palette's preferred display-font Tk family name, or
+    `fallback` if the palette has none or the font isn't actually
+    registered on this machine. For hand-built font tuples outside
+    apply_theme()'s own style construction (e.g. the sidebar nav labels
+    and Credits' category headings) that want the same palette-aware
+    display face apply_theme() already gives headings/titles."""
+    return _apply._resolve_font_family(root, DISPLAY_FONT_FAMILY.get(CURRENT_PALETTE), fallback)
+
+
 def backdrop_photo_image(width: int, height: int, master: tk.Misc):
     """Return a PhotoImage of the *active* theme's backdrop at this size,
     or None if it has none. See apply.py's backdrop_photo_image and
     backdrops/__init__.py."""
     return _apply.backdrop_photo_image(CURRENT_PALETTE, width, height, PALETTE, master)
+
+
+def backdrop_frames(width: int, height: int) -> list | None:
+    """The active theme's precomputed backdrop animation flip-book at this
+    size, or None if it has none. See apply.py's backdrop_frames."""
+    return _apply.backdrop_frames(CURRENT_PALETTE, width, height, PALETTE)

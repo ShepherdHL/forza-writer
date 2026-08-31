@@ -26,6 +26,13 @@ DEFAULT_SETTINGS = {
     "output_dir": "data/fontpacks",
     "direct_output_dir": "data/direct",
     "image_output_dir": "data/image",
+    # Glyph Template writes blank tracing SVGs/projects, not finished
+    # fontpacks -- a separate default from output_dir (Fontpacks) so a
+    # font's templates land as their own folder instead of scattering
+    # loose per-block folders alongside real generated packs, which have
+    # no manifest.json of their own and never show up as browsable packs
+    # in Output anyway.
+    "glyph_template_output_dir": "data/SVG Templates",
     # KFPS.exe's own path, for the Plates tab's "Send to KFPS" button
     # (subprocess.Popen([kfps_executable, geometry_json_path])). Empty by
     # default -- KFPS lives outside this repo, at whatever path this
@@ -69,6 +76,14 @@ DEFAULT_SETTINGS = {
     # moment the user resizes or un-maximizes.
     "window_geometry": "",
     "window_maximized": True,
+    # Log panel state. Collapsed hides the Text+scrollbars body, leaving
+    # just its header row visible; detached shows the same content in a
+    # separate Toplevel window instead of the docked panel. Detaching
+    # always implies not-collapsed (a collapsed-and-detached combination
+    # isn't a meaningful UI state -- see shell.py's _toggle_log_detached),
+    # so these two are validated together, not independently.
+    "log_collapsed": False,
+    "log_detached": False,
     # Shared color-picker state (tools/gen_modelbin_gui/color_picker_widget.py),
     # used identically by every tab's picker. saved_colors/recent_colors are
     # one shared library visible from every tab; color_ascii_art/
@@ -162,6 +177,10 @@ def _validated(settings: dict) -> dict:
     result["window_maximized"] = bool(result["window_maximized"])
     if not isinstance(result["window_geometry"], str) or not _GEOMETRY_RE.match(result["window_geometry"]):
         result["window_geometry"] = DEFAULT_SETTINGS["window_geometry"]
+    result["log_collapsed"] = bool(result["log_collapsed"])
+    result["log_detached"] = bool(result["log_detached"])
+    if result["log_detached"]:
+        result["log_collapsed"] = False
 
     for key in ("color_ascii_art", "color_forza_font_text", "color_generator",
                 "color_advanced", "color_direct"):

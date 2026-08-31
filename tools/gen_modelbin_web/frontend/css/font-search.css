@@ -1,0 +1,31 @@
+/* Shared searchable installed-font picker (frontend/js/font-search.js). */
+
+.font-search-wrap { position: relative; display: inline-block; }
+.font-search-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 320px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  z-index: 5;
+}
+.font-search-row {
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--fg);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.font-search-row:hover { background: var(--frame-light); }
+.font-search-empty {
+  padding: 10px;
+  font-size: 12px;
+  color: var(--disabled);
+}

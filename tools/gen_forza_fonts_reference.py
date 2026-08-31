@@ -33,19 +33,17 @@ FONT_NUMBERS = range(1, 12)
 # `confirmed=False` entries that still name a font are a same-family lead,
 # not an identification. The exact cut was not found.
 FONT_IDENTIFICATION: dict[int, dict] = {
-    1: {"confirmed": True, "note": "Arial Bold"},
-    2: {"confirmed": False, "note": "Unidentified. Elegant italic script/cursive. Art-Deco style."},
+    1: {"confirmed": True, "note": "Arial Bold."},
+    2: {"confirmed": False, "note": "Unidentified. Art-Deco Style, Italic Script/Cursive."},
     3: {"confirmed": False, "note": "Unidentified."},
-    4: {"confirmed": False, "note": "Unidentified. Hand-drawn/marker style. Rough, uneven strokes."},
-    5: {"confirmed": False, "note": "Unidentified. Blackletter/Gothic. Similar to Goudy Text MT."},
-    6: {"confirmed": True, "note": "Brush Script MT"},
-    7: {"confirmed": True, "note": "Haettenschweiler"},
-    8: {"confirmed": False, "note": "Unidentified. Bold weathered/distressed serif."},
-    9: {"confirmed": True, "note": "Rockwell-esque font. Specifically Rockwell Bold, not Rockwell "
-                                    "Condensed or Extra Bold. Matched down to the G's spur detail."},
-    10: {"confirmed": False, "note": "Unidentified. High-contrast condensed serif. Similar to Onyx and "
-                                      "Bodoni MT Poster Compressed."},
-    11: {"confirmed": True, "note": "Century Gothic"},
+    4: {"confirmed": False, "note": "Unidentified. Hand-drawn/Marker style."},
+    5: {"confirmed": False, "note": "Unidentified."},
+    6: {"confirmed": True, "note": "Brush Script MT."},
+    7: {"confirmed": True, "note": "Haettenschweiler."},
+    8: {"confirmed": False, "note": "Unidentified."},
+    9: {"confirmed": True, "note": "Rockwell-esque font."},
+    10: {"confirmed": False, "note": "Unidentified. Similar to Onyx & Bodoni MT Poster Compressed."},
+    11: {"confirmed": True, "note": "Century Gothic."},
 }
 
 

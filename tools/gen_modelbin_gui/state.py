@@ -86,7 +86,7 @@ ASCII_PREVIEW_SIZE = (640, 420)
 SIDEBAR_WIDTH = 170
 
 TABS = ['forza_font_text', 'generator', 'advanced', 'direct', 'ascii_art', 'glyph_inspector',
-        'layer_effects', 'outputs', 'composer', 'plates', 'settings', 'credits']
+        'glyph_template', 'layer_effects', 'outputs', 'composer', 'plates', 'settings', 'credits']
 
 TAB_LABELS = {
     'forza_font_text': t('state.tab.forza_font_text'),
@@ -95,6 +95,7 @@ TAB_LABELS = {
     'direct': t('state.tab.direct'),
     'ascii_art': t('state.tab.ascii_art'),
     'glyph_inspector': t('state.tab.glyph_inspector'),
+    'glyph_template': t('state.tab.glyph_template'),
     'layer_effects': t('state.tab.layer_effects'),
     'outputs': t('state.tab.outputs'),
     'composer': t('state.tab.composer'),

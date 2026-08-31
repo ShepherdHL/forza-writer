@@ -1,0 +1,37 @@
+/* Layer Effects tab: the layer list and the properties grid below it need
+   their own compact row/grid treatment not covered by app.css's generic
+   .list-box (which assumes plain single-line rows with no checkbox). */
+
+.le-layer-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--entry-bg);
+  margin-bottom: 8px;
+}
+.le-layer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--fg);
+  cursor: pointer;
+}
+.le-layer-row:hover { background: var(--frame-light); }
+.le-layer-row.active { background: var(--accent); color: var(--accent-fg); }
+.le-layer-row.active .le-layer-label { font-weight: 600; }
+.le-layer-row input[type="checkbox"] { accent-color: var(--accent); flex: none; }
+.le-layer-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.le-props-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  row-gap: 8px;
+  align-items: center;
+  font-size: 12.5px;
+}
+.le-props-grid label.field-label { justify-self: start; }
+.le-props-grid input[type="range"] { accent-color: var(--accent); width: 160px; }

@@ -69,7 +69,9 @@ def test_resolve_requested_chars_script_uses_bounded_curated_set(monkeypatch):
 
     result = resolve_requested_chars(Path('font.ttf'), None, ['Cyrillic'], None, False)
 
-    assert result == set('АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя')
+    # Includes the "Mongolian additions" group (Өө, Үү) alongside the
+    # standard Russian alphabet -- see forza_writer/alphabets.py.
+    assert result == set('АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюяӨөҮү')
 
 
 def test_resolve_requested_chars_chinese_script_is_bounded_not_full_han(monkeypatch):

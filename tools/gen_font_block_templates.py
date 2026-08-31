@@ -24,8 +24,9 @@ from fontTools.ttLib import TTFont  # noqa: E402
 
 from forza_writer.fabric_project import save as save_project  # noqa: E402
 from forza_writer.glyph_template import (  # noqa: E402
-    DEFAULT_CHARS_PER_ROW, TEMPLATE_UNICODE_BLOCKS, blocks_covered_by_font, build_flat_template,
-    build_font_traced_overlay_svg, save_template, wrap_template_as_project,
+    DEFAULT_CHARS_PER_ROW, DEFAULT_TRACE_TEXT_COLOR, TEMPLATE_UNICODE_BLOCKS, blocks_covered_by_font,
+    build_flat_template, build_font_traced_overlay_svg, save_template, validate_hex_color,
+    wrap_template_as_project,
 )
 
 DEFAULT_OUT_DIR = Path("data/fontpacks/default-templates")
@@ -39,12 +40,13 @@ def slugify(name: str) -> str:
 
 def build_all_block_projects(font_path: Path, prefix_base: str, chars_per_row: int = DEFAULT_CHARS_PER_ROW,
                               min_chars: int = DEFAULT_MIN_CHARS, only_blocks: set[str] | None = None,
-                              log=print):
+                              log=print, text_color: str = DEFAULT_TRACE_TEXT_COLOR):
     """Yields (block_name, template_id, template, project) for every block
     the font covers. `only_blocks`, if given, restricts to those exact
     TEMPLATE_UNICODE_BLOCKS names (case-sensitive), to avoid embedding a large
     CJK font once per every block it happens to cover when only a couple
-    are actually wanted."""
+    are actually wanted. `text_color` (#rgb/#rrggbb) is the traced
+    letterform's fill color in every block's overlay."""
     font = TTFont(str(font_path), fontNumber=0)
     try:
         cmap = font.getBestCmap() or {}
@@ -65,7 +67,7 @@ def build_all_block_projects(font_path: Path, prefix_base: str, chars_per_row: i
         template_id = f"{prefix_base}-{slugify(block_name)}"
         template = build_flat_template(chars, template_id, category_label=block_name,
                                         chars_per_row=chars_per_row)
-        overlay_svg, missing = build_font_traced_overlay_svg(template, font_path)
+        overlay_svg, missing = build_font_traced_overlay_svg(template, font_path, text_color=text_color)
         if missing:
             log(f"  [{block_name}] Note: {len(missing)} char(s) unexpectedly missing after cmap pre-filter")
         project = wrap_template_as_project(template, overlay_svg, template_id, overlay_opacity=0.5)
@@ -89,11 +91,19 @@ def main():
                      help="Comma-separated block names to restrict to (must match TEMPLATE_UNICODE_BLOCKS exactly, "
                           "e.g. \"Hiragana,Katakana\"). Default: every block the font covers — expensive "
                           "for a large CJK font embedded per block, so scope this down when that matters.")
+    ap.add_argument("--text-color", default=DEFAULT_TRACE_TEXT_COLOR,
+                     help=f"Traced letterform fill color, #rgb or #rrggbb (default: {DEFAULT_TRACE_TEXT_COLOR}), "
+                          "applied to every block's overlay.")
     args = ap.parse_args()
 
     font_path = Path(args.font_file)
     if not font_path.exists():
         print(f"Font file not found: {font_path}")
+        sys.exit(1)
+    try:
+        validate_hex_color(args.text_color)
+    except ValueError as exc:
+        print(exc)
         sys.exit(1)
 
     only_blocks = {b.strip() for b in args.blocks.split(",")} if args.blocks else None
@@ -101,7 +111,8 @@ def main():
     out_dir = Path(args.out_dir)
     written = []
     for block_name, template_id, template, project in build_all_block_projects(
-            font_path, args.prefix_base, args.chars_per_row, args.min_chars, only_blocks):
+            font_path, args.prefix_base, args.chars_per_row, args.min_chars, only_blocks,
+            text_color=args.text_color):
         block_dir = out_dir / template_id
         template_path = block_dir / f"{template_id}_template.json"
         project_path = block_dir / f"{template_id}_blank.fabric-project.json"

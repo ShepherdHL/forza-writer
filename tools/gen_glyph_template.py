@@ -28,9 +28,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from forza_writer.fabric_project import save as save_project  # noqa: E402
 from forza_writer.glyph_template import (  # noqa: E402
-    DEFAULT_CHARS_PER_ROW, build_blank_overlay_svg, build_font_traced_overlay_svg,
-    build_template, categorized_basic_latin, categorized_for_script_group, save_template,
-    wrap_template_as_project,
+    DEFAULT_CHARS_PER_ROW, DEFAULT_TRACE_TEXT_COLOR, build_blank_overlay_svg,
+    build_font_traced_overlay_svg, build_template, categorized_basic_latin,
+    categorized_for_script_group, save_template, validate_hex_color, wrap_template_as_project,
 )
 
 DEFAULT_OUT_DIR = Path("data/fontpacks")
@@ -56,15 +56,17 @@ def categorized_for_charset(charset: str) -> dict[str, list[str]]:
 
 def build_blank_project(template_id: str, chars_per_row: int = DEFAULT_CHARS_PER_ROW,
                          charset: str = "basic-latin", font_file: str | Path | None = None,
-                         log=print):
+                         log=print, text_color: str = DEFAULT_TRACE_TEXT_COLOR):
     """Returns (template, fabric_project_dict). If `font_file` is given, the
     overlay shows that font's real letterforms (embedded, not scraped) as a
     tracing guide instead of a bare label; characters missing from its cmap
-    fall back to a label-only cell, logged so it's not a silent gap."""
+    fall back to a label-only cell, logged so it's not a silent gap.
+    `text_color` (`#rgb`/`#rrggbb`) is that traced letterform's fill color;
+    ignored when `font_file` is None, since there's no traced text to color."""
     categorized = categorized_for_charset(charset)
     template = build_template(categorized, template_id, chars_per_row=chars_per_row)
     if font_file is not None:
-        overlay_svg, missing = build_font_traced_overlay_svg(template, font_file)
+        overlay_svg, missing = build_font_traced_overlay_svg(template, font_file, text_color=text_color)
         if missing:
             log(f"  Note: font has no glyph for {len(missing)} slot(s), label-only there: "
                 f"{''.join(missing)}")
@@ -92,14 +94,23 @@ def main():
                      help="Optional font file (otf/ttf/woff/woff2) to embed as a real-letterform tracing "
                           "guide instead of bare labels. Only use a font you hold a license for — it's "
                           "embedded directly into the overlay, not fetched from anywhere.")
+    ap.add_argument("--text-color", default=DEFAULT_TRACE_TEXT_COLOR,
+                     help=f"Traced letterform fill color, #rgb or #rrggbb (default: {DEFAULT_TRACE_TEXT_COLOR}). "
+                          "Only affects --font-file's traced text, not the cell/codepoint chrome.")
     args = ap.parse_args()
 
     if args.font_file and not Path(args.font_file).exists():
         print(f"Font file not found: {args.font_file}")
         sys.exit(1)
+    try:
+        validate_hex_color(args.text_color)
+    except ValueError as exc:
+        print(exc)
+        sys.exit(1)
 
     out_dir = Path(args.out_dir) / args.prefix
-    template, project = build_blank_project(args.prefix, args.chars_per_row, args.charset, args.font_file)
+    template, project = build_blank_project(args.prefix, args.chars_per_row, args.charset, args.font_file,
+                                             text_color=args.text_color)
 
     template_path = out_dir / f"{args.prefix}_template.json"
     project_path = out_dir / f"{args.prefix}_blank.fabric-project.json"
