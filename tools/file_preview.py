@@ -445,14 +445,24 @@ def render_modelbin_preview(path: Path, size: tuple[int, int] = DEFAULT_SIZE,
 
 
 def render_file_preview(path: Path, size: tuple[int, int] = DEFAULT_SIZE,
-                         bg: str = DEFAULT_BG, fg: str = DEFAULT_FG) -> Image.Image:
+                         bg: str = DEFAULT_BG, fg: str = DEFAULT_FG,
+                         vinyls_dir: Path | None = None) -> Image.Image:
     """Dispatch on file extension. Never raises — unknown extensions and
-    unreadable files both fall through to a placeholder tile."""
+    unreadable files both fall through to a placeholder tile.
+
+    `vinyls_dir` (see `kfps_vinyls_dir`) is forwarded to `render_json_preview`
+    for a `.json` file; ignored for `.modelbin`, which has no letterform
+    shape concept. Every caller used to just drop this on the floor, so a
+    native-font letterform shape (from a font_reuse fontpack, or from any
+    older shape list that happens to include one) rendered as a plain box
+    everywhere except the Plates tab, the one caller that already resolved
+    and passed it.
+    """
     path = Path(path)
     try:
         if path.suffix.lower() == ".json":
             data = json.loads(path.read_text(encoding="utf-8"))
-            return render_json_preview(data.get("shapes", []), size, bg, fg)
+            return render_json_preview(data.get("shapes", []), size, bg, fg, vinyls_dir=vinyls_dir)
         if path.suffix.lower() == ".modelbin":
             return render_modelbin_preview(path, size, bg, fg)
         return _placeholder(size, f"unsupported file type: {path.suffix}", bg, fg)

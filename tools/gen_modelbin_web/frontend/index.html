@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/tabs/glyph-inspector.css">
+<link rel="stylesheet" href="css/tabs/glyph-template.css">
 <link rel="stylesheet" href="css/color-picker.css">
 <link rel="stylesheet" href="css/font-search.css">
 <link rel="stylesheet" href="css/tabs/layer-effects.css">
@@ -23,7 +24,29 @@
   <div class="frame">
     <!-- ============================================================ sidebar -->
     <nav class="sidebar" aria-label="Forza Writer tabs">
-      <div class="sidebar-mark">FORZA WRITER<span>TOOLS</span></div>
+      <div class="sidebar-mark">
+        <svg class="sidebar-mark-icon" viewBox="0 0 42 42" aria-hidden="true">
+          <!-- Two braille cells reading "FW" (dot patterns {1,2,4} then
+               {2,4,5,6}). Deliberately more detailed than the plain
+               two-dot assets/icon-web.ico -- this renders at 26px in the
+               sidebar rather than a 16-24px title bar, so the full pattern
+               still reads clearly. F's dots are white, W's are the brand
+               orange -- same fixed hex as the taskbar icon's two dots. -->
+          <circle class="dot-f" cx="7.1" cy="8.36" r="2.95"/>
+          <circle class="dot-f" cx="15.91" cy="8.36" r="2.95"/>
+          <circle class="dot-f" cx="7.1" cy="20.96" r="2.95"/>
+          <circle class="dot-off" cx="15.91" cy="20.96" r="2.95"/>
+          <circle class="dot-off" cx="7.1" cy="33.56" r="2.95"/>
+          <circle class="dot-off" cx="15.91" cy="33.56" r="2.95"/>
+          <circle class="dot-off" cx="26.0" cy="8.36" r="2.95"/>
+          <circle class="dot-w" cx="34.82" cy="8.36" r="2.95"/>
+          <circle class="dot-w" cx="26.0" cy="20.96" r="2.95"/>
+          <circle class="dot-w" cx="34.82" cy="20.96" r="2.95"/>
+          <circle class="dot-off" cx="26.0" cy="33.56" r="2.95"/>
+          <circle class="dot-w" cx="34.82" cy="33.56" r="2.95"/>
+        </svg>
+        <div class="sidebar-mark-text">FORZA WRITER</div>
+      </div>
       <div class="nav" id="nav"><!-- populated by shell.js from api.get_tabs() --></div>
     </nav>
 

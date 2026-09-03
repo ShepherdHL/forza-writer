@@ -2,9 +2,98 @@
    indeterminate run progress bar -- nothing else here needs a dedicated
    class beyond app.css's generic .section/.checkbox-row/.radio-group. */
 
+/* Tucked-away easter egg for the "Ellipses Only" preset (see vinyl-shapes.js
+   syncEasterEgg). Capped at max-width below rather than shown fully native
+   size: these screenshots are wide relative to this panel, and letting them
+   render at full width overpowered the section they're tucked into.
+   :not([hidden]) rather than a bare .vs-egg-panel rule: an unconditional
+   `display: flex` here has the same specificity as the browser's built-in
+   `[hidden] { display: none; }` and, as an author rule loaded after it,
+   would win and force the panel to render even while `hidden` is set. */
+.vs-egg-panel:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-2);
+}
+.vs-egg-panel img { display: block; max-width: 420px; height: auto; }
+
 .gen-shape-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .gen-shape-tile { border: none; background: none; padding: 0; cursor: pointer; border-radius: 4px; overflow: hidden; line-height: 0; }
 .gen-shape-tile img { display: block; }
+
+/* Sort/type-filter toolbar and the "active script filter" chip that sits
+   above the font grid -- see renderFontGrid()/updateScriptChip() in
+   generator.js. */
+.gen-font-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.gen-font-type-filters {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.gen-font-type-filters label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.gen-font-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--panel-2);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 2px 10px;
+  margin-bottom: 6px;
+}
+.gen-font-filter-chip .chip-x {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+
+/* Visual font browser (Grid view): each tile is a server-rasterized PNG of
+   the font's own name set in its own typeface -- see fonts.render_grid_tiles
+   and font_preview.render_font_name. Sized to match Tkinter's
+   GRID_TILE_SIZE (170x36) so this reads the same way the original did. */
+.gen-font-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--entry-bg);
+  padding: 6px;
+  margin-bottom: 8px;
+}
+.gen-font-tile {
+  width: 170px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  background-color: var(--panel-2);
+  background-size: cover;
+  background-position: center;
+}
+.gen-font-tile:hover { border-color: var(--border); }
+.gen-font-tile.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
 .gen-region-title {
   font-family: var(--display);

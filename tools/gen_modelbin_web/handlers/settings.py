@@ -110,12 +110,21 @@ def register(api, window, run_state: dict | None = None) -> None:
             game_locator.extract_reference_modelbin(dest, zip_path)
         except FileNotFoundError as exc:
             return {'found': False, 'message': str(exc)}
+        # Persisted immediately, not just returned for the field to display:
+        # the frontend's Detect button only ever filled the input and left
+        # it to a separate, later Save click to actually persist, so a
+        # successful detection that the user didn't *also* explicitly Save
+        # silently reverted to empty on next launch. "Detect" should mean
+        # "find and remember", the same as "Browse..." picking a path does
+        # not require a second confirmation to count as chosen.
+        gui_settings.update_settings({'reference_modelbin': str(dest)})
         return {'found': True, 'path': str(dest), 'message': f'Extracted from {zip_path}'}
 
     def detect_kfps_executable(_payload: dict) -> dict:
         path = game_locator.find_kfps_executable()
         if path is None:
             return {'found': False, 'message': 'No KFPS install found in common locations.'}
+        gui_settings.update_settings({'kfps_executable': str(path)})  # see detect_reference_modelbin above
         return {'found': True, 'path': str(path)}
 
     def save_paths(payload: dict) -> dict:

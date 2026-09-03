@@ -1,0 +1,119 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "gta-sa-exempt-fictional",
+  "display_name_key": "plates.template.gta_sa_exempt_fictional",
+  "country": "GTA",
+  "jurisdiction": "San Andreas",
+  "era": "fictional",
+  "plate_type": "government",
+  "width_mm": 304.8,
+  "height_mm": 152.4,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Reference for this template's layout, text, and colors came from a clean, isolated plate texture the Forza Writer user supplied -- one of a set of thirteen originally extracted from GTA V's companion iFruit app (not this app's own game files, and not a screenshot taken in-game) and posted publicly to Reddit by u/sgtfrankieboy. The app's government-exempt plate: an off-white background, no month or registration-detail stickers (neither is visible on this specific texture, unlike the standard San Andreas variants), and 'SA EXEMPT' in bold dark red block capitals (color approximately #BB2020, sampled) centered in the upper third. The lower area is blank in the reference texture (filled in dynamically per-vehicle), same as every other GTA template here -- modeled as an ordinary registration field even though a real EXEMPT plate likely carries a different kind of identifier; nothing in the reference distinguishes the two, so the standard field/format is reused rather than guessed at.",
+    "contributors": [],
+    "reference_urls": [
+      "https://www.reddit.com/r/GrandTheftAutoV/comments/1migfx/all_gta_v_number_plates/"
+    ],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      228,
+      228,
+      228,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": {
+    "decoration_id": "border",
+    "kind": "border",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": 304.8,
+    "height_mm": 152.4,
+    "color": [
+      176,
+      176,
+      173,
+      255
+    ],
+    "asset_ref": null,
+    "editable": true
+  },
+  "fields": [
+    {
+      "field_id": "jurisdiction_header",
+      "label_key": "plates.field.jurisdiction_header",
+      "role": "jurisdiction_text",
+      "x_mm": 76.0,
+      "y_mm": 22.0,
+      "width_mm": 152.8,
+      "height_mm": 24.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.55,
+      "tracking": 3.0,
+      "line_spacing": 1.0,
+      "default_text": "SA EXEMPT",
+      "color": [
+        187,
+        32,
+        32,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 15.0,
+      "y_mm": 52.0,
+      "width_mm": 274.8,
+      "height_mm": 76.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.5,
+      "tracking": 4.0,
+      "line_spacing": 1.0,
+      "default_text": "12ABC345",
+      "color": [
+        187,
+        32,
+        32,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.gta_sa.format_hint",
+        "min_length": 8,
+        "max_length": 8,
+        "allowed_pattern": "[0-9]{2}[A-Z]{3}[0-9]{3}",
+        "excluded_chars": [],
+        "custom_rule_id": null
+      },
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

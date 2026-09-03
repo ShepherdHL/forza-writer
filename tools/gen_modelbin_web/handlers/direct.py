@@ -113,7 +113,9 @@ def register(api, window) -> None:
         state['suggested_name'] = default_name
 
         p = gui_theme.palette()
-        image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
+        vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
+        image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
+                                                       vinyls_dir=vinyls_dir)
 
         if method == 'modern':
             quality = metadata.get('quality_by_glyph', {})

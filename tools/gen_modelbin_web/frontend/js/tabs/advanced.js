@@ -196,21 +196,26 @@ window.ForzaTabs = window.ForzaTabs || {};
     els.advInstance.addEventListener('change', () => applyInstance(els.advInstance.value));
 
     // -- 3. output mode -------------------------------------------------------
+    // Card style matches Direct Generator's method cards (direct.js's
+    // renderMethodCards): a plain clickable div per option, no visible radio
+    // dot, selected state shown purely via the orange border/title color.
+    let outputMode = 'json';
     function currentOutput() {
-      return container.querySelector('input[name="advOutput"]:checked')?.value || 'json';
+      return outputMode;
     }
     function renderOutputCards() {
-      const chosen = currentOutput();
       els.advOutputCards.innerHTML = OUTPUT_MODES.map((m) => `
-        <label class="section method-card ${chosen === m.key ? 'active' : ''}"
-               style="margin-bottom:0; cursor:pointer; padding: 10px 14px; display:block; ${chosen === m.key ? 'border-color: var(--accent);' : ''}">
-          <input type="radio" name="advOutput" value="${m.key}" ${chosen === m.key ? 'checked' : ''} style="margin-right:8px;">
-          <span style="font-family: var(--display); font-weight: 600; font-size: 12px; ${chosen === m.key ? 'color: var(--accent);' : ''}">${esc(m.title)}</span>
-          <div class="field-hint" style="margin-top: 4px; margin-left: 22px;">${esc(m.desc)}</div>
-        </label>
+        <div class="section method-card ${outputMode === m.key ? 'active' : ''}" data-key="${m.key}"
+             style="margin-bottom:0; cursor:pointer; padding: 10px 14px; ${outputMode === m.key ? 'border-color: var(--accent);' : ''}">
+          <div style="font-family: var(--display); font-weight: 600; font-size: 12px; ${outputMode === m.key ? 'color: var(--accent);' : ''}">${esc(m.title)}</div>
+          <div class="field-hint" style="margin-top: 4px;">${esc(m.desc)}</div>
+        </div>
       `).join('');
-      container.querySelectorAll('input[name="advOutput"]').forEach((radio) => {
-        radio.addEventListener('change', renderOutputCards);
+      els.advOutputCards.querySelectorAll('.method-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          outputMode = card.dataset.key;
+          renderOutputCards();
+        });
       });
     }
     renderOutputCards();

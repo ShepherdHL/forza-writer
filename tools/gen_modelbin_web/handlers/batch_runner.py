@@ -26,6 +26,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
 import glyph_overrides as glyph_overrides_store  # noqa: E402
+import gui_settings  # noqa: E402
 import gui_theme  # noqa: E402
 from gen_fontpack import OUTPUT_MODES, build_fontpack, pack_dir_for, sanitize_prefix  # noqa: E402
 from forza_writer import alphabets  # noqa: E402
@@ -208,6 +209,12 @@ def start(window, run: dict, payload: dict, *, source_label: str, variation: dic
     run['generation'] += 1
     gen = run['generation']
 
+    # Resolved once, not per glyph: same file_preview.kfps_vinyls_dir(...)
+    # call the Plates tab already makes, so a font_reuse glyph's live
+    # preview during this run shows the real letterform instead of a plain
+    # box, same as its exported .json and its quality-gate score already do.
+    vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
+
     def log(line: str, level: str = 'plain') -> None:
         # Routed through the shared Log panel (shell.js's log_append
         # listener), not a tab-local log -- matching Tkinter's _log(),
@@ -223,7 +230,8 @@ def start(window, run: dict, payload: dict, *, source_label: str, variation: dic
         if not file_path.exists():
             return
         p = gui_theme.palette()
-        image = file_preview.render_file_preview(file_path, LIVE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
+        image = file_preview.render_file_preview(file_path, LIVE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
+                                                  vinyls_dir=vinyls_dir)
         quality = artifact.get('quality')
         if quality:
             stats = (f"{category} {entry['char']!r}: {quality['verdict'].upper()} "
@@ -258,6 +266,13 @@ def start(window, run: dict, payload: dict, *, source_label: str, variation: dic
                 color_mode=color_mode, solid_color=solid_color, high_contrast_seed=high_contrast_seed,
                 mask_overrides=mask_overrides, manual_assignments=manual_assignments,
                 **variation_kwargs)
+            # build_fontpack may have renamed pack_dir (appending the total
+            # shape count) after this function's own pack_dir_for call
+            # above computed it -- recover the actual directory it wrote to
+            # rather than operating on a path that no longer exists.
+            if manifest.get('pack_dir_name'):
+                nonlocal pack_dir
+                pack_dir = pack_dir.parent / manifest['pack_dir_name']
             if run['abort_requested']:
                 removed = 0
                 for rel in manifest.get('files_written', []):

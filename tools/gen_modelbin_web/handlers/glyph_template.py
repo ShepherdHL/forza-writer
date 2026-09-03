@@ -18,6 +18,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 import gen_font_block_templates  # noqa: E402
 import gen_glyph_template  # noqa: E402
+import glyph_template_preview  # noqa: E402
 import gui_settings  # noqa: E402
 from gen_fontpack import sanitize_prefix  # noqa: E402
 from fontTools.ttLib import TTFont  # noqa: E402
@@ -25,9 +26,10 @@ from forza_writer.fabric_project import save as save_project  # noqa: E402
 from forza_writer.font_info import load_font_info  # noqa: E402
 from forza_writer.glyph_template import (  # noqa: E402
     DEFAULT_CHARS_PER_ROW, DEFAULT_TRACE_TEXT_COLOR, TEMPLATE_UNICODE_BLOCKS, blocks_covered_by_font,
-    save_template, validate_hex_color)
+    build_flat_template, save_template, validate_hex_color)
 
 from ..events import push_event  # noqa: E402
+from ..imaging import image_to_data_uri  # noqa: E402
 
 _FONT_FILE_TYPES = ('Fonts (*.ttf;*.otf;*.ttc)',)
 # The first four TEMPLATE_UNICODE_BLOCKS entries are exactly "Basic Latin"
@@ -94,6 +96,47 @@ def register(api, window) -> None:
             return {'cancelled': True}
         return {'path': chosen[0]}
 
+    def render_preview(payload: dict) -> dict:
+        """A scaled-to-fit thumbnail of the grid the current settings would
+        generate. Single mode: the selected charset's own grid. Split mode:
+        the one block named in `payload['block']` (the checklist row the
+        user last clicked to preview -- Split mode writes one grid per
+        checked block, so there's no single "the" grid to show without a
+        block chosen). Synchronous: rendering a few hundred PIL text draws
+        is fast enough not to need the background-thread/push_event dance
+        `generate` uses for actual file generation."""
+        font_path = Path(payload['font_path']) if payload.get('font_path') else None
+        text_color = payload.get('text_color') or DEFAULT_TRACE_TEXT_COLOR
+        chars_per_row = max(1, int(payload.get('chars_per_row') or DEFAULT_CHARS_PER_ROW))
+        mode = payload['mode']
+
+        if mode == 'split':
+            block = payload.get('block')
+            if not block:
+                return {'image': None}
+            template = build_flat_template(
+                block['chars'], 'PREVIEW', category_label=block['name'], chars_per_row=chars_per_row)
+        else:
+            charset = payload.get('charset', 'basic-latin')
+            categorized = gen_glyph_template.categorized_for_charset(charset)
+            template = gen_glyph_template.build_template(categorized, 'PREVIEW', chars_per_row=chars_per_row)
+
+        image = glyph_template_preview.render_grid_preview(template, font_path, text_color)
+        return {'image': image_to_data_uri(image)}
+
+    def render_block_samples(payload: dict) -> dict:
+        """One short rendered sample per Unicode block, for the Split-mode
+        checklist (e.g. "Punctuation & Symbols" showing the font's own
+        ". , ! ? / \\ [ ]"). Batched into one call, mirroring
+        handlers/glyph_inspector.py's render_tiles."""
+        font_path = Path(payload['font_path'])
+        samples = {
+            block['name']: image_to_data_uri(
+                glyph_template_preview.render_block_sample(font_path, block['chars']))
+            for block in payload['blocks']
+        }
+        return {'samples': samples}
+
     def generate(payload: dict) -> dict:
         font_path = Path(payload['font_path'])
         text_color = payload['text_color']
@@ -137,10 +180,19 @@ def register(api, window) -> None:
                     charset = payload['charset']
                     template, project = gen_glyph_template.build_blank_project(
                         prefix, chars_per_row, charset, font_path, log=post_log, text_color=text_color)
-                    pack_dir = out_dir / prefix
-                    save_template(template, pack_dir / f'{prefix}_template.json')
-                    save_project(project, pack_dir / f'{prefix}_blank.fabric-project.json')
-                    svg_path = pack_dir / f'{prefix}.svg'
+                    # Use the template's own (possibly charset-suffixed) id, not
+                    # the bare prefix, for the folder/filenames -- otherwise
+                    # generating e.g. Hiragana then Katakana under the same
+                    # prefix both wrote <prefix>/<prefix>.svg, and the second
+                    # run silently overwrote the first. Kept flat (not nested
+                    # under out_dir/prefix/ like Split mode above) because for
+                    # the default basic-latin charset effective_id == prefix,
+                    # so nesting would double up as <prefix>/<prefix>/<prefix>.
+                    effective_id = template.template_id
+                    pack_dir = out_dir / effective_id
+                    save_template(template, pack_dir / f'{effective_id}_template.json')
+                    save_project(project, pack_dir / f'{effective_id}_blank.fabric-project.json')
+                    svg_path = pack_dir / f'{effective_id}.svg'
                     svg_path.parent.mkdir(parents=True, exist_ok=True)
                     svg_path.write_text(project['editor_source_overlay']['svg_text'], encoding='utf-8')
                     message = (f'{len(template.slots)} slot(s) across {template.row_count} row(s) '
@@ -156,4 +208,6 @@ def register(api, window) -> None:
     api.register('glyph_template.browse_font', browse_font)
     api.register('glyph_template.load_font_by_path', load_font_by_path)
     api.register('glyph_template.pick_output_dir', pick_output_dir)
+    api.register('glyph_template.render_preview', render_preview)
+    api.register('glyph_template.render_block_samples', render_block_samples)
     api.register('glyph_template.generate', generate)

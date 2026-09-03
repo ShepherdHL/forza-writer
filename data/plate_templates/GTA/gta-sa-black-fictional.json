@@ -1,0 +1,178 @@
+{
+  "format": "forza_writer_plate_template_v1",
+  "template_id": "gta-sa-black-fictional",
+  "display_name_key": "plates.template.gta_sa_black_fictional",
+  "country": "GTA",
+  "jurisdiction": "San Andreas",
+  "era": "fictional",
+  "plate_type": "passenger",
+  "width_mm": 304.8,
+  "height_mm": 152.4,
+  "accuracy_status": "fictional",
+  "provenance": {
+    "source_notes": "Reference for this template's layout, text, and colors came from a clean, isolated plate texture the Forza Writer user supplied -- one of a set of thirteen originally extracted from GTA V's companion iFruit app (not this app's own game files, and not a screenshot taken in-game) and posted publicly to Reddit by u/sgtfrankieboy. One of the app's five stock San Andreas color schemes -- see gta-sa-passenger-fictional's own notes for the full set and for the shared layout this reuses exactly (wordmark, month-sticker, and orange registration-detail-sticker positions), since every variant shares one base layout, just recolored and re-fonted. Black background, 'SAN ANDREAS' in bold yellow block capitals (#FDED06, sampled directly). The registration number is blank in this base texture too (filled in per-vehicle by the game), so its color is extrapolated from the wordmark color for visual consistency, not directly observed.",
+    "contributors": [],
+    "reference_urls": [
+      "https://www.reddit.com/r/GrandTheftAutoV/comments/1migfx/all_gta_v_number_plates/"
+    ],
+    "reconstruction_author": null,
+    "year_documented": null
+  },
+  "background": {
+    "decoration_id": "bg",
+    "kind": "solid_fill",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": null,
+    "height_mm": null,
+    "color": [
+      37,
+      37,
+      37,
+      255
+    ],
+    "asset_ref": null,
+    "editable": false
+  },
+  "border": {
+    "decoration_id": "border",
+    "kind": "border",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": 304.8,
+    "height_mm": 152.4,
+    "color": [
+      176,
+      176,
+      173,
+      255
+    ],
+    "asset_ref": null,
+    "editable": true
+  },
+  "fields": [
+    {
+      "field_id": "jurisdiction_header",
+      "label_key": "plates.field.jurisdiction_header",
+      "role": "jurisdiction_text",
+      "x_mm": 48.6,
+      "y_mm": 23.6,
+      "width_mm": 176.0,
+      "height_mm": 20.6,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.55,
+      "tracking": 2.0,
+      "line_spacing": 1.0,
+      "default_text": "SAN ANDREAS",
+      "color": [
+        253,
+        237,
+        6,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "month_sticker",
+      "label_key": "plates.field.month_sticker",
+      "role": "decorative_text",
+      "x_mm": 21.9,
+      "y_mm": 23.6,
+      "width_mm": 39.7,
+      "height_mm": 23.6,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.5,
+      "tracking": 1.0,
+      "line_spacing": 1.0,
+      "default_text": "JUN",
+      "color": [
+        50,
+        48,
+        45,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "registration",
+      "label_key": "plates.field.registration",
+      "role": "registration",
+      "x_mm": 15.0,
+      "y_mm": 52.0,
+      "width_mm": 274.8,
+      "height_mm": 76.0,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.5,
+      "tracking": 4.0,
+      "line_spacing": 1.0,
+      "default_text": "12ABC345",
+      "color": [
+        253,
+        237,
+        6,
+        255
+      ],
+      "validation": {
+        "format_hint_key": "plates.validation.gta_sa.format_hint",
+        "min_length": 8,
+        "max_length": 8,
+        "allowed_pattern": "[0-9]{2}[A-Z]{3}[0-9]{3}",
+        "excluded_chars": [],
+        "custom_rule_id": null
+      },
+      "editable_in_authentic_mode": false
+    }
+  ],
+  "decorations": [
+    {
+      "decoration_id": "month_sticker_bg",
+      "kind": "sticker",
+      "x_mm": 21.9,
+      "y_mm": 23.6,
+      "width_mm": 39.7,
+      "height_mm": 23.6,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    },
+    {
+      "decoration_id": "registration_sticker",
+      "kind": "sticker",
+      "x_mm": 244.0,
+      "y_mm": 22.9,
+      "width_mm": 38.9,
+      "height_mm": 24.3,
+      "color": [
+        211,
+        58,
+        1,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    }
+  ],
+  "tags": [
+    "vanity-available",
+    "fictional-game"
+  ]
+}

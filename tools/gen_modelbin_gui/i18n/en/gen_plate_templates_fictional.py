@@ -7,6 +7,17 @@ why templates reference keys here rather than literal English text.
 
 STRINGS: dict[str, str] = {
     'plates.template.gta_sa_passenger_fictional': 'San Andreas Passenger (GTA V)',
+    'plates.template.gta_sa_black_fictional': 'San Andreas, Black (GTA V)',
+    'plates.template.gta_sa_blue_fictional': 'San Andreas, Blue (GTA V)',
+    'plates.template.gta_sa_red_fictional': 'San Andreas, Striped (GTA V)',
+    'plates.template.gta_sa_exempt_fictional': 'SA Exempt / Government (GTA V)',
+    'plates.template.gta_libertycity_bw_fictional': 'Liberty City, Blue & White (GTA V)',
+    'plates.template.gta_libertycity_by_fictional': 'Liberty City, Blue & Gold (GTA V)',
+    'plates.template.gta_libertycity_skyline_fictional': 'Liberty City, Skyline (GTA V)',
+    'plates.template.gta_vicecity_fictional': 'Vice City, Skyline (GTA V)',
+    'plates.template.gta_lossantos_shrimps_fictional': 'Los Santos Shrimps (GTA V)',
+    'plates.template.gta_sprunk_fictional': 'Sprunk (GTA V)',
+    'plates.template.gta_patriot_fictional': 'Patriot Beer (GTA V)',
     'plates.template.nfs_fairhaven_passenger_fictional': 'Fairhaven Passenger (NFS: Most Wanted)',
     'plates.template.nfs_rockport_passenger_fictional': 'Rockport Passenger (NFS: Most Wanted)',
     'plates.template.nfs_palmont_passenger_fictional': 'Palmont Passenger (NFS: Carbon)',
@@ -33,6 +44,8 @@ STRINGS: dict[str, str] = {
     'plates.field.csg_mark': 'CSG Mark',
     'plates.field.glitch_band': 'Glitch Band',
     'plates.field.label': 'Label',
+    'plates.field.month_sticker': 'Month Sticker',
+    'plates.field.team_wordmark': 'Team Wordmark',
 
     'plates.validation.gta_sa.format_hint': '2 digits, 3 letters, 3 digits (e.g. 12ABC345)',
     'plates.validation.halo_nm.format_hint': "'K', 2 letters, space, 3 digits, 1 letter (e.g. KBL 117J)",

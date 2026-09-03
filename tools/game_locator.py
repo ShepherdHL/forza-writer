@@ -209,7 +209,21 @@ def find_kfps_executable() -> Path | None:
             if candidate.is_file():
                 candidates.append(candidate)
 
-    for candidate in _dedupe(candidates):
-        if candidate.is_file():
-            return candidate
-    return None
+    valid = [c for c in _dedupe(candidates) if c.is_file()]
+    # Prefer whichever candidate actually has the fabric-editor resources
+    # file_preview.kfps_vinyls_dir() looks for, over just the first one
+    # found. An in-place KFPS update can restructure the install one folder
+    # deeper (confirmed against a real install: a stray old KFPS.exe was
+    # left behind at <parent>/Forza Painter/KFPS/KFPS.exe after an update
+    # moved the real, current install to
+    # <parent>/Forza Painter/KFPS/KloudysFH6Painter/KFPS.exe), and nothing
+    # about the filename tells the two apart. Falls back to the first
+    # candidate found if none have the resources folder, rather than
+    # returning nothing: this path is also used to launch KFPS from the
+    # Plates tab, where a copy missing that folder can still be perfectly
+    # valid.
+    with_resources = [c for c in valid
+                       if (c.parent / "tools" / "fabric-editor" / "Resources" / "Vinyls").is_dir()]
+    if with_resources:
+        return with_resources[0]
+    return valid[0] if valid else None

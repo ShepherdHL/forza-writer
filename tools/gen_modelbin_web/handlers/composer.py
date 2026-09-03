@@ -27,6 +27,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
+import gui_settings  # noqa: E402
 import gui_theme  # noqa: E402
 from forza_writer.export import save as save_composed_json, to_json as composed_to_json  # noqa: E402
 from forza_writer.forza_colors import hex_to_rgb  # noqa: E402
@@ -83,7 +84,9 @@ def register(api, window) -> None:
 
         composed_shapes['shapes'] = shapes
         p = gui_theme.palette()
-        image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
+        vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
+        image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
+                                                       vinyls_dir=vinyls_dir)
         return {
             'shapes': shapes,
             'preview_image': _image_to_data_uri(image),
@@ -129,7 +132,9 @@ def register(api, window) -> None:
 
         composed_shapes['shapes'] = shapes
         p = gui_theme.palette()
-        image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
+        vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
+        image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
+                                                       vinyls_dir=vinyls_dir)
         return {
             'shapes': shapes,
             'preview_image': _image_to_data_uri(image),

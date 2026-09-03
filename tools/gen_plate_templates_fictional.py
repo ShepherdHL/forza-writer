@@ -1,6 +1,7 @@
 """
 Builds a set of fictional license-plate templates modeled on plates seen in
-nine video-game settings: Grand Theft Auto V (San Andreas), Need for Speed
+nine video-game settings: Grand Theft Auto V (twelve San Andreas/Liberty
+City/Vice City/brand-tie-in variants -- see gta_* below), Need for Speed
 (Fairhaven, Rockport, Palmont, Seacrest County, Tri City Bay), Saints Row
 (Stilwater, Steelport), Halo (New Mombasa, Reach -- two variants),
 Cyberpunk 2077 (Night City), Mirror's Edge (transport and passenger
@@ -13,15 +14,21 @@ None of these are `REFERENCE_BASED` -- every template here uses
 `AccuracyStatus.FICTIONAL`, since none is a real government standard. That
 does not mean "invented freely," though: each template's own
 `Provenance.source_notes` says exactly what it's grounded in (a developer
-quote, an in-game screenshot supplied by a Forza Writer user, a wiki
-gallery of player-made plates) and exactly what's a best-guess
-approximation (a color read off a low-resolution screenshot, a font
-standing in for one that doesn't exist as a redistributable file, an
-Easter-egg micro-print transcribed from a blurry shot). Treat these as fan
-approximations for a hobby tool, not as extracted or reproduced game
-assets -- no image, texture, or font file from any of these games was
-copied, downloaded, or scraped to build them. See each template's own
-Provenance for its specific sources.
+quote, an in-game screenshot the user personally captured, a wiki gallery
+of player-made plates, or -- the GTA V set specifically -- clean plate
+textures the user supplied that were originally extracted from GTA V's
+companion iFruit app and posted publicly to Reddit, see `_GTA_IFRUIT_NOTE`)
+and exactly what's a best-guess approximation (a color read off a
+low-resolution screenshot, a font standing in for one that doesn't exist
+as a redistributable file, an Easter-egg micro-print transcribed from a
+blurry shot). Treat these as fan approximations for a hobby tool, not as
+extracted or reproduced game assets: reference images (however sourced)
+inform hand-written colors/positions/text, same as every screenshot used
+elsewhere in this file, but no image, texture, or font *file* is embedded,
+copied, or reproduced by anything this script writes -- every template's
+actual output is metrics/placeholder-box geometry only, per this file's
+Typography paragraph below. See each template's own Provenance for its
+specific sources.
 
 Typography: same placeholder-box policy as tools/gen_plate_templates.py --
 every field only ever renders a plain box per character, sized/spaced from
@@ -85,6 +92,25 @@ SCREENSHOT_NOTE = (
     "the game itself or an official tool."
 )
 
+# GTA V's iFruit companion app shipped clean, isolated plate textures for
+# every stock plate design it offers -- a set of thirteen the Forza Writer
+# user supplied directly, originally extracted from that app (not this
+# app's own game files, and not a screenshot taken in-game) and posted
+# publicly to Reddit by u/sgtfrankieboy. Used the same way every other
+# screenshot in this file is: as reference to write an honest, hand-
+# authored description (colors sampled directly where noted, positions
+# approximated by eye otherwise), never embedded or traced -- this app's
+# output is metrics/placeholder-box geometry only, same as everywhere
+# else, regardless of source image quality.
+_GTA_IFRUIT_REDDIT_URL = "https://www.reddit.com/r/GrandTheftAutoV/comments/1migfx/all_gta_v_number_plates/"
+_GTA_IFRUIT_NOTE = (
+    "Reference for this template's layout, text, and colors came from a clean, isolated plate texture "
+    "the Forza Writer user supplied -- one of a set of thirteen originally extracted from GTA V's "
+    "companion iFruit app (not this app's own game files, and not a screenshot taken in-game) and "
+    "posted publicly to Reddit by u/sgtfrankieboy."
+)
+_GTA_SA_FRAME_COLOR = (176, 176, 173, 255)  # sampled from gta-sa-passenger-fictional's own reference
+
 
 def gta_san_andreas() -> PlateTemplate:
     return PlateTemplate(
@@ -95,47 +121,597 @@ def gta_san_andreas() -> PlateTemplate:
         accuracy_status=AccuracyStatus.FICTIONAL,
         provenance=Provenance(
             source_notes=(
-                "Grand Theft Auto V ships five stock San Andreas plate variants (yellow-on-black, "
-                "yellow-on-blue, a striped white variant, a plain white/blue variant, and a white "
-                "government 'SA EXEMPT' plate) -- this template models the plain white-background/"
-                "blue-text variant, the one described as most common. 'SAN ANDREAS' as the header text and "
-                "the 2-digit/3-letter/3-digit registration format (e.g. 12ABC345) are corroborated across "
-                "two independent wikis. No slogan/motto text was found on the plate itself in either "
-                "source -- treat any claim of one as unconfirmed. The text color (a dark blue, "
-                "approximately #0F2352) comes from a single wiki's datamined-looking hex values, not "
-                "independently corroborated. The font is named 'Penitentiary Gothic Regular' by one wiki "
-                "only; not bundled here either way -- this template's text uses the same placeholder Latin "
-                "fontpack as every real-world template."
+                "Rebuilt against real reference: the user supplied clean, isolated plate textures "
+                "originally extracted from GTA V's companion iFruit app (not this app's own game files, "
+                "and not a screenshot the user personally took) and posted publicly to Reddit by "
+                "u/sgtfrankieboy (see reference_urls). This template models the plain (unmarked-filename) "
+                "'San Andreas' texture specifically, one of five stock variants the app ships (the others "
+                "-- yellow-on-black, yellow-on-orange-on-navy, a gold-striped white/dark-red variant, and "
+                "the white 'SA EXEMPT' government plate -- are not modeled here). Colors and layout below "
+                "are measured/sampled directly from that source image, not guessed: an off-white "
+                "background (~#EDEDED), 'San Andreas' in a dark red script (~#8E1414, sampled range "
+                "#7F0E0E-#B93838 from anti-aliasing) -- the cursive/script letterform itself isn't "
+                "reproducible (no script font is bundled; same placeholder-box limitation as every other "
+                "template here), a cream month-indicator sticker (top-left, reads 'MAY' in this specific "
+                "source file -- the four variants checked each show a different, seemingly arbitrary "
+                "month, so this is decorative, not meaningful data), and an orange registration-detail "
+                "sticker (top-right, exact color #D33A01, reading 'CA' and a small registration-like "
+                "number too fine to transcribe reliably -- modeled as a plain colored sticker, no text, "
+                "same treatment de-current-eu-band gives its own inspection stickers). The registration "
+                "number itself is blank in every one of these base textures (filled in dynamically "
+                "per-vehicle by the game, not baked into the reusable plate art), so its color here is "
+                "extrapolated from the red accent for visual consistency, not directly observed -- flagged "
+                "as a guess. 'SAN ANDREAS' as the header text (previously modeled in blue block caps, now "
+                "corrected to match the real script wordmark) and the 2-digit/3-letter/3-digit registration "
+                "format (e.g. 12ABC345) remain corroborated by two independent wikis, unaffected by this "
+                "revision."
             ),
             reference_urls=(
                 "https://www.grandtheftwiki.com/Vehicle_License_Plates",
                 "https://gta.wiki/w/License_Plates",
                 "https://gtaforums.com/topic/573705-san-andreas-license-plates/",
+                "https://www.reddit.com/r/GrandTheftAutoV/comments/1migfx/all_gta_v_number_plates/",
             ),
         ),
         background=Decoration(decoration_id="bg", kind=DecorationKind.SOLID_FILL, x_mm=0.0, y_mm=0.0,
-                               color=WHITE, editable=False),
-        border=None,
+                               color=(237, 237, 237, 255), editable=False),
+        border=Decoration(decoration_id="border", kind=DecorationKind.BORDER, x_mm=0.0, y_mm=0.0,
+                           width_mm=PLATE_W, height_mm=PLATE_H, color=(176, 176, 173, 255)),
         fields=(
             PlateField(
                 field_id="jurisdiction_header", label_key="plates.field.jurisdiction_header",
                 role=FieldRole.JURISDICTION_TEXT,
-                x_mm=20.0, y_mm=10.0, width_mm=264.8, height_mm=26.0, alignment="center",
+                x_mm=48.6, y_mm=23.6, width_mm=176.0, height_mm=20.6, alignment="center",
                 char_source=_LATIN, char_scale=0.55, tracking=2.0,
-                default_text="SAN ANDREAS", color=(15, 35, 82, 255),
+                default_text="San Andreas", color=(142, 20, 20, 255),
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="month_sticker", label_key="plates.field.month_sticker", role=FieldRole.DECORATIVE_TEXT,
+                x_mm=21.9, y_mm=23.6, width_mm=39.7, height_mm=23.6, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=1.0,
+                default_text="MAY", color=(50, 48, 45, 255),
                 editable_in_authentic_mode=False,
             ),
             PlateField(
                 field_id="registration", label_key="plates.field.registration", role=FieldRole.REGISTRATION,
-                x_mm=20.0, y_mm=48.0, width_mm=264.8, height_mm=70.0, alignment="center",
-                char_source=_LATIN, char_scale=0.51, tracking=4.0,
-                default_text="12ABC345", color=(15, 35, 82, 255),
+                x_mm=15.0, y_mm=52.0, width_mm=274.8, height_mm=76.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=4.0,
+                default_text="12ABC345", color=(142, 20, 20, 255),
                 validation=FieldValidation(
                     format_hint_key="plates.validation.gta_sa.format_hint",
                     min_length=8, max_length=8,
                     allowed_pattern=r"[0-9]{2}[A-Z]{3}[0-9]{3}",
                 ),
             ),
+        ),
+        decorations=(
+            Decoration(decoration_id="month_sticker_bg", kind=DecorationKind.STICKER,
+                       x_mm=21.9, y_mm=23.6, width_mm=39.7, height_mm=23.6, color=(236, 233, 218, 255)),
+            Decoration(decoration_id="registration_sticker", kind=DecorationKind.STICKER,
+                       x_mm=244.0, y_mm=22.9, width_mm=38.9, height_mm=24.3, color=(211, 58, 1, 255)),
+        ),
+        tags=("vanity-available", "fictional-game"),
+    )
+
+
+def _gta_sa_variant(template_id: str, display_name_key: str, bg_color, wordmark_color, sticker_bg_color,
+                     sticker_month: str, extra_notes: str, extra_decorations: tuple = ()) -> PlateTemplate:
+    """One of the iFruit app's other San Andreas color schemes -- same
+    layout as gta_san_andreas() (wordmark/month-sticker/registration-
+    sticker positions all measured once from that template's own
+    reference image and reused unchanged here), just recolored and
+    re-fonted (block capitals here, not that one's cursive script)."""
+    return PlateTemplate(
+        template_id=template_id,
+        display_name_key=display_name_key,
+        country="GTA", jurisdiction="San Andreas", era="fictional", plate_type="passenger",
+        width_mm=PLATE_W, height_mm=PLATE_H,
+        accuracy_status=AccuracyStatus.FICTIONAL,
+        provenance=Provenance(
+            source_notes=(
+                f"{_GTA_IFRUIT_NOTE} One of the app's five stock San Andreas color schemes -- see "
+                f"gta-sa-passenger-fictional's own notes for the full set and for the shared layout this "
+                f"reuses exactly (wordmark, month-sticker, and orange registration-detail-sticker "
+                f"positions), since every variant shares one base layout, just recolored and re-fonted. "
+                f"{extra_notes} The registration number is blank in this base texture too (filled in "
+                f"per-vehicle by the game), so its color is extrapolated from the wordmark color for "
+                f"visual consistency, not directly observed."
+            ),
+            reference_urls=(_GTA_IFRUIT_REDDIT_URL,),
+        ),
+        background=Decoration(decoration_id="bg", kind=DecorationKind.SOLID_FILL, x_mm=0.0, y_mm=0.0,
+                               color=bg_color, editable=False),
+        border=Decoration(decoration_id="border", kind=DecorationKind.BORDER, x_mm=0.0, y_mm=0.0,
+                           width_mm=PLATE_W, height_mm=PLATE_H, color=_GTA_SA_FRAME_COLOR),
+        fields=(
+            PlateField(
+                field_id="jurisdiction_header", label_key="plates.field.jurisdiction_header",
+                role=FieldRole.JURISDICTION_TEXT,
+                x_mm=48.6, y_mm=23.6, width_mm=176.0, height_mm=20.6, alignment="center",
+                char_source=_LATIN, char_scale=0.55, tracking=2.0,
+                default_text="SAN ANDREAS", color=wordmark_color,
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="month_sticker", label_key="plates.field.month_sticker", role=FieldRole.DECORATIVE_TEXT,
+                x_mm=21.9, y_mm=23.6, width_mm=39.7, height_mm=23.6, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=1.0,
+                default_text=sticker_month, color=(50, 48, 45, 255),
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="registration", label_key="plates.field.registration", role=FieldRole.REGISTRATION,
+                x_mm=15.0, y_mm=52.0, width_mm=274.8, height_mm=76.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=4.0,
+                default_text="12ABC345", color=wordmark_color,
+                validation=FieldValidation(
+                    format_hint_key="plates.validation.gta_sa.format_hint",
+                    min_length=8, max_length=8,
+                    allowed_pattern=r"[0-9]{2}[A-Z]{3}[0-9]{3}",
+                ),
+            ),
+        ),
+        decorations=(
+            Decoration(decoration_id="month_sticker_bg", kind=DecorationKind.STICKER,
+                       x_mm=21.9, y_mm=23.6, width_mm=39.7, height_mm=23.6, color=sticker_bg_color),
+            Decoration(decoration_id="registration_sticker", kind=DecorationKind.STICKER,
+                       x_mm=244.0, y_mm=22.9, width_mm=38.9, height_mm=24.3, color=(211, 58, 1, 255)),
+            *extra_decorations,
+        ),
+        tags=("vanity-available", "fictional-game"),
+    )
+
+
+def gta_sa_black() -> PlateTemplate:
+    return _gta_sa_variant(
+        "gta-sa-black-fictional", "plates.template.gta_sa_black_fictional",
+        bg_color=(37, 37, 37, 255), wordmark_color=(253, 237, 6, 255),
+        sticker_bg_color=WHITE, sticker_month="JUN",
+        extra_notes=(
+            "Black background, 'SAN ANDREAS' in bold yellow block capitals (#FDED06, sampled directly)."
+        ),
+    )
+
+
+def gta_sa_blue() -> PlateTemplate:
+    return _gta_sa_variant(
+        "gta-sa-blue-fictional", "plates.template.gta_sa_blue_fictional",
+        bg_color=(28, 43, 84, 255), wordmark_color=(249, 167, 33, 255),
+        sticker_bg_color=(238, 235, 216, 255), sticker_month="DEC",
+        extra_notes=(
+            "Navy blue background, 'SAN ANDREAS' in bold orange block capitals (#F9A721, sampled directly)."
+        ),
+    )
+
+
+def gta_sa_red() -> PlateTemplate:
+    return _gta_sa_variant(
+        "gta-sa-red-fictional", "plates.template.gta_sa_red_fictional",
+        bg_color=(230, 230, 228, 255), wordmark_color=(174, 31, 35, 255),
+        sticker_bg_color=(238, 235, 216, 255), sticker_month="OCT",
+        extra_notes=(
+            "Off-white background with two thin horizontal gold stripes across the upper third (color "
+            "approximately #E1B20F, sampled) -- the schema has no repeating-stripe primitive, so this is "
+            "simplified to one flat gold SEPARATOR bar rather than the real double stripe. 'SAN ANDREAS' "
+            "in bold dark red block capitals (#AE1F23, sampled directly)."
+        ),
+        extra_decorations=(
+            Decoration(decoration_id="stripe", kind=DecorationKind.SEPARATOR,
+                       x_mm=0.0, y_mm=47.0, width_mm=PLATE_W, height_mm=4.0, color=(225, 178, 15, 255)),
+        ),
+    )
+
+
+def gta_exempt() -> PlateTemplate:
+    return PlateTemplate(
+        template_id="gta-sa-exempt-fictional",
+        display_name_key="plates.template.gta_sa_exempt_fictional",
+        country="GTA", jurisdiction="San Andreas", era="fictional", plate_type="government",
+        width_mm=PLATE_W, height_mm=PLATE_H,
+        accuracy_status=AccuracyStatus.FICTIONAL,
+        provenance=Provenance(
+            source_notes=(
+                f"{_GTA_IFRUIT_NOTE} The app's government-exempt plate: an off-white background, no month "
+                f"or registration-detail stickers (neither is visible on this specific texture, unlike the "
+                f"standard San Andreas variants), and 'SA EXEMPT' in bold dark red block capitals (color "
+                f"approximately #BB2020, sampled) centered in the upper third. The lower area is blank in "
+                f"the reference texture (filled in dynamically per-vehicle), same as every other GTA "
+                f"template here -- modeled as an ordinary registration field even though a real EXEMPT "
+                f"plate likely carries a different kind of identifier; nothing in the reference "
+                f"distinguishes the two, so the standard field/format is reused rather than guessed at."
+            ),
+            reference_urls=(_GTA_IFRUIT_REDDIT_URL,),
+        ),
+        background=Decoration(decoration_id="bg", kind=DecorationKind.SOLID_FILL, x_mm=0.0, y_mm=0.0,
+                               color=(228, 228, 228, 255), editable=False),
+        border=Decoration(decoration_id="border", kind=DecorationKind.BORDER, x_mm=0.0, y_mm=0.0,
+                           width_mm=PLATE_W, height_mm=PLATE_H, color=_GTA_SA_FRAME_COLOR),
+        fields=(
+            PlateField(
+                field_id="jurisdiction_header", label_key="plates.field.jurisdiction_header",
+                role=FieldRole.JURISDICTION_TEXT,
+                x_mm=76.0, y_mm=22.0, width_mm=152.8, height_mm=24.0, alignment="center",
+                char_source=_LATIN, char_scale=0.55, tracking=3.0,
+                default_text="SA EXEMPT", color=(187, 32, 32, 255),
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="registration", label_key="plates.field.registration", role=FieldRole.REGISTRATION,
+                x_mm=15.0, y_mm=52.0, width_mm=274.8, height_mm=76.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=4.0,
+                default_text="12ABC345", color=(187, 32, 32, 255),
+                validation=FieldValidation(
+                    format_hint_key="plates.validation.gta_sa.format_hint",
+                    min_length=8, max_length=8,
+                    allowed_pattern=r"[0-9]{2}[A-Z]{3}[0-9]{3}",
+                ),
+            ),
+        ),
+        tags=("vanity-available", "fictional-game"),
+    )
+
+
+def _gta_liberty_city(template_id: str, display_name_key: str, body_color, extra_notes: str,
+                       extra_decorations: tuple = ()) -> PlateTemplate:
+    return PlateTemplate(
+        template_id=template_id,
+        display_name_key=display_name_key,
+        country="GTA", jurisdiction="Liberty City", era="fictional", plate_type="passenger",
+        width_mm=PLATE_W, height_mm=PLATE_H,
+        accuracy_status=AccuracyStatus.FICTIONAL,
+        provenance=Provenance(
+            source_notes=(
+                f"{_GTA_IFRUIT_NOTE} A novelty plate referencing Liberty City (the setting of other GTA "
+                f"games, not San Andreas) the app offers as a selectable design in GTA V. A solid navy "
+                f"header band across the top third carries 'LIBERTY CITY' in bold silver-gray italic "
+                f"capitals; two empty corner boxes sit in that band -- no sticker content is visible on "
+                f"this variant, unlike the San Andreas plates' filled-in stickers, so these are modeled as "
+                f"plain empty sticker-shaped decorations rather than guessing at content. {extra_notes} "
+                f"Positions are approximated by eye against the reference image's own proportions, not "
+                f"pixel-measured the way gta-sa-passenger-fictional's were."
+            ),
+            reference_urls=(_GTA_IFRUIT_REDDIT_URL,),
+        ),
+        background=Decoration(decoration_id="bg", kind=DecorationKind.SOLID_FILL, x_mm=0.0, y_mm=0.0,
+                               color=body_color, editable=False),
+        border=Decoration(decoration_id="border", kind=DecorationKind.BORDER, x_mm=0.0, y_mm=0.0,
+                           width_mm=PLATE_W, height_mm=PLATE_H, color=_GTA_SA_FRAME_COLOR),
+        fields=(
+            PlateField(
+                field_id="jurisdiction_header", label_key="plates.field.jurisdiction_header",
+                role=FieldRole.JURISDICTION_TEXT,
+                x_mm=60.0, y_mm=8.0, width_mm=185.0, height_mm=26.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=2.0,
+                default_text="LIBERTY CITY", color=(195, 200, 208, 255),
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="registration", label_key="plates.field.registration", role=FieldRole.REGISTRATION,
+                x_mm=15.0, y_mm=56.0, width_mm=274.8, height_mm=72.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=4.0,
+                default_text="12ABC345", color=(35, 38, 60, 255),
+                validation=FieldValidation(
+                    format_hint_key="plates.validation.gta_sa.format_hint",
+                    min_length=8, max_length=8,
+                    allowed_pattern=r"[0-9]{2}[A-Z]{3}[0-9]{3}",
+                ),
+            ),
+        ),
+        decorations=(
+            Decoration(decoration_id="header_band", kind=DecorationKind.JURISDICTION_MARK,
+                       x_mm=0.0, y_mm=0.0, width_mm=PLATE_W, height_mm=38.0, color=(45, 48, 130, 255)),
+            Decoration(decoration_id="left_sticker", kind=DecorationKind.STICKER,
+                       x_mm=15.0, y_mm=15.0, width_mm=40.0, height_mm=22.0, color=WHITE),
+            Decoration(decoration_id="right_sticker", kind=DecorationKind.STICKER,
+                       x_mm=249.8, y_mm=15.0, width_mm=40.0, height_mm=22.0, color=WHITE),
+            *extra_decorations,
+        ),
+        tags=("vanity-available", "fictional-game"),
+    )
+
+
+def gta_liberty_city_bw() -> PlateTemplate:
+    return _gta_liberty_city(
+        "gta-libertycity-bw-fictional", "plates.template.gta_libertycity_bw_fictional",
+        body_color=(238, 238, 238, 255),
+        extra_notes=(
+            "This 'BW' (blue and white) variant's body is off-white with a thin horizontal red divider "
+            "line just below the header band and another near the bottom edge -- both simplified to "
+            "single flat SEPARATOR bars."
+        ),
+        extra_decorations=(
+            Decoration(decoration_id="divider_top", kind=DecorationKind.SEPARATOR,
+                       x_mm=0.0, y_mm=39.0, width_mm=PLATE_W, height_mm=3.0, color=(200, 40, 40, 255)),
+            Decoration(decoration_id="divider_bottom", kind=DecorationKind.SEPARATOR,
+                       x_mm=0.0, y_mm=134.0, width_mm=PLATE_W, height_mm=3.0, color=(200, 40, 40, 255)),
+        ),
+    )
+
+
+def gta_liberty_city_by() -> PlateTemplate:
+    return _gta_liberty_city(
+        "gta-libertycity-by-fictional", "plates.template.gta_libertycity_by_fictional",
+        body_color=(232, 182, 55, 255),
+        extra_notes=(
+            "This 'BY' (blue and yellow) variant's body is a solid gold/yellow (#E8B637, sampled "
+            "directly), no divider lines."
+        ),
+    )
+
+
+def _gta_skyline_plate(template_id: str, display_name_key: str, jurisdiction: str, sky_color,
+                        skyline_color, wordmark_text: str, wordmark_color, bottom_band_color,
+                        extra_notes: str) -> PlateTemplate:
+    return PlateTemplate(
+        template_id=template_id,
+        display_name_key=display_name_key,
+        country="GTA", jurisdiction=jurisdiction, era="fictional", plate_type="passenger",
+        width_mm=PLATE_W, height_mm=PLATE_H,
+        accuracy_status=AccuracyStatus.FICTIONAL,
+        provenance=Provenance(
+            source_notes=(
+                f"{_GTA_IFRUIT_NOTE} A gradient sky with a city skyline silhouette runs across the header "
+                f"band behind the wordmark, and a solid color band sits along the bottom -- the schema has "
+                f"no gradient or arbitrary-silhouette primitive (same limitation cp2077-nightcity-"
+                f"passenger-fictional's own emblem already documents), so both are simplified: the sky to "
+                f"a single flat color and the skyline to a plain dark band along the header's lower edge "
+                f"rather than an actual building silhouette shape. {extra_notes} Positions are "
+                f"approximated by eye against the reference image's own proportions, not pixel-measured."
+            ),
+            reference_urls=(_GTA_IFRUIT_REDDIT_URL,),
+        ),
+        background=Decoration(decoration_id="bg", kind=DecorationKind.SOLID_FILL, x_mm=0.0, y_mm=0.0,
+                               color=WHITE, editable=False),
+        border=Decoration(decoration_id="border", kind=DecorationKind.BORDER, x_mm=0.0, y_mm=0.0,
+                           width_mm=PLATE_W, height_mm=PLATE_H, color=_GTA_SA_FRAME_COLOR),
+        fields=(
+            PlateField(
+                field_id="jurisdiction_header", label_key="plates.field.jurisdiction_header",
+                role=FieldRole.JURISDICTION_TEXT,
+                x_mm=55.0, y_mm=6.0, width_mm=195.0, height_mm=28.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=2.0,
+                default_text=wordmark_text, color=wordmark_color,
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="registration", label_key="plates.field.registration", role=FieldRole.REGISTRATION,
+                x_mm=15.0, y_mm=56.0, width_mm=274.8, height_mm=68.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=4.0,
+                default_text="12ABC345", color=(40, 40, 45, 255),
+                validation=FieldValidation(
+                    format_hint_key="plates.validation.gta_sa.format_hint",
+                    min_length=8, max_length=8,
+                    allowed_pattern=r"[0-9]{2}[A-Z]{3}[0-9]{3}",
+                ),
+            ),
+        ),
+        decorations=(
+            Decoration(decoration_id="sky", kind=DecorationKind.SOLID_FILL,
+                       x_mm=0.0, y_mm=0.0, width_mm=PLATE_W, height_mm=36.0, color=sky_color),
+            Decoration(decoration_id="skyline", kind=DecorationKind.CUSTOM_SHAPE,
+                       x_mm=0.0, y_mm=28.0, width_mm=PLATE_W, height_mm=8.0, color=skyline_color),
+            Decoration(decoration_id="left_sticker", kind=DecorationKind.STICKER,
+                       x_mm=15.0, y_mm=15.0, width_mm=40.0, height_mm=20.0, color=WHITE),
+            Decoration(decoration_id="right_sticker", kind=DecorationKind.STICKER,
+                       x_mm=249.8, y_mm=15.0, width_mm=40.0, height_mm=20.0, color=WHITE),
+            Decoration(decoration_id="bottom_band", kind=DecorationKind.SOLID_FILL,
+                       x_mm=0.0, y_mm=134.0, width_mm=PLATE_W, height_mm=18.4, color=bottom_band_color),
+        ),
+        tags=("vanity-available", "fictional-game"),
+    )
+
+
+def gta_liberty_city_skyline() -> PlateTemplate:
+    return _gta_skyline_plate(
+        "gta-libertycity-skyline-fictional", "plates.template.gta_libertycity_skyline_fictional",
+        "Liberty City", sky_color=(120, 175, 210, 255), skyline_color=(0, 42, 76, 255),
+        wordmark_text="LIBERTY CITY", wordmark_color=(200, 205, 212, 255),
+        bottom_band_color=(20, 45, 85, 255),
+        extra_notes=(
+            "Sky color sampled from the gradient's lighter (upper) tone; skyline silhouette color sampled "
+            "directly (#002A4C)."
+        ),
+    )
+
+
+def gta_vice_city() -> PlateTemplate:
+    return _gta_skyline_plate(
+        "gta-vicecity-fictional", "plates.template.gta_vicecity_fictional",
+        "Vice City", sky_color=(238, 172, 177, 255), skyline_color=(123, 59, 73, 255),
+        wordmark_text="Vice City", wordmark_color=(202, 202, 202, 255),
+        bottom_band_color=(190, 90, 115, 255),
+        extra_notes=(
+            "Sunset-pink sky gradient and skyline colors both sampled directly. 'Vice City' renders in a "
+            "cursive script on the real plate, unlike Liberty City's block italic -- not reproducible (no "
+            "script font is bundled), same limitation as gta-sa-passenger-fictional's own wordmark."
+        ),
+    )
+
+
+def gta_los_santos_shrimps() -> PlateTemplate:
+    return PlateTemplate(
+        template_id="gta-lossantos-shrimps-fictional",
+        display_name_key="plates.template.gta_lossantos_shrimps_fictional",
+        country="GTA", jurisdiction="Los Santos", era="fictional", plate_type="passenger",
+        width_mm=PLATE_W, height_mm=PLATE_H,
+        accuracy_status=AccuracyStatus.FICTIONAL,
+        provenance=Provenance(
+            source_notes=(
+                f"{_GTA_IFRUIT_NOTE} A fictional sports-team novelty plate: 'LOS SANTOS' in small black "
+                f"caps above 'SHRIMPS' in a large red arched/curved script styled like a sports jersey "
+                f"wordmark -- the arched curve itself isn't reproducible (no curved-baseline text layout "
+                f"in this schema), so both lines render as plain straight placeholder rows. Red color "
+                f"(#DD3528) sampled directly. A solid red band runs along the bottom edge. Two empty "
+                f"corner sticker boxes, same treatment as the Liberty City templates above."
+            ),
+            reference_urls=(_GTA_IFRUIT_REDDIT_URL,),
+        ),
+        background=Decoration(decoration_id="bg", kind=DecorationKind.SOLID_FILL, x_mm=0.0, y_mm=0.0,
+                               color=(238, 238, 239, 255), editable=False),
+        border=Decoration(decoration_id="border", kind=DecorationKind.BORDER, x_mm=0.0, y_mm=0.0,
+                           width_mm=PLATE_W, height_mm=PLATE_H, color=_GTA_SA_FRAME_COLOR),
+        fields=(
+            PlateField(
+                field_id="city_banner", label_key="plates.field.city_banner", role=FieldRole.JURISDICTION_TEXT,
+                x_mm=95.0, y_mm=6.0, width_mm=115.0, height_mm=12.0, alignment="center",
+                char_source=_LATIN, char_scale=0.55, tracking=3.0,
+                default_text="LOS SANTOS", color=(25, 25, 25, 255),
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="team_wordmark", label_key="plates.field.tagline", role=FieldRole.DECORATIVE_TEXT,
+                x_mm=60.0, y_mm=20.0, width_mm=185.0, height_mm=26.0, alignment="center",
+                char_source=_LATIN, char_scale=0.6, tracking=2.0,
+                default_text="SHRIMPS", color=(221, 53, 40, 255),
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="registration", label_key="plates.field.registration", role=FieldRole.REGISTRATION,
+                x_mm=15.0, y_mm=58.0, width_mm=274.8, height_mm=66.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=4.0,
+                default_text="12ABC345", color=(40, 40, 40, 255),
+                validation=FieldValidation(
+                    format_hint_key="plates.validation.gta_sa.format_hint",
+                    min_length=8, max_length=8,
+                    allowed_pattern=r"[0-9]{2}[A-Z]{3}[0-9]{3}",
+                ),
+            ),
+        ),
+        decorations=(
+            Decoration(decoration_id="left_sticker", kind=DecorationKind.STICKER,
+                       x_mm=15.0, y_mm=15.0, width_mm=40.0, height_mm=22.0, color=WHITE),
+            Decoration(decoration_id="right_sticker", kind=DecorationKind.STICKER,
+                       x_mm=249.8, y_mm=15.0, width_mm=40.0, height_mm=22.0, color=WHITE),
+            Decoration(decoration_id="bottom_band", kind=DecorationKind.SOLID_FILL,
+                       x_mm=0.0, y_mm=140.0, width_mm=PLATE_W, height_mm=12.4, color=(221, 53, 40, 255)),
+        ),
+        tags=("vanity-available", "fictional-game"),
+    )
+
+
+def gta_sprunk() -> PlateTemplate:
+    return PlateTemplate(
+        template_id="gta-sprunk-fictional",
+        display_name_key="plates.template.gta_sprunk_fictional",
+        country="GTA", jurisdiction="San Andreas", era="fictional", plate_type="passenger",
+        width_mm=PLATE_W, height_mm=PLATE_H,
+        accuracy_status=AccuracyStatus.FICTIONAL,
+        provenance=Provenance(
+            source_notes=(
+                f"{_GTA_IFRUIT_NOTE} A brand tie-in novelty plate for Sprunk, GTA's fictional soft-drink "
+                f"brand. The real design is considerably more elaborate than this schema can represent: a "
+                f"green halftone/polka-dot textured gradient background, a decorative bubble graphic and "
+                f"swoosh beneath the wordmark, and a bold white bubble-letter 'Sprunk' logotype with a "
+                f"small 'The Essence of Life' tagline above it -- only the flat background color, the "
+                f"wordmark text, and the tagline text are modeled; the texture, bubbles, and swoosh are "
+                f"omitted entirely (no pattern/gradient/decorative-graphic primitive in this schema, same "
+                f"treatment as every other branded/emblem plate in this set, e.g. cp2077-nightcity's own "
+                f"emblem). Green background sampled directly (#99C335); the bubble-letter logotype's own "
+                f"style isn't reproducible either way (placeholder boxes only). Two empty corner sticker "
+                f"boxes -- these render as solid black in the reference image, which most likely means "
+                f"transparency/cutout in the original asset rather than an actual black sticker, so "
+                f"modeled as plain white boxes matching every other template's empty-sticker convention "
+                f"instead of guessing black is meaningful."
+            ),
+            reference_urls=(_GTA_IFRUIT_REDDIT_URL,),
+        ),
+        background=Decoration(decoration_id="bg", kind=DecorationKind.SOLID_FILL, x_mm=0.0, y_mm=0.0,
+                               color=(153, 195, 53, 255), editable=False),
+        border=Decoration(decoration_id="border", kind=DecorationKind.BORDER, x_mm=0.0, y_mm=0.0,
+                           width_mm=PLATE_W, height_mm=PLATE_H, color=_GTA_SA_FRAME_COLOR),
+        fields=(
+            PlateField(
+                field_id="tagline", label_key="plates.field.tagline", role=FieldRole.DECORATIVE_TEXT,
+                x_mm=95.0, y_mm=8.0, width_mm=115.0, height_mm=10.0, alignment="center",
+                char_source=_LATIN, char_scale=0.35, tracking=1.0,
+                default_text="THE ESSENCE OF LIFE", color=(0, 90, 45, 255),
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="brand_wordmark", label_key="plates.field.label", role=FieldRole.DECORATIVE_TEXT,
+                x_mm=60.0, y_mm=19.0, width_mm=185.0, height_mm=28.0, alignment="center",
+                char_source=_LATIN, char_scale=0.6, tracking=2.0,
+                default_text="Sprunk", color=WHITE,
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="registration", label_key="plates.field.registration", role=FieldRole.REGISTRATION,
+                x_mm=15.0, y_mm=56.0, width_mm=274.8, height_mm=72.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=4.0,
+                default_text="12ABC345", color=(20, 60, 30, 255),
+                validation=FieldValidation(
+                    format_hint_key="plates.validation.gta_sa.format_hint",
+                    min_length=8, max_length=8,
+                    allowed_pattern=r"[0-9]{2}[A-Z]{3}[0-9]{3}",
+                ),
+            ),
+        ),
+        decorations=(
+            Decoration(decoration_id="left_sticker", kind=DecorationKind.STICKER,
+                       x_mm=15.0, y_mm=15.0, width_mm=40.0, height_mm=22.0, color=WHITE),
+            Decoration(decoration_id="right_sticker", kind=DecorationKind.STICKER,
+                       x_mm=249.8, y_mm=15.0, width_mm=40.0, height_mm=22.0, color=WHITE),
+        ),
+        tags=("vanity-available", "fictional-game"),
+    )
+
+
+def gta_patriot() -> PlateTemplate:
+    return PlateTemplate(
+        template_id="gta-patriot-fictional",
+        display_name_key="plates.template.gta_patriot_fictional",
+        country="GTA", jurisdiction="San Andreas", era="fictional", plate_type="passenger",
+        width_mm=PLATE_W, height_mm=PLATE_H,
+        accuracy_status=AccuracyStatus.FICTIONAL,
+        provenance=Provenance(
+            source_notes=(
+                f"{_GTA_IFRUIT_NOTE} A brand tie-in novelty plate for Patriot, GTA's fictional beer brand. "
+                f"The real design centers on an elaborate badge -- crossed pistols over a star, a "
+                f"'BEER'/'PATRIOT'/'SINCE 1985' ribbon banner, and a 'DRINK US' rubber-stamp graphic in "
+                f"the corner -- none of which this schema can represent (no icon/emblem/stamp primitive); "
+                f"only the wordmark text and the background/stripe colors are modeled, same simplification "
+                f"as every other branded plate in this set. Background reads as a white-to-blue vertical "
+                f"gradient in the reference; simplified to a single flat pale-blue color here (no gradient "
+                f"primitive). A red/white/blue horizontal stripe runs near the bottom, colors approximated "
+                f"by eye against the reference rather than sampled precisely (the stripe is thin and partly "
+                f"obscured by the 'DRINK US' stamp in the source image)."
+            ),
+            reference_urls=(_GTA_IFRUIT_REDDIT_URL,),
+        ),
+        background=Decoration(decoration_id="bg", kind=DecorationKind.SOLID_FILL, x_mm=0.0, y_mm=0.0,
+                               color=(210, 220, 235, 255), editable=False),
+        border=Decoration(decoration_id="border", kind=DecorationKind.BORDER, x_mm=0.0, y_mm=0.0,
+                           width_mm=PLATE_W, height_mm=PLATE_H, color=_GTA_SA_FRAME_COLOR),
+        fields=(
+            PlateField(
+                field_id="brand_wordmark", label_key="plates.field.label", role=FieldRole.DECORATIVE_TEXT,
+                x_mm=70.0, y_mm=28.0, width_mm=165.0, height_mm=26.0, alignment="center",
+                char_source=_LATIN, char_scale=0.55, tracking=2.0,
+                default_text="PATRIOT", color=(20, 40, 110, 255),
+                editable_in_authentic_mode=False,
+            ),
+            PlateField(
+                field_id="registration", label_key="plates.field.registration", role=FieldRole.REGISTRATION,
+                x_mm=15.0, y_mm=62.0, width_mm=274.8, height_mm=58.0, alignment="center",
+                char_source=_LATIN, char_scale=0.5, tracking=4.0,
+                default_text="12ABC345", color=(30, 30, 35, 255),
+                validation=FieldValidation(
+                    format_hint_key="plates.validation.gta_sa.format_hint",
+                    min_length=8, max_length=8,
+                    allowed_pattern=r"[0-9]{2}[A-Z]{3}[0-9]{3}",
+                ),
+            ),
+        ),
+        decorations=(
+            Decoration(decoration_id="left_sticker", kind=DecorationKind.STICKER,
+                       x_mm=15.0, y_mm=15.0, width_mm=40.0, height_mm=22.0, color=WHITE),
+            Decoration(decoration_id="right_sticker", kind=DecorationKind.STICKER,
+                       x_mm=249.8, y_mm=15.0, width_mm=40.0, height_mm=22.0, color=WHITE),
+            Decoration(decoration_id="stripe_red", kind=DecorationKind.SEPARATOR,
+                       x_mm=0.0, y_mm=126.0, width_mm=PLATE_W, height_mm=6.0, color=(190, 40, 40, 255)),
+            Decoration(decoration_id="stripe_blue", kind=DecorationKind.SEPARATOR,
+                       x_mm=0.0, y_mm=138.0, width_mm=PLATE_W, height_mm=6.0, color=(30, 60, 150, 255)),
         ),
         tags=("vanity-available", "fictional-game"),
     )
@@ -733,6 +1309,9 @@ def phasmophobia_ghd_van() -> PlateTemplate:
 
 TEMPLATES = (
     gta_san_andreas,
+    gta_sa_black, gta_sa_blue, gta_sa_red, gta_exempt,
+    gta_liberty_city_bw, gta_liberty_city_by, gta_liberty_city_skyline,
+    gta_vice_city, gta_los_santos_shrimps, gta_sprunk, gta_patriot,
     nfs_fairhaven, nfs_rockport, nfs_palmont, nfs_tri_city_bay, nfs_seacrest_county,
     sr_stilwater, sr_steelport,
     halo_new_mombasa, halo_reach_barcode, halo_reach_standard,

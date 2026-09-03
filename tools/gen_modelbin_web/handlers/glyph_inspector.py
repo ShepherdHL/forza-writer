@@ -10,9 +10,7 @@ per the migration plan's "forza_writer stays UI-agnostic" principle.
 """
 from __future__ import annotations
 
-import base64
 import difflib
-import io
 import json
 import re
 import sys
@@ -29,6 +27,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 import file_preview  # noqa: E402
 import font_preview  # noqa: E402
 import glyph_reference_preview  # noqa: E402
+import gui_settings  # noqa: E402
 import gui_theme  # noqa: E402
 from gen_modelbin import extract_contours, normalize_to_128  # noqa: E402
 from gen_modelbin_gui.state import (  # noqa: E402
@@ -40,6 +39,7 @@ from forza_writer.generation_policy import DEFAULT_POLICY  # noqa: E402
 from forza_writer.primitive_fit import fit_glyph_with_strategy, rasterize_contours  # noqa: E402
 
 from ..events import push_event  # noqa: E402
+from ..imaging import image_to_data_uri as _image_to_data_uri  # noqa: E402
 
 _FONT_FILE_TYPES = ('Fonts (*.ttf;*.otf;*.ttc)',)
 _SHAPE_FILE_TYPES = ('Shape JSON (*.json)',)
@@ -85,12 +85,6 @@ def _guess_font_from_filename(filename: str) -> dict | None:
     if best_score >= 0.72:
         return {'name': best_name, 'path': str(best_path)}
     return None
-
-
-def _image_to_data_uri(image) -> str:
-    buf = io.BytesIO()
-    image.save(buf, format='PNG')
-    return 'data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode('ascii')
 
 
 def _font_status_text(info) -> str:
@@ -241,7 +235,9 @@ def register(api, window) -> None:
                     backend = resolve_backend(backend_choice)
 
                 p = gui_theme.palette()
-                image = file_preview.render_json_preview(shapes, GLYPH_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
+                vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
+                image = file_preview.render_json_preview(shapes, GLYPH_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
+                                                          vinyls_dir=vinyls_dir)
                 mask_count = sum(1 for s in shapes if s.get('mask'))
                 push_event(window, 'glyph_inspector_generated_ready', gen, {
                     'image': _image_to_data_uri(image),

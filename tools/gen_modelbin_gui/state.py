@@ -182,3 +182,15 @@ def enumerate_installed_fonts() -> dict[str, Path]:
 
 ICON_PATH = Path(__file__).resolve().parent.parent.parent / 'assets' / 'icon.ico'
 
+# Purely decorative: the two screenshots backing the "Ellipses Only" preset's
+# tucked-away easter egg (see GeneratorTabMixin._build_generation_section).
+# Not checked into the repo by default -- the toggle only shows whichever of
+# these actually exist, so a partial or missing set is never a broken-looking
+# gap. Ordered narratively: the "5 years ago" origin story, then the
+# "circles are optimal" callback that prompted this preset.
+_ASSETS_DIR = Path(__file__).resolve().parent.parent.parent / 'assets'
+EASTER_EGG_IMAGES = (
+    _ASSETS_DIR / 'lance_deepcirclelore.png',
+    _ASSETS_DIR / 'lance_optimalcircles.png',
+)
+

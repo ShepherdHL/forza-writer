@@ -33,6 +33,7 @@ GUI's Generator tab does:
 import argparse
 import json
 import re
+import shutil
 import sys
 import unicodedata
 from datetime import datetime, timezone
@@ -83,11 +84,53 @@ def generation_profile_id(output: str, curve_segments: int, resolved_backend: st
 
 def pack_dir_for(out_dir: Path, prefix: str, output: str, curve_segments: int,
                   resolved_backend: str) -> Path:
-    """Where this exact generation profile's pack lives: one folder per font
-    (`prefix`), with each profile (output format x backend x curve
+    """Where this exact generation profile's pack *starts out*: one folder
+    per font (`prefix`), with each profile (output format x backend x curve
     smoothness) nested inside it, so a CPU and a CUDA run of the same font
-    sit together instead of scattered as flat siblings under `out_dir`."""
+    sit together instead of scattered as flat siblings under `out_dir`.
+
+    This is a write target, not a lookup: `build_fontpack` writes every
+    glyph here, then -- for a json/json_legacy pack, once the true total
+    shape count is known -- renames this exact directory to
+    `<profile_id>_<total_shapes>` (see the total_shapes block near the end
+    of `build_fontpack`). A caller that needs to *find* an
+    already-generated pack after the fact (Export to KFPS, an "open output
+    folder" action, abort cleanup) has to account for that possible suffix
+    instead of assuming this exact path still exists; use
+    `find_pack_dir` for that, not this function.
+    """
     return Path(out_dir) / prefix / generation_profile_id(output, curve_segments, resolved_backend)
+
+
+# Matches "<anything>_<digits>" at the end of a profile dir name -- the
+# layer-count suffix build_fontpack appends, e.g. "JSON-CUDA-CS8_212".
+_PACK_DIR_SUFFIX_RE = re.compile(r"^(?P<base>.+)_(?P<count>\d+)$")
+
+
+def find_pack_dir(out_dir: Path, prefix: str, output: str, curve_segments: int,
+                   resolved_backend: str) -> Path | None:
+    """Locate an already-generated pack for this exact profile, whether or
+    not `build_fontpack` renamed it to include a layer-count suffix.
+
+    Checks the unsuffixed path first (always correct for modelbin, which
+    never gets a suffix; also covers a json pack from before this feature
+    existed), then falls back to the one `<profile_id>_<digits>` sibling
+    directory, if exactly one exists. Returns None if neither is found, or
+    if more than one suffixed sibling exists (an inconsistent state
+    `build_fontpack` shouldn't produce on its own, since it replaces its
+    own prior suffixed output rather than leaving old ones behind -- but
+    this refuses to guess which is current rather than silently picking
+    one).
+    """
+    bare = pack_dir_for(out_dir, prefix, output, curve_segments, resolved_backend)
+    if bare.is_dir():
+        return bare
+    if not bare.parent.is_dir():
+        return None
+    matches = [p for p in bare.parent.glob(f"{bare.name}_*")
+               if p.is_dir() and _PACK_DIR_SUFFIX_RE.match(p.name)
+               and _PACK_DIR_SUFFIX_RE.match(p.name)["base"] == bare.name]
+    return matches[0] if len(matches) == 1 else None
 
 
 def glyph_filename(prefix: str, char: str, ext: str = "modelbin") -> str:
@@ -375,9 +418,19 @@ def build_fontpack(font_path: Path, out_dir: Path, prefix: str,
     # only care that *some* json artifact was generated, not which
     # strategy produced it.
     summary_mode = "json" if output in ("json", "json_legacy") else "modelbin"
+    # Sum of every successfully generated glyph's shape_count. modelbin
+    # glyphs have no such field (a mesh, not a shape list), so this is 0
+    # for a modelbin pack -- correctly leaving its folder name untouched
+    # below, since "layer count" isn't a concept that applies to it.
+    total_shapes = sum(
+        entry.get("artifacts", {}).get("json", {}).get("shape_count") or 0
+        for entries in manifest["categories"].values()
+        for entry in entries
+    )
     manifest["summary"] = {
         "skipped": len(skipped),
         "by_category": {c: len(manifest["categories"].get(c, [])) for c in CATEGORY_ORDER},
+        "total_shapes": total_shapes,
         summary_mode: counts,
     }
     if output in ("json", "json_legacy") and verify_quality:
@@ -396,6 +449,39 @@ def build_fontpack(font_path: Path, out_dir: Path, prefix: str,
         # nobody mistakes "generated" for "verified in-game".
         manifest["experimental"] = ("this pack includes stencil-mode glyphs (mask-layer cutouts); "
                                      "mask rendering hasn't been verified against a live FH6 session yet")
+
+    if total_shapes > 0:
+        # Renamed only now that the true total is known -- every write
+        # above targeted the pre-rename pack_dir, and a directory rename is
+        # atomic and doesn't touch any file inside or its already-recorded
+        # path (every path in the manifest is relative to pack_dir, not
+        # absolute). Only the profile subfolder gets the suffix
+        # (JSON-CUDA-CS8 -> JSON-CUDA-CS8_212), not the font-level folder
+        # above it: that level can hold several profiles of the same font
+        # side by side (see pack_dir_for), each with its own total, so only
+        # the subfolder has one well-defined count to name itself after.
+        # Any older suffixed sibling of *this* profile is removed first --
+        # not just one at today's exact total, but any "<base>_<digits>"
+        # match -- otherwise a regenerate that changes the total (a
+        # different preset, more characters, ...) would leave the old
+        # count's folder behind as an orphan instead of the usual
+        # regenerate-overwrites-in-place behavior every other path here
+        # already has.
+        base_name = pack_dir.name
+        for sibling in pack_dir.parent.glob(f"{base_name}_*"):
+            match = _PACK_DIR_SUFFIX_RE.match(sibling.name)
+            if sibling.is_dir() and match and match["base"] == base_name:
+                shutil.rmtree(sibling)
+        pack_dir = pack_dir.rename(pack_dir.parent / f"{base_name}_{total_shapes}")
+
+    # The directory build_fontpack actually wrote to, name only (not a full
+    # path -- manifest.json intentionally stores no absolute paths
+    # elsewhere either). A caller holding this same manifest right after
+    # generation (abort cleanup, a "done" log line) can recover the true
+    # pack_dir as `original_pack_dir.parent / manifest["pack_dir_name"]`
+    # without re-deriving it or guessing at a suffix; a caller coming back
+    # later with no manifest in hand yet should use `find_pack_dir` instead.
+    manifest["pack_dir_name"] = pack_dir.name
 
     pack_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = pack_dir / "manifest.json"

@@ -8,11 +8,6 @@ _run_batch that both Tkinter tabs delegate to.
 Two deliberate scope simplifications for this first web pass (both
 call-out-able, non-functionality-losing UI simplifications, not engine
 changes):
-  - Font browsing is search-only (reuses the shared fonts.list_installed
-    catalog via the frontend's ForzaFontSearch widget) plus "Browse on
-    machine...". The Tkinter tab's List/Grid toggle and script-tab filter
-    are a *browsing* convenience only -- every installed font is still
-    reachable, just via typing instead of a thumbnail grid.
   - Non-Latin alphabet groups are all shown at once rather than gated
     behind the (deferred) font-browser's script tabs. Every checkbox and
     the "Select only <script>" shortcut are present and behave exactly as
@@ -23,10 +18,12 @@ changes):
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 import webview
+from PIL import Image
 
 _TOOLS_DIR = Path(__file__).resolve().parent.parent.parent
 _REPO_ROOT = _TOOLS_DIR.parent
@@ -36,7 +33,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 import gui_settings  # noqa: E402
 import gui_theme  # noqa: E402
 import vinyl_tiles  # noqa: E402
-from gen_fontpack import glyph_filename, pack_dir_for, sanitize_prefix  # noqa: E402
+from gen_fontpack import find_pack_dir, glyph_filename, sanitize_prefix  # noqa: E402
 from gen_fabric_project import build_fabric_project  # noqa: E402
 from forza_writer import alphabets  # noqa: E402
 from forza_writer.charset import charset_from_font  # noqa: E402
@@ -51,6 +48,21 @@ from forza_writer.variable_fonts import inspect_variable_font  # noqa: E402
 from . import batch_runner  # noqa: E402
 
 _FONT_FILE_TYPES = ('Fonts (*.ttf;*.otf;*.ttc)', 'All files (*.*)')
+
+# Mirrors tools/gen_modelbin_gui/state.py's EASTER_EGG_IMAGES: the same two
+# files, same narrative order, one shared source of truth in assets/ rather
+# than the web app keeping its own copies. Missing files are skipped, not an
+# error, so the frontend's toggle just stays hidden until they're dropped in.
+_EASTER_EGG_IMAGE_NAMES = ('lance_deepcirclelore.png', 'lance_optimalcircles.png')
+
+
+def _easter_egg_images() -> list[str]:
+    uris = []
+    for name in _EASTER_EGG_IMAGE_NAMES:
+        path = _REPO_ROOT / 'assets' / name
+        if path.is_file():
+            uris.append(batch_runner.image_to_data_uri(Image.open(path)))
+    return uris
 
 # Each non-Latin script's own endonym (the name speakers of it actually use),
 # shown alongside the English label in the Characters grid -- e.g. "Ελληνικά
@@ -219,6 +231,7 @@ def register(api, window, run_state: dict) -> None:
             'preferred_shapes': settings.get('generation_preferred_shapes', []),
             'fallback': settings.get('generation_fallback', DEFAULT_POLICY.fallback),
             'allow_exact_cover': settings.get('generation_allow_exact_cover', True),
+            'allow_font_reuse': settings.get('generation_allow_font_reuse', False),
         })
         preset_name = settings.get('generation_preset', RECOMMENDED_PRESET)
         if preset_name in PRESETS and policy == PRESETS[preset_name]:
@@ -229,6 +242,7 @@ def register(api, window, run_state: dict) -> None:
             'presets': {name: policy_to_dict(p) for name, p in PRESETS.items()},
             'preset_labels': PRESET_LABELS,
             'recommended_preset': RECOMMENDED_PRESET,
+            'easter_egg_images': _easter_egg_images(),
             'fallback_modes': list(FALLBACK_MODES),
             'fallback_labels': FALLBACK_LABELS,
             'primitive_count': len(PRIMITIVE_CATALOG),
@@ -239,13 +253,34 @@ def register(api, window, run_state: dict) -> None:
         problems = policy.validate()
         return {'problems': problems, 'allows_exact_cover': policy.allow_exact_cover}
 
-    def export_kfps(payload: dict) -> dict:
+    def open_output_folder(payload: dict) -> dict:
+        """Mirrors Tkinter's GeneratorTabMixin._open_output_folder.
+        find_pack_dir (not pack_dir_for) accounts for build_fontpack's
+        layer-count folder suffix, falling back to the root output dir when
+        nothing's been generated under this exact profile (backend + curve
+        smoothness) yet."""
         prefix = sanitize_prefix(payload['prefix'])
         backend = resolve_backend(payload['compute_backend'])
-        pack_dir = pack_dir_for(Path(payload['out_dir']), prefix, 'json', max(1, int(payload['segments'])), backend.resolved)
-        if not (pack_dir / 'manifest.json').exists():
+        out_dir = Path(payload['out_dir'])
+        pack_dir = find_pack_dir(out_dir, prefix, payload['output'],
+                                  max(1, int(payload['segments'])), backend.resolved)
+        target = pack_dir if pack_dir is not None else out_dir
+        if not target.is_dir():
+            return {'opened': False, 'path': str(target)}
+        os.startfile(target)  # noqa: S606 -- local desktop app, user's own files
+        return {'opened': True, 'path': str(target)}
+
+    def export_kfps(payload: dict) -> dict:
+        # find_pack_dir (not pack_dir_for) accounts for build_fontpack's
+        # layer-count folder suffix.
+        prefix = sanitize_prefix(payload['prefix'])
+        backend = resolve_backend(payload['compute_backend'])
+        pack_dir = find_pack_dir(Path(payload['out_dir']), prefix, 'json',
+                                  max(1, int(payload['segments'])), backend.resolved)
+        if pack_dir is None:
             raise ValueError(
-                f'No manifest.json in: {pack_dir}\n\nGenerate a fontpack with .json output first '
+                f"No fontpack found for {prefix!r} under: {payload['out_dir']}\n\n"
+                'Generate a fontpack with .json output first '
                 '(Custom Mesh alone has no shapes to export).')
         lines: list[str] = []
         project = build_fabric_project(pack_dir, log=lines.append)
@@ -272,6 +307,7 @@ def register(api, window, run_state: dict) -> None:
     api.register('generator.render_shape_tile', render_shape_tile)
     api.register('generator.get_policy_defaults', get_policy_defaults)
     api.register('generator.validate_policy', validate_policy)
+    api.register('generator.open_output_folder', open_output_folder)
     api.register('generator.export_kfps', export_kfps)
     api.register('generator.start', start)
     api.register('generator.halt', halt)

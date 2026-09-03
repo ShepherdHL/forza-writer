@@ -42,6 +42,15 @@ from gen_modelbin_web.handlers import plates as plates_handlers  # noqa: E402
 from gen_modelbin_web.handlers import configurator as configurator_handlers  # noqa: E402
 
 FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
+# The web app's own icon -- a simple two-dot mark (white, then orange),
+# distinct from the Tkinter app's assets/icon.ico so the two windows are
+# visually distinguishable in the taskbar/Alt-Tab. Deliberately plain
+# rather than a detailed braille-dot grid: at the 16-24px sizes Windows
+# actually renders a title-bar/taskbar icon at, fine detail just reads as
+# noise -- two bold dots hold up. Sets both the title-bar icon (top-left
+# corner) and the taskbar icon -- pywebview draws both from this one file
+# via webview.start's `icon` argument.
+ICON_PATH = Path(__file__).resolve().parent.parent.parent / "assets" / "icon-web.ico"
 
 
 def _startup_log(window) -> None:
@@ -102,7 +111,7 @@ def main() -> None:
 
     window.events.loaded += on_loaded
 
-    webview.start(gui="edgechromium")
+    webview.start(gui="edgechromium", icon=str(ICON_PATH))
 
 
 if __name__ == "__main__":

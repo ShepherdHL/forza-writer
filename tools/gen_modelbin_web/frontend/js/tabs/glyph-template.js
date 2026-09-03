@@ -20,14 +20,17 @@ window.ForzaTabs = window.ForzaTabs || {};
     return '#' + [rgba[0], rgba[1], rgba[2]].map((c) => c.toString(16).padStart(2, '0')).join('');
   }
 
+  const CHARSET_LABELS = { 'basic-latin': 'Basic Latin', 'hiragana': 'Hiragana', 'katakana': 'Katakana' };
+  function charsetLabel(key) {
+    return CHARSET_LABELS[key] || key;
+  }
+
   async function mount(container) {
     container.innerHTML = `
       <h2 class="page-heading">Glyph Template</h2>
       <div class="intro-text">
-        Generate a KFPS-importable glyph template for a font: a labeled grid, one cell per
-        character, with the font's own letterforms embedded as a tracing guide. Open the exported
-        project in Kloudy's Fabric Editor, draw over each glyph, group each glyph's shapes, then run
-        import_glyph_template.py to turn it into a fontpack.
+        Generate a labeled uniform grid for your selected font, in the form of an SVG Template.<br>
+        This can be used in the KFPS Fabric Editor, or used as a tracing guide in the game.
       </div>
 
       <div class="gi-content" style="grid-template-columns: 1fr 340px;">
@@ -49,9 +52,9 @@ window.ForzaTabs = window.ForzaTabs || {};
         <div class="section-title">2. Charset</div>
         <div class="field-row" style="margin-bottom: 6px;">
           <label><input type="radio" name="gtMode" value="single" checked> Single template</label>
-          <select class="path-input" id="gtCharset" style="width: 160px; display:inline-block; margin-left: 10px;"></select>
           <label style="margin-left: 14px;">Chars/row <input type="number" class="path-input" id="gtCharsPerRow" style="width: 60px; margin-left: 6px;"></label>
         </div>
+        <div id="gtCharsetGroup" style="display:flex; flex-direction:column; gap:8px; margin: 0 0 8px 24px;"></div>
         <div class="field-row" style="margin-bottom: 6px;">
           <label><input type="radio" name="gtMode" value="split"> Split by Unicode block (recommended for large libraries)</label>
           <label style="margin-left: 14px;">Min glyphs/block <input type="number" class="path-input" id="gtMinChars" style="width: 60px; margin-left: 6px;"></label>
@@ -94,6 +97,15 @@ window.ForzaTabs = window.ForzaTabs || {};
 
         <div>
           <div class="section">
+            <div class="section-title">Preview</div>
+            <div class="gt-preview-panel" id="gtPreviewPanel">
+              <div class="gt-preview-empty" id="gtPreviewEmpty">Load a font to see a preview.</div>
+              <img id="gtPreviewImg" style="display:none;">
+            </div>
+            <div class="field-hint" id="gtPreviewHint" style="margin-top: 6px;"></div>
+          </div>
+
+          <div class="section">
             <div class="section-title">Tracing Color</div>
             <div style="display:flex; align-items: center; gap: 10px; margin-bottom: 8px;">
               <div class="cp-swatch" id="gtColorSwatch" style="width: 36px; height: 24px; cursor: pointer;"></div>
@@ -116,11 +128,33 @@ window.ForzaTabs = window.ForzaTabs || {};
     let pendingGeneration = null;
 
     // -- charset / defaults -------------------------------------------------
+    // Card style matches Direct Generator's method cards (direct.js's
+    // renderMethodCards): a plain clickable div per option, no visible radio
+    // dot, selected state shown purely via the orange border/title color.
+    let selectedCharset = null;
+    function currentCharset() { return selectedCharset || 'basic-latin'; }
+    function renderCharsetCards(charsets) {
+      container.querySelector('#gtCharsetGroup').innerHTML = charsets.map((c) => `
+        <div class="section method-card ${currentCharset() === c ? 'active' : ''}" data-key="${esc(c)}"
+             style="margin-bottom:0; cursor:pointer; padding: 8px 14px; ${currentCharset() === c ? 'border-color: var(--accent);' : ''}">
+          <div style="font-family: var(--display); font-weight: 600; font-size: 12px; ${currentCharset() === c ? 'color: var(--accent);' : ''}">${esc(charsetLabel(c))}</div>
+        </div>
+      `).join('');
+      container.querySelector('#gtCharsetGroup').querySelectorAll('.method-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          selectedCharset = card.dataset.key;
+          renderCharsetCards(charsets);
+          schedulePreviewRefresh();
+        });
+      });
+    }
+
     const charsetsResp = await api.call('glyph_template.get_charsets', {});
     let defaultMinChars = 4;
     if (charsetsResp.ok) {
       const { charsets, default_chars_per_row, default_trace_color, default_min_chars, default_output_dir } = charsetsResp.result;
-      container.querySelector('#gtCharset').innerHTML = charsets.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      selectedCharset = charsets[0] || 'basic-latin';
+      renderCharsetCards(charsets);
       container.querySelector('#gtCharsPerRow').value = default_chars_per_row;
       container.querySelector('#gtMinChars').value = default_min_chars;
       defaultMinChars = default_min_chars;
@@ -143,6 +177,7 @@ window.ForzaTabs = window.ForzaTabs || {};
       container.querySelector('#gtColorHex').value = hex;
       container.querySelector('#gtColorSwatch').style.background = hex;
       if (colorPicker) colorPicker.sync();
+      schedulePreviewRefresh();
     }
     container.querySelector('#gtColorSwatch').addEventListener('click', () => {
       container.querySelector('#gtColorNative').value = container.querySelector('#gtColorHex').value || '#e6e6e6';
@@ -191,12 +226,90 @@ window.ForzaTabs = window.ForzaTabs || {};
 
     container.querySelector('#gtPrefix').addEventListener('input', () => { prefixEdited = true; });
 
+    // -- live grid preview --------------------------------------------------
+    // Split mode writes one grid per checked block, so there is no single
+    // "the" grid to show without one chosen -- clicking a block's row below
+    // (not its checkbox, which stays purely include/exclude) sets it as the
+    // one currently previewed. Single mode has no such ambiguity: the
+    // preview always reflects the one selected charset.
+    let previewBlockName = null;
+    let previewDebounceId = null;
+    let previewRequestId = 0;
+
+    function schedulePreviewRefresh() {
+      if (previewDebounceId) clearTimeout(previewDebounceId);
+      previewDebounceId = setTimeout(refreshPreview, 180);
+    }
+
+    function showPreviewEmpty(message) {
+      container.querySelector('#gtPreviewImg').style.display = 'none';
+      const emptyEl = container.querySelector('#gtPreviewEmpty');
+      emptyEl.textContent = message;
+      emptyEl.style.display = '';
+      container.querySelector('#gtPreviewHint').textContent = '';
+    }
+
+    async function refreshPreview() {
+      if (!loadedFont) { showPreviewEmpty('Load a font to see a preview.'); return; }
+      const mode = container.querySelector('input[name="gtMode"]:checked').value;
+      const payload = {
+        font_path: loadedFont.path,
+        text_color: container.querySelector('#gtColorHex').value.trim() || '#e6e6e6',
+        chars_per_row: Number(container.querySelector('#gtCharsPerRow').value || 10),
+        mode,
+      };
+      if (mode === 'split') {
+        const block = loadedFont.covered.find((b) => b.name === previewBlockName);
+        if (!block) { showPreviewEmpty('Click a block below to preview its grid.'); return; }
+        payload.block = { name: block.name, chars: block.chars };
+      } else {
+        payload.charset = currentCharset();
+      }
+
+      const requestId = ++previewRequestId;
+      const resp = await api.call('glyph_template.render_preview', payload);
+      if (requestId !== previewRequestId) return; // superseded by a newer request
+      if (!resp.ok || !resp.result.image) {
+        showPreviewEmpty(resp.ok ? 'No preview available.' : resp.error);
+        return;
+      }
+      container.querySelector('#gtPreviewImg').src = resp.result.image;
+      container.querySelector('#gtPreviewImg').style.display = '';
+      container.querySelector('#gtPreviewEmpty').style.display = 'none';
+      container.querySelector('#gtPreviewHint').textContent = mode === 'split'
+        ? `Previewing ${previewBlockName} — click another block below to switch.` : '';
+    }
+
     // -- mode / block checklist --------------------------------------------
     function updateModeVisibility() {
       const mode = container.querySelector('input[name="gtMode"]:checked').value;
       container.querySelector('#gtBlocksWrap').style.display = mode === 'split' ? '' : 'none';
     }
-    container.querySelectorAll('input[name="gtMode"]').forEach((r) => r.addEventListener('change', updateModeVisibility));
+    container.querySelectorAll('input[name="gtMode"]').forEach((r) => r.addEventListener('change', () => {
+      updateModeVisibility();
+      schedulePreviewRefresh();
+    }));
+
+    function setPreviewBlock(name) {
+      previewBlockName = name;
+      container.querySelectorAll('.gt-block-row').forEach((row) => {
+        row.classList.toggle('gt-block-previewing', row.dataset.blockName === name);
+      });
+      schedulePreviewRefresh();
+    }
+
+    async function refreshBlockSamples(blocks) {
+      if (!loadedFont || blocks.length === 0) return;
+      const resp = await api.call('glyph_template.render_block_samples', {
+        font_path: loadedFont.path,
+        blocks: blocks.map((b) => ({ name: b.name, chars: b.chars })),
+      });
+      if (!resp.ok) return;
+      container.querySelectorAll('.gt-block-row').forEach((row) => {
+        const uri = resp.result.samples[row.dataset.blockName];
+        if (uri) row.querySelector('.gt-block-sample').style.backgroundImage = `url(${uri})`;
+      });
+    }
 
     function renderBlockChecklist() {
       const listEl = container.querySelector('#gtBlocksList');
@@ -204,6 +317,7 @@ window.ForzaTabs = window.ForzaTabs || {};
       if (!loadedFont) {
         statusEl.textContent = 'Load a font to see which Unicode blocks it covers.';
         listEl.innerHTML = '';
+        previewBlockName = null;
         return;
       }
       const minChars = Math.max(1, Number(container.querySelector('#gtMinChars').value || defaultMinChars));
@@ -211,19 +325,35 @@ window.ForzaTabs = window.ForzaTabs || {};
       if (eligible.length === 0) {
         statusEl.textContent = `No block reaches ${minChars} glyph(s) at this threshold. Lower "Min glyphs/block".`;
         listEl.innerHTML = '';
+        previewBlockName = null;
+        schedulePreviewRefresh();
         return;
       }
       listEl.innerHTML = eligible.map((b) => `
-        <div class="checkbox-row">
+        <div class="checkbox-row gt-block-row" data-block-name="${esc(b.name)}">
           <input type="checkbox" checked data-block="${esc(b.name)}" id="gtBlock_${esc(b.name)}">
+          <div class="gt-block-sample"></div>
           <label for="gtBlock_${esc(b.name)}">${esc(b.name)} (${b.chars.length})</label>
         </div>
       `).join('');
       statusEl.textContent =
         `${eligible.length} of ${loadedFont.total_known_blocks} known block(s) covered at this threshold. ` +
         'Uncheck any you do not want a template for.';
+
+      listEl.querySelectorAll('.gt-block-row').forEach((row) => {
+        row.addEventListener('click', () => setPreviewBlock(row.dataset.blockName));
+      });
+      if (!previewBlockName || !eligible.some((b) => b.name === previewBlockName)) {
+        previewBlockName = eligible[0].name;
+      }
+      listEl.querySelectorAll('.gt-block-row').forEach((row) => {
+        row.classList.toggle('gt-block-previewing', row.dataset.blockName === previewBlockName);
+      });
+      refreshBlockSamples(eligible);
+      schedulePreviewRefresh();
     }
     container.querySelector('#gtMinChars').addEventListener('input', renderBlockChecklist);
+    container.querySelector('#gtCharsPerRow').addEventListener('input', schedulePreviewRefresh);
 
     container.querySelector('#gtBrowseOutDir').addEventListener('click', async () => {
       const resp = await api.call('glyph_template.pick_output_dir', { initial: container.querySelector('#gtOutDir').value });
@@ -253,7 +383,7 @@ window.ForzaTabs = window.ForzaTabs || {};
         payload.only_blocks = Array.from(container.querySelectorAll('#gtBlocksList input:checked')).map((el) => el.dataset.block);
         if (payload.only_blocks.length === 0) { statusEl.textContent = 'Check at least one Unicode block to generate.'; return; }
       } else {
-        payload.charset = container.querySelector('#gtCharset').value;
+        payload.charset = currentCharset();
       }
 
       container.querySelector('#gtGenerate').disabled = true;

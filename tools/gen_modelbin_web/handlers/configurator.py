@@ -39,6 +39,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
 import glyph_overrides as glyph_overrides_store  # noqa: E402
+import gui_settings  # noqa: E402
 import gui_theme  # noqa: E402
 from forza_writer.charset import CATEGORY_ORDER, charset_from_font  # noqa: E402
 from forza_writer.compute_backend import resolve_backend  # noqa: E402
@@ -117,6 +118,7 @@ def register(api, window) -> None:
         compute_backend = payload.get('compute_backend', 'auto')
         compute_forced = bool(payload.get('compute_forced', False))
         p = gui_theme.palette()
+        vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
 
         overrides = glyph_overrides_store.load_overrides_for_font(font_path)
         entry = overrides.get(char, {'mode': 'auto'})
@@ -128,7 +130,8 @@ def register(api, window) -> None:
                 shapes = data.get('shapes', [])
             except Exception as exc:
                 raise ValueError(f"Couldn't read {entry['file']!r}: {exc}") from exc
-            image = file_preview.render_json_preview(shapes, _PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
+            image = file_preview.render_json_preview(shapes, _PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
+                                                       vinyls_dir=vinyls_dir)
             mask_count = sum(1 for s in shapes if s.get('mask'))
             return {
                 'mode': 'manual', 'effective_mode': 'manual', 'shape_count': len(shapes),
@@ -159,7 +162,8 @@ def register(api, window) -> None:
             shapes, strategy = fit_glyph_with_strategy(
                 char, font_path, segments, mask_mode=effective_mode, compute_backend=backend.resolved)
         info = {key: value for key, value in info.items() if not key.startswith('_')}
-        image = file_preview.render_json_preview(shapes, _PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
+        image = file_preview.render_json_preview(shapes, _PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
+                                                  vinyls_dir=vinyls_dir)
         mask_count = sum(1 for shape in shapes if shape.get('mask'))
         return {
             'mode': mode, 'effective_mode': effective_mode, 'info': info,

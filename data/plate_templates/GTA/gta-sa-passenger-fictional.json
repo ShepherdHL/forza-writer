@@ -10,12 +10,13 @@
   "height_mm": 152.4,
   "accuracy_status": "fictional",
   "provenance": {
-    "source_notes": "Grand Theft Auto V ships five stock San Andreas plate variants (yellow-on-black, yellow-on-blue, a striped white variant, a plain white/blue variant, and a white government 'SA EXEMPT' plate) -- this template models the plain white-background/blue-text variant, the one described as most common. 'SAN ANDREAS' as the header text and the 2-digit/3-letter/3-digit registration format (e.g. 12ABC345) are corroborated across two independent wikis. No slogan/motto text was found on the plate itself in either source -- treat any claim of one as unconfirmed. The text color (a dark blue, approximately #0F2352) comes from a single wiki's datamined-looking hex values, not independently corroborated. The font is named 'Penitentiary Gothic Regular' by one wiki only; not bundled here either way -- this template's text uses the same placeholder Latin fontpack as every real-world template.",
+    "source_notes": "Rebuilt against real reference: the user supplied clean, isolated plate textures originally extracted from GTA V's companion iFruit app (not this app's own game files, and not a screenshot the user personally took) and posted publicly to Reddit by u/sgtfrankieboy (see reference_urls). This template models the plain (unmarked-filename) 'San Andreas' texture specifically, one of five stock variants the app ships (the others -- yellow-on-black, yellow-on-orange-on-navy, a gold-striped white/dark-red variant, and the white 'SA EXEMPT' government plate -- are not modeled here). Colors and layout below are measured/sampled directly from that source image, not guessed: an off-white background (~#EDEDED), 'San Andreas' in a dark red script (~#8E1414, sampled range #7F0E0E-#B93838 from anti-aliasing) -- the cursive/script letterform itself isn't reproducible (no script font is bundled; same placeholder-box limitation as every other template here), a cream month-indicator sticker (top-left, reads 'MAY' in this specific source file -- the four variants checked each show a different, seemingly arbitrary month, so this is decorative, not meaningful data), and an orange registration-detail sticker (top-right, exact color #D33A01, reading 'CA' and a small registration-like number too fine to transcribe reliably -- modeled as a plain colored sticker, no text, same treatment de-current-eu-band gives its own inspection stickers). The registration number itself is blank in every one of these base textures (filled in dynamically per-vehicle by the game, not baked into the reusable plate art), so its color here is extrapolated from the red accent for visual consistency, not directly observed -- flagged as a guess. 'SAN ANDREAS' as the header text (previously modeled in blue block caps, now corrected to match the real script wordmark) and the 2-digit/3-letter/3-digit registration format (e.g. 12ABC345) remain corroborated by two independent wikis, unaffected by this revision.",
     "contributors": [],
     "reference_urls": [
       "https://www.grandtheftwiki.com/Vehicle_License_Plates",
       "https://gta.wiki/w/License_Plates",
-      "https://gtaforums.com/topic/573705-san-andreas-license-plates/"
+      "https://gtaforums.com/topic/573705-san-andreas-license-plates/",
+      "https://www.reddit.com/r/GrandTheftAutoV/comments/1migfx/all_gta_v_number_plates/"
     ],
     "reconstruction_author": null,
     "year_documented": null
@@ -28,24 +29,39 @@
     "width_mm": null,
     "height_mm": null,
     "color": [
-      255,
-      255,
-      255,
+      237,
+      237,
+      237,
       255
     ],
     "asset_ref": null,
     "editable": false
   },
-  "border": null,
+  "border": {
+    "decoration_id": "border",
+    "kind": "border",
+    "x_mm": 0.0,
+    "y_mm": 0.0,
+    "width_mm": 304.8,
+    "height_mm": 152.4,
+    "color": [
+      176,
+      176,
+      173,
+      255
+    ],
+    "asset_ref": null,
+    "editable": true
+  },
   "fields": [
     {
       "field_id": "jurisdiction_header",
       "label_key": "plates.field.jurisdiction_header",
       "role": "jurisdiction_text",
-      "x_mm": 20.0,
-      "y_mm": 10.0,
-      "width_mm": 264.8,
-      "height_mm": 26.0,
+      "x_mm": 48.6,
+      "y_mm": 23.6,
+      "width_mm": 176.0,
+      "height_mm": 20.6,
       "alignment": "center",
       "char_source": {
         "font_file": "LiberationSans-Regular.ttf",
@@ -54,11 +70,37 @@
       "char_scale": 0.55,
       "tracking": 2.0,
       "line_spacing": 1.0,
-      "default_text": "SAN ANDREAS",
+      "default_text": "San Andreas",
       "color": [
-        15,
-        35,
-        82,
+        142,
+        20,
+        20,
+        255
+      ],
+      "validation": null,
+      "editable_in_authentic_mode": false
+    },
+    {
+      "field_id": "month_sticker",
+      "label_key": "plates.field.month_sticker",
+      "role": "decorative_text",
+      "x_mm": 21.9,
+      "y_mm": 23.6,
+      "width_mm": 39.7,
+      "height_mm": 23.6,
+      "alignment": "center",
+      "char_source": {
+        "font_file": "LiberationSans-Regular.ttf",
+        "fallback": null
+      },
+      "char_scale": 0.5,
+      "tracking": 1.0,
+      "line_spacing": 1.0,
+      "default_text": "MAY",
+      "color": [
+        50,
+        48,
+        45,
         255
       ],
       "validation": null,
@@ -68,23 +110,23 @@
       "field_id": "registration",
       "label_key": "plates.field.registration",
       "role": "registration",
-      "x_mm": 20.0,
-      "y_mm": 48.0,
-      "width_mm": 264.8,
-      "height_mm": 70.0,
+      "x_mm": 15.0,
+      "y_mm": 52.0,
+      "width_mm": 274.8,
+      "height_mm": 76.0,
       "alignment": "center",
       "char_source": {
         "font_file": "LiberationSans-Regular.ttf",
         "fallback": null
       },
-      "char_scale": 0.51,
+      "char_scale": 0.5,
       "tracking": 4.0,
       "line_spacing": 1.0,
       "default_text": "12ABC345",
       "color": [
-        15,
-        35,
-        82,
+        142,
+        20,
+        20,
         255
       ],
       "validation": {
@@ -98,7 +140,40 @@
       "editable_in_authentic_mode": false
     }
   ],
-  "decorations": [],
+  "decorations": [
+    {
+      "decoration_id": "month_sticker_bg",
+      "kind": "sticker",
+      "x_mm": 21.9,
+      "y_mm": 23.6,
+      "width_mm": 39.7,
+      "height_mm": 23.6,
+      "color": [
+        236,
+        233,
+        218,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    },
+    {
+      "decoration_id": "registration_sticker",
+      "kind": "sticker",
+      "x_mm": 244.0,
+      "y_mm": 22.9,
+      "width_mm": 38.9,
+      "height_mm": 24.3,
+      "color": [
+        211,
+        58,
+        1,
+        255
+      ],
+      "asset_ref": null,
+      "editable": true
+    }
+  ],
   "tags": [
     "vanity-available",
     "fictional-game"

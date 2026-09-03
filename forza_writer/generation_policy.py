@@ -121,6 +121,13 @@ class GenerationPolicy:
     # "Primitive Only" preset, whose complaint is precisely that an exact
     # cover answers a blocky glyph with a pile of rectangles.
     allow_exact_cover: bool = True
+    # Off by default, deliberately, unlike every other dial here: this one
+    # can replace a glyph's entire shape composition with a single reused
+    # in-game letterform (see forza_writer.font_reuse) when one of the five
+    # identified Forza Fonts already matches closely enough. That changes
+    # which letterform gets drawn, not just how it is built, so it should
+    # never turn on silently the way a shape preference can.
+    allow_font_reuse: bool = False
     max_layers: int = DEFAULT_MAX_LAYERS
     quality_target: float = DEFAULT_QUALITY_TARGET
     min_gain: int = DEFAULT_MIN_GAIN
@@ -258,6 +265,13 @@ PRESETS: dict[str, GenerationPolicy] = {
     # rather than a grid of squares.
     "primitive_only": replace(
         DEFAULT_POLICY, preferred=_EXPRESSIVE_SHAPES, allow_exact_cover=False),
+    # Return-to-form: the original Forza Painter text-vinyl tracer only ever
+    # built glyphs out of ellipses. Circle Border is included alongside
+    # Circle, not just Circle alone, so a letter with a counter (O, D, Q)
+    # gets a real ring instead of a solid disk. Square is excluded, so
+    # allows_exact_cover is already False with no extra flag needed.
+    "ellipses_only": replace(
+        DEFAULT_POLICY, allowed=frozenset({"circle", "circle_border"})),
 }
 
 PRESET_LABELS: dict[str, str] = {
@@ -265,6 +279,7 @@ PRESET_LABELS: dict[str, str] = {
     "maximum_fidelity": "Maximum Fidelity",
     "minimum_vinyl": "Minimum Vinyl Count",
     "primitive_only": "Primitive Only",
+    "ellipses_only": "Ellipses Only",
 }
 
 RECOMMENDED_PRESET = "balanced"
@@ -296,6 +311,7 @@ def policy_to_dict(policy: GenerationPolicy) -> dict:
         "preferred_shapes": sorted(policy.preferred),
         "fallback": policy.fallback,
         "allow_exact_cover": policy.allow_exact_cover,
+        "allow_font_reuse": policy.allow_font_reuse,
         "max_layers": policy.max_layers,
         "quality_target": policy.quality_target,
         "min_gain": policy.min_gain,
@@ -352,6 +368,7 @@ def policy_from_dict(data: dict | None,
         preference_bonus=_number("preference_bonus", base.preference_bonus, float),
         fallback=fallback,
         allow_exact_cover=bool(data.get("allow_exact_cover", base.allow_exact_cover)),
+        allow_font_reuse=bool(data.get("allow_font_reuse", base.allow_font_reuse)),
         max_layers=_number("max_layers", base.max_layers, int),
         quality_target=_number("quality_target", base.quality_target, float),
         min_gain=_number("min_gain", base.min_gain, int),

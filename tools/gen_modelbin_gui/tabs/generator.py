@@ -4,6 +4,7 @@ filtering, alphabet groups), character selection, and the main preview/export ro
 
 import colorsys
 import json
+import os
 import queue
 import re
 import string
@@ -27,8 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from gen_fontpack import (  # noqa: E402
     OUTPUT_MODES,
     build_fontpack,
+    find_pack_dir,
     glyph_filename,
-    pack_dir_for,
     sanitize_prefix,
 )
 from gen_fabric_project import build_fabric_project, save_project  # noqa: E402
@@ -62,9 +63,9 @@ from forza_writer.variable_fonts import (  # noqa: E402
 
 from ..color_picker_widget import ColorPickerWidget  # noqa: E402
 from ..state import (  # noqa: E402
-    FONT_EXTENSIONS, FONTS_DIR_SYSTEM, GRID_MAX_TILES, GRID_TILE_GAP, GRID_TILE_SIZE,
-    ICON_PATH, LIVE_PREVIEW_SIZE, COMPOSE_PREVIEW_SIZE, OUTPUT_MODE_LABELS, PREVIEW_SIZE,
-    SIDEBAR_WIDTH, TABS, TAB_LABELS, _MODE_LABELS, direct_output_filename,
+    EASTER_EGG_IMAGES, FONT_EXTENSIONS, FONTS_DIR_SYSTEM, GRID_MAX_TILES, GRID_TILE_GAP,
+    GRID_TILE_SIZE, ICON_PATH, LIVE_PREVIEW_SIZE, COMPOSE_PREVIEW_SIZE, OUTPUT_MODE_LABELS,
+    PREVIEW_SIZE, SIDEBAR_WIDTH, TABS, TAB_LABELS, _MODE_LABELS, direct_output_filename,
     enumerate_installed_fonts, is_running_as_administrator, sidebar_tab_text)
 
 
@@ -494,6 +495,8 @@ class GeneratorTabMixin:
         self.abort_btn.pack(side='left', padx=2)
         self.export_kfps_btn = ttk.Button(run_actions, text='Export to KFPS…', command=self._quick_export_kfps)
         self.export_kfps_btn.pack(side='right', padx=4)
+        ttk.Button(run_actions, text='Open Output Folder',
+                   command=self._open_output_folder).pack(side='right', padx=4)
         self.progress = ttk.Progressbar(run_frame, mode='indeterminate')
         self.progress.pack(fill='x', expand=True, padx=4, pady=(6, 0))
 
@@ -748,19 +751,43 @@ class GeneratorTabMixin:
     def _goto_configurator_for_current_font(self):
         self._show_tab('generator')
         self._set_configurator_workspace_open(True)
+    def _open_output_folder(self):
+        """Jump straight to this run's output in Explorer, rather than
+        making the user retrace Prefix/root-folder/backend by hand over in
+        the Outputs tab. find_pack_dir accounts for build_fontpack's
+        layer-count folder suffix (json/json_legacy packs only), so this
+        finds the actual directory even though this exact combination of
+        settings no longer determines its name on its own."""
+        prefix = sanitize_prefix(self.prefix_var.get())
+        output = self.output_var.get()
+        out_dir = Path(self.modelbin_out_var.get() if output == 'modelbin' else self.out_var.get())
+        backend = gen_modelbin_gui.resolve_backend(self.compute_backend_var.get())
+        segments = max(1, int(self.segments_var.get()))
+        pack_dir = find_pack_dir(out_dir, prefix, output, segments, backend.resolved)
+        # Falls back to the root rather than erroring: nothing generated
+        # yet under this exact profile is a very ordinary first-run state,
+        # not a problem worth interrupting the user over.
+        target = pack_dir if pack_dir is not None else out_dir
+        if not target.exists():
+            messagebox.showinfo('Output folder', f"This folder doesn't exist yet:\n{target}")
+            return
+        os.startfile(target)
     def _quick_export_kfps(self):
         # Wraps gen_fabric_project.build_fabric_project(): the fontpack
         # dir is derived from the current Prefix/Fontpack-root-folder
         # fields, same as a Generate run would use, so this works whether
         # that pack was just generated this session or already existed.
+        # find_pack_dir (not pack_dir_for) accounts for build_fontpack's
+        # layer-count folder suffix.
         prefix = sanitize_prefix(self.prefix_var.get())
         backend = gen_modelbin_gui.resolve_backend(self.compute_backend_var.get())
-        pack_dir = pack_dir_for(self.out_var.get(), prefix, 'json',
-                                 max(1, int(self.segments_var.get())), backend.resolved)
-        if not (pack_dir / 'manifest.json').exists():
+        pack_dir = find_pack_dir(self.out_var.get(), prefix, 'json',
+                                  max(1, int(self.segments_var.get())), backend.resolved)
+        if pack_dir is None:
             messagebox.showerror('No fontpack found',
-                                  f'No manifest.json in:\n{pack_dir}\n\nGenerate a fontpack with '
-                                  f'.json output first (Custom Mesh alone has no shapes to export).')
+                                  f'No fontpack found for {prefix!r} under:\n{self.out_var.get()}\n\n'
+                                  f'Generate a fontpack with .json output first (Custom Mesh alone has '
+                                  f'no shapes to export).')
             return
         try:
             project = build_fabric_project(pack_dir, log=self._log)
@@ -982,6 +1009,22 @@ class GeneratorTabMixin:
         ttk.Button(preset_row, text='Restore Recommended Defaults',
                    command=self._restore_recommended_generation_defaults).pack(side='left', padx=8)
 
+        # Tucked-away easter egg, only ever relevant to the "Ellipses Only"
+        # preset. Invisible unless at least one of EASTER_EGG_IMAGES actually
+        # exists on disk (so this never ships as a dead button pointing at
+        # nothing) and, on top of that, only packed into view while that
+        # preset is actually selected -- see _sync_easter_egg_visibility,
+        # called from _refresh_generation_state on every policy change.
+        self._easter_egg_photos = []
+        self._easter_egg_visible = False
+        self._easter_egg_frame = None
+        if any(path.is_file() for path in EASTER_EGG_IMAGES):
+            self._easter_egg_toggle_btn = ttk.Button(
+                preset_row, text='▸', width=2, command=self._toggle_easter_egg)
+            # Not packed here: _sync_easter_egg_visibility packs/unpacks it
+            # based on the selected preset, starting hidden.
+            self._easter_egg_frame = ttk.Frame(frame)
+
         self.generation_preset_hint_var = tk.StringVar()
         ttk.Label(frame, textvariable=self.generation_preset_hint_var, style='Hint.TLabel',
                   wraplength=gui_theme.WRAP_MED, justify='left').pack(
@@ -1068,6 +1111,23 @@ class GeneratorTabMixin:
             style='Hint.TLabel', wraplength=gui_theme.WRAP_MED,
             justify='left').pack(fill='x', padx=gui_theme.INDENT_PAD, pady=(0, 4))
 
+        self.generation_font_reuse_var = tk.BooleanVar(value=DEFAULT_POLICY.allow_font_reuse)
+        ttk.Checkbutton(
+            frame, text='Reuse an existing in-game letter when one matches closely',
+            variable=self.generation_font_reuse_var,
+            command=self._on_generation_policy_changed).pack(
+                anchor='w', padx=gui_theme.INDENT_PAD, pady=(2, 0))
+        ttk.Label(
+            frame,
+            text="Checks each glyph against 5 of FH6's 11 built-in fonts with a confirmed real-world "
+                 "match (Arial Bold, Brush Script MT, Haettenschweiler, Rockwell Bold, Century Gothic "
+                 "Bold). If one already looks close enough, that single existing letter replaces the "
+                 "whole primitive composition for just that glyph -- most won't match anything and are "
+                 "unaffected. Off by default: this changes which letterform gets drawn, not just how "
+                 "it's built.",
+            style='Hint.TLabel', wraplength=gui_theme.WRAP_MED,
+            justify='left').pack(fill='x', padx=gui_theme.INDENT_PAD, pady=(0, 4))
+
         self.generation_validation_var = tk.StringVar()
         self.generation_validation_lbl = ttk.Label(
             frame, textvariable=self.generation_validation_var, style='Hint.TLabel',
@@ -1084,6 +1144,7 @@ class GeneratorTabMixin:
             "preferred_shapes": self.settings.get('generation_preferred_shapes', []),
             "fallback": self.settings.get('generation_fallback', DEFAULT_POLICY.fallback),
             "allow_exact_cover": self.settings.get('generation_allow_exact_cover', True),
+            "allow_font_reuse": self.settings.get('generation_allow_font_reuse', False),
         })
         preset_name = self.settings.get('generation_preset', RECOMMENDED_PRESET)
         # A stored preset only wins when the stored dials still match it;
@@ -1116,7 +1177,8 @@ class GeneratorTabMixin:
         from dataclasses import replace
         return replace(
             base, allowed=allowed, preferred=preferred, fallback=fallback,
-            allow_exact_cover=bool(self.generation_exact_cover_var.get()))
+            allow_exact_cover=bool(self.generation_exact_cover_var.get()),
+            allow_font_reuse=bool(self.generation_font_reuse_var.get()))
 
     def _selected_preset_name(self) -> str:
         label = self.generation_preset_var.get()
@@ -1134,6 +1196,7 @@ class GeneratorTabMixin:
             var.set(shape_id in policy.preferred)
         self.generation_fallback_var.set(FALLBACK_LABELS[policy.fallback])
         self.generation_exact_cover_var.set(policy.allow_exact_cover)
+        self.generation_font_reuse_var.set(policy.allow_font_reuse)
         name = preset_name_for(policy)
         if name in PRESET_LABELS:
             self.generation_preset_var.set(PRESET_LABELS[name])
@@ -1221,6 +1284,46 @@ class GeneratorTabMixin:
             canvas.configure(background=palette['panel_alt'])
             canvas.create_image(0, 0, anchor='nw', image=photo)
 
+    def _toggle_easter_egg(self) -> None:
+        if self._easter_egg_frame is None:
+            return
+        self._easter_egg_visible = not self._easter_egg_visible
+        if self._easter_egg_visible:
+            if not self._easter_egg_photos:
+                for path in EASTER_EGG_IMAGES:
+                    if not path.is_file():
+                        continue
+                    # Shown at native size, not upscaled or shrunk: these are
+                    # already-small Discord screenshot crops, and resampling
+                    # a source that small in either direction only makes it
+                    # softer. master= pins the PhotoImage to the tab's own
+                    # interpreter, same reason _redraw_shape_tiles does it
+                    # for the vinyl-shape tiles above.
+                    image = Image.open(path)
+                    photo = ImageTk.PhotoImage(image, master=self._easter_egg_frame)
+                    self._easter_egg_photos.append(photo)
+                    ttk.Label(self._easter_egg_frame, image=photo).pack(padx=4, pady=(4, 0))
+            self._easter_egg_frame.pack(fill='x', padx=gui_theme.INDENT_PAD, pady=(0, 4))
+            self._easter_egg_toggle_btn.configure(text='▾')
+        else:
+            self._easter_egg_frame.pack_forget()
+            self._easter_egg_toggle_btn.configure(text='▸')
+
+    def _sync_easter_egg_visibility(self, preset_name: str) -> None:
+        """Show the tucked-away toggle only while "Ellipses Only" is the
+        active preset; collapse its panel the moment the preset changes away
+        from it rather than leaving a stale open panel behind."""
+        btn = getattr(self, '_easter_egg_toggle_btn', None)
+        if btn is None:
+            return
+        if preset_name == 'ellipses_only':
+            if not btn.winfo_manager():
+                btn.pack(side='right', padx=(2, 4))
+        else:
+            if self._easter_egg_visible:
+                self._toggle_easter_egg()  # also collapses the open panel
+            btn.pack_forget()
+
     def _toggle_generation_shapes(self) -> None:
         self._generation_shapes_visible = not self._generation_shapes_visible
         if self._generation_shapes_visible:
@@ -1258,6 +1361,7 @@ class GeneratorTabMixin:
         self.generation_preset_hint_var.set(
             'Custom — these settings no longer match a preset.' if name == 'custom'
             else f'{PRESET_LABELS[name]} preset.')
+        self._sync_easter_egg_visibility(name)
 
         self._redraw_shape_tiles()
         self.generation_shapes_summary_var.set(

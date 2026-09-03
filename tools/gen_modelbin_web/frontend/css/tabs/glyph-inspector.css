@@ -203,6 +203,13 @@
 
 .gi-filmstrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .gi-film-card {
+  /* Grid tracks default to min-width: auto, which respects a card's own
+     intrinsic content width (e.g. "COMPONENTS") even inside a
+     fixed-width .gi-filmstrip -- without this the grid overflows its own
+     container and the last card runs into whatever sits to its right
+     (the ledger, once .gi-compare-readout-col gave the filmstrip an
+     explicit width so it fits the horizontal Selected Glyph layout). */
+  min-width: 0;
   background: var(--panel-2);
   border: 1px solid var(--frame-light);
   border-radius: 5px;
@@ -215,7 +222,14 @@
   gap: 4px;
   transition: border-color 140ms ease, background 140ms ease;
 }
-.gi-film-card .k { font-family: var(--display); font-weight: 600; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+.gi-film-card .k {
+  font-family: var(--display); font-weight: 600; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  /* "Components" is one unbreakable word -- at this card's narrow width
+     (min-width: 0 lets the card itself shrink to its grid track) it has
+     no space to wrap at like "Boundary F1" does, so without this it just
+     overflows the card's edge instead of wrapping mid-word. */
+  overflow-wrap: break-word;
+}
 .gi-film-card .v { font-family: var(--mono); font-size: 15px; font-variant-numeric: tabular-nums; color: var(--fg); }
 .gi-film-card .flag-chip { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--flag); margin-top: 2px; }
 .gi-film-card .flag-chip::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--flag); box-shadow: 0 0 5px var(--flag); }
@@ -302,13 +316,69 @@
   border: 1px solid color-mix(in srgb, var(--generated) 45%, transparent);
 }
 
+/* ------------------------------------------------- Selected Glyph, horizontal --
+   Laid out as one wide row along the bottom of the page instead of a tall
+   right-hand sidebar -- the sidebar version packed mode controls, a 380px
+   preview, metadata, and (in Compare mode) a gauge/filmstrip/ledger all
+   into one narrow column, which routinely ran taller than the viewport
+   even at a large monitor's full-screen width. A horizontal band uses the
+   page's actual spare width instead of fighting its height. */
+.gi-detail-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.gi-detail-controls { flex: 0 0 170px; }
+
+.gi-diff-panel-compact {
+  /* Matches the backend's native GLYPH_PREVIEW_SIZE render resolution
+     (380x380) -- Reference mode's ascender/cap-height/x-height guide
+     labels are baked into those pixels, and image-rendering: pixelated
+     (see .gi-diff-panel img) makes small text look much worse scaled down
+     than the same reduction would with smooth interpolation, so shrinking
+     the display size costs more legibility than the space saved is worth. */
+  width: 380px;
+  height: 380px;
+  aspect-ratio: unset;
+  flex: 0 0 auto;
+}
+
+.gi-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(190px, 1fr));
+  gap: 2px 20px;
+  flex: 0 1 420px;
+  align-content: start;
+}
+
+.gi-compare-extras-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  flex: 0 1 auto;
+}
+.gi-compare-readout-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+/* Wide enough that "Boundary F1"/"Components" read on one line instead of
+   wrapping (or, at 320px, breaking mid-word) -- the whole compare-extras
+   row already has the full page width to itself once it wraps below the
+   controls/preview/metadata row, so there's no reason to keep it narrow. */
+.gi-compare-readout-col .gi-filmstrip { width: 480px; }
+
 /* --------------------------------------------------- categorized glyph grid --
    The browsable tile list on the left of the Glyph Inspector tab -- one
    category (Unicode block) per header, tiles rendered lazily via
    glyph_inspector.render_tiles as CSS background-images so a slow font
    load never blocks laying out the (already-known) grid structure itself. */
 .gi-tile-scroll {
-  max-height: 480px;
+  max-height: 400px;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 4px;

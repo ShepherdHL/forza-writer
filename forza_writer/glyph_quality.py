@@ -17,6 +17,50 @@ DEFAULT_PASS_IOU = 0.90
 DEFAULT_PASS_BOUNDARY_F1 = 0.80
 
 
+def _render_font_reuse_layer(shape: dict, cx: float, cy: float, sx: float, sy: float,
+                              rotation: float, resolution: int, skew_x: float) -> np.ndarray | None:
+    """Re-render an already-placed whole-glyph shape (see
+    forza_writer.font_reuse) from the same real font file that produced it,
+    so this shows up in preview/quality-gate rendering the same as a
+    Primitives shape does, instead of being silently skipped as unknown.
+    Returns None if the shape isn't a font_reuse placement, or its font
+    isn't one of the confirmed ones this build knows a real file for.
+    """
+    from dataclasses import dataclass
+
+    from forza_writer.font_reuse import CONFIRMED_FONT_FILES, resolve_font_path
+    from forza_writer.primitive_fit import rasterize_contours, render_candidate
+    from forza_writer.shapes import resource_to_char, shape_word_to_resource
+    from gen_modelbin import extract_contours, normalize_to_128
+
+    resource = shape_word_to_resource(int(shape.get("type_word", -1)))
+    if resource is None:
+        return None
+    family, index = resource
+    if not (family.startswith("Upper_Letters_") or family.startswith("Lower_Letters_")):
+        return None
+    try:
+        font_number = int(family.rsplit("_", 1)[1])
+    except ValueError:
+        return None
+    font_file = CONFIRMED_FONT_FILES.get(font_number)
+    char = resource_to_char(family, index)
+    if font_file is None or char is None:
+        return None
+    font_path = resolve_font_path(font_file)
+    if font_path is None:
+        return None
+    contours, upm = extract_contours(char, font_path, 8)
+    mask = rasterize_contours(normalize_to_128(contours, upm), 128)
+
+    @dataclass(frozen=True)
+    class _FontGlyphShape:
+        mask: np.ndarray
+        rotationally_symmetric: bool = False
+
+    return render_candidate(_FontGlyphShape(mask=mask), cx, cy, sx, sy, rotation, resolution, skew_x)
+
+
 def render_shapes_mask(shapes: list[dict], resolution: int) -> tuple[np.ndarray, list[int]]:
     """Render exported Forza primitive layers, including ordered mask cutouts."""
     from forza_writer.primitive_fit import render_candidate, shape_to_render_params
@@ -27,10 +71,13 @@ def render_shapes_mask(shapes: list[dict], resolution: int) -> tuple[np.ndarray,
     for shape in shapes:
         shape_id, cx, cy, sx, sy, rotation, skew_x = shape_to_render_params(shape, resolution)
         if shape_id is None:
-            unknown.append(int(shape.get("type_word", -1)))
-            continue
-        layer = render_candidate(
-            PRIMITIVE_CATALOG[shape_id], cx, cy, sx, sy, rotation, resolution, skew_x)
+            layer = _render_font_reuse_layer(shape, cx, cy, sx, sy, rotation, resolution, skew_x)
+            if layer is None:
+                unknown.append(int(shape.get("type_word", -1)))
+                continue
+        else:
+            layer = render_candidate(
+                PRIMITIVE_CATALOG[shape_id], cx, cy, sx, sy, rotation, resolution, skew_x)
         is_mask = bool(shape.get("mask") or (len(shape.get("data", [])) > 6 and shape["data"][6]))
         canvas = (canvas & ~layer) if is_mask else (canvas | layer)
     return canvas, unknown

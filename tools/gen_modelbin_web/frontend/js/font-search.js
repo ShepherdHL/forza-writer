@@ -14,6 +14,30 @@ window.ForzaFontSearch = (function () {
     return fontsCache;
   }
 
+  // Lazily kicks off fonts.classify (script support + glyph count per
+  // installed font, see handlers/fonts.py) and resolves once it's ready.
+  // Shared across every instance on the page, same as ensureFonts above --
+  // whichever tab asks first pays the ~couple-of-seconds one-time cost,
+  // everyone after that (this session) gets it instantly.
+  let classificationPromise = null;
+
+  function ensureClassification() {
+    if (classificationPromise) return classificationPromise;
+    classificationPromise = new Promise((resolve) => {
+      window.pywebview.api.call('fonts.classify', {}).then((resp) => {
+        if (resp.ok && resp.result.status === 'done') {
+          resolve(resp.result.fonts);
+          return;
+        }
+        const off = window.__forzaEvents.on('fonts_classified', (_generation, payload) => {
+          off();
+          resolve(payload.fonts);
+        });
+      });
+    });
+    return classificationPromise;
+  }
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, (c) => (
       { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
@@ -70,7 +94,10 @@ window.ForzaFontSearch = (function () {
       resultsEl.style.display = '';
     }
 
-    input.addEventListener('input', () => renderResults(input.value));
+    input.addEventListener('input', () => {
+      renderResults(input.value);
+      if (options.onQueryChange) options.onQueryChange(input.value);
+    });
     input.addEventListener('focus', () => renderResults(input.value));
     input.addEventListener('blur', hide);
 
@@ -80,5 +107,5 @@ window.ForzaFontSearch = (function () {
     };
   }
 
-  return { create };
+  return { create, getFonts: ensureFonts, getClassification: ensureClassification };
 })();

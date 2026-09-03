@@ -9,12 +9,16 @@
 // Generator needs its own instance rather than literally sharing this
 // tab's live state.
 //
-// Two deliberate, non-functionality-losing scope simplifications (see
+// One deliberate, non-functionality-losing scope simplification (see
 // handlers/generator.py's module docstring for the full rationale):
-//   - Font browsing is search-only (ForzaFontSearch) + "Browse on machine…",
-//     dropping the List/Grid toggle and script-tab filter.
-//   - Non-Latin alphabet groups are all shown at once rather than gated
-//     behind a font-browser script tab.
+//   - The Characters section's non-Latin alphabet groups are all shown at
+//     once rather than gated behind Tkinter's separate font-browser script
+//     tab bar. The visual Grid font browser itself (fonts rendered in
+//     their own typeface, sortable, filterable by file type and by
+//     script) IS ported and goes further than Tkinter's tab bar in one
+//     way: clicking "Select only <Script>" in the Characters section
+//     drives the same script filter, via character-selector.js's
+//     onScriptFilter -- see renderFontGrid()/updateScriptChip() below.
 // Per-glyph Configurator overrides and variable-font instancing stay
 // Advanced Generator's territory, same as in Tkinter.
 window.ForzaTabs = window.ForzaTabs || {};
@@ -46,10 +50,25 @@ window.ForzaTabs = window.ForzaTabs || {};
         <div>
       <div class="section">
         <div class="section-title">1. Font</div>
+        <div class="gen-font-toolbar">
+          <select class="path-input" id="genFontSort" style="max-width: 170px;">
+            <option value="az">Sort: A → Z</option>
+            <option value="za">Sort: Z → A</option>
+            <option value="glyphs">Sort: Glyph Count</option>
+          </select>
+          <span class="gen-font-type-filters">
+            <label><input type="checkbox" class="gen-font-type" value=".ttf" checked> .ttf</label>
+            <label><input type="checkbox" class="gen-font-type" value=".otf" checked> .otf</label>
+            <label><input type="checkbox" class="gen-font-type" value=".woff2" checked> .woff2</label>
+          </span>
+        </div>
+        <div class="gen-font-filter-chip" id="genFontScriptChip" style="display:none;"></div>
         <div class="path-field" style="margin-bottom: 8px;">
           <div id="genFontSearch" style="flex:1;"></div>
           <button type="button" class="btn" id="genBrowseFont">Browse on machine…</button>
         </div>
+        <div class="field-hint" id="genFontGridStatus"></div>
+        <div class="gen-font-grid" id="genFontGrid"></div>
         <div class="field-hint" id="genFontPath">(no font selected)</div>
         <div class="field-hint" id="genLowercaseWarning" style="color: var(--warn);"></div>
         <div class="field-hint" id="genLargeFontWarning" style="color: var(--warn);"></div>
@@ -149,7 +168,8 @@ window.ForzaTabs = window.ForzaTabs || {};
           <button type="button" class="btn accent" id="genGenerate">Generate</button>
           <button type="button" class="btn" id="genHalt" disabled>Halt</button>
           <button type="button" class="btn" id="genAbort" disabled>Abort</button>
-          <button type="button" class="btn" id="genExportKfps" style="margin-left: auto;">Export to KFPS…</button>
+          <button type="button" class="btn" id="genOpenOutput" style="margin-left: auto;">Open Output Folder</button>
+          <button type="button" class="btn" id="genExportKfps">Export to KFPS…</button>
         </div>
         <div class="gen-progress" id="genProgress"><div class="gen-progress-bar"></div></div>
         <div class="field-hint" id="genRunStatus" style="margin-top: 8px;">
@@ -231,14 +251,149 @@ window.ForzaTabs = window.ForzaTabs || {};
       }
       refreshFontInfo();
       refreshCharsetSummary();
+      renderFontGrid();
     }
     const fontSearch = window.ForzaFontSearch.create(els.genFontSearch, {
       placeholder: 'Search installed fonts…', width: '100%',
       onSelect: (font) => onFontChosen(font.path, font.name),
+      onQueryChange: (q) => {
+        fontGridQuery = q;
+        clearTimeout(fontGridDebounce);
+        fontGridDebounce = setTimeout(renderFontGrid, 120);
+      },
     });
     els.genBrowseFont.addEventListener('click', async () => {
       const resp = await api.call('generator.browse_font', {});
       if (resp.ok && !resp.result.cancelled) { fontSearch.setValue(resp.result.path.split(/[\\/]/).pop()); onFontChosen(resp.result.path); }
+    });
+
+    // Visual "Grid" font browser: every installed font rendered in its own
+    // typeface, mirroring Tkinter's Grid view (tabs/generator.py's
+    // _populate_font_grid). Filters live off the same search box above
+    // (via onQueryChange) instead of a separate List/Grid toggle -- the
+    // text dropdown already covers "list", so this only adds the part that
+    // was actually missing: seeing fonts rendered in their own typeface.
+    //
+    // Sort/type-filter toolbar and the script filter (below) both narrow
+    // this same grid; the search dropdown above stays a plain by-name
+    // search across every installed font regardless -- it's a shared
+    // component used by several other tabs, so tying its results to
+    // Generator-only sort/filter state would be a surprising side effect
+    // for those other tabs.
+    const FONT_GRID_CAP = 60;
+    let allFontsPromise = null;
+    let fontGridQuery = '';
+    let fontGridDebounce = null;
+    let fontGridRequestId = 0;
+    let fontSort = 'az';
+    let activeTypeFilters = new Set(['.ttf', '.otf', '.woff2']);
+    let activeScriptFilter = null; // e.g. "Japanese", set via "Select only <Script>"
+    const fontGridImageCache = new Map(); // font name -> data URI
+
+    // script_detect.py's cmap-coverage heuristic doesn't cover every script
+    // the Characters section offers a "Select only <Script>" button for --
+    // Khmer/Tamil/Vietnamese have alphabet cards but no detection
+    // threshold (see forza_writer/script_detect.py's _SIMPLE_SCRIPTS).
+    // Filtering the font grid by one of these would just hide every font,
+    // which reads as broken rather than "no matches" -- so these fall back
+    // to leaving the grid unfiltered, with a hint explaining why.
+    const SCRIPT_FILTER_UNSUPPORTED = new Set(['Khmer', 'Tamil', 'Vietnamese']);
+
+    function updateScriptChip() {
+      if (!activeScriptFilter) {
+        els.genFontScriptChip.style.display = 'none';
+        els.genFontScriptChip.innerHTML = '';
+        return;
+      }
+      els.genFontScriptChip.style.display = '';
+      const message = SCRIPT_FILTER_UNSUPPORTED.has(activeScriptFilter)
+        ? `Script detection isn't available for ${esc(activeScriptFilter)} yet -- showing all fonts.`
+        : `Showing only ${esc(activeScriptFilter)}-capable fonts`;
+      els.genFontScriptChip.innerHTML = `${message} <button type="button" class="chip-x" id="genFontScriptChipClear">✕</button>`;
+      els.genFontScriptChip.querySelector('#genFontScriptChipClear').addEventListener('click', () => {
+        activeScriptFilter = null;
+        updateScriptChip();
+        renderFontGrid();
+      });
+    }
+
+    function renderGridTile(f) {
+      return `<button type="button" class="gen-font-tile ${f.path === fontPath ? 'selected' : ''}"
+                style="background-image:url('${fontGridImageCache.get(f.name) || ''}')"
+                title="${esc(f.name)}"></button>`;
+    }
+    async function renderFontGrid() {
+      const id = ++fontGridRequestId;
+      if (!allFontsPromise) allFontsPromise = window.ForzaFontSearch.getFonts();
+      const fonts = await allFontsPromise;
+      if (id !== fontGridRequestId) return;
+
+      const scriptFilterActive = activeScriptFilter && !SCRIPT_FILTER_UNSUPPORTED.has(activeScriptFilter);
+      const needsClassification = scriptFilterActive || fontSort === 'glyphs';
+      let classification = null;
+      if (needsClassification) {
+        els.genFontGridStatus.textContent = 'Checking script support and glyph counts (first time only)…';
+        classification = await window.ForzaFontSearch.getClassification();
+        if (id !== fontGridRequestId) return;
+      }
+
+      const q = fontGridQuery.trim().toLowerCase();
+      let matches = fonts.filter((f) => {
+        if (q && !f.name.toLowerCase().includes(q)) return false;
+        const ext = `.${f.path.split('.').pop().toLowerCase()}`;
+        if (!activeTypeFilters.has(ext)) return false;
+        if (scriptFilterActive) {
+          const info = classification[f.name];
+          if (!info || !info.scripts.includes(activeScriptFilter)) return false;
+        }
+        return true;
+      });
+      if (fontSort === 'za') {
+        matches = matches.slice().reverse(); // fonts arrives A-Z already
+      } else if (fontSort === 'glyphs') {
+        matches = matches.slice().sort((a, b) =>
+          (classification[b.name]?.glyph_count || 0) - (classification[a.name]?.glyph_count || 0));
+      }
+
+      const visible = matches.slice(0, FONT_GRID_CAP);
+      const overflow = matches.length - visible.length;
+      els.genFontGridStatus.textContent = overflow > 0
+        ? `${overflow} more — refine your search to see them` : '';
+      if (visible.length === 0) {
+        els.genFontGrid.innerHTML = '<div class="field-hint" style="padding:6px;">No installed fonts match.</div>';
+        return;
+      }
+
+      const uncached = visible.filter((f) => !fontGridImageCache.has(f.name));
+      if (uncached.length > 0) {
+        const resp = await api.call('fonts.render_grid_tiles',
+          { fonts: uncached.map((f) => ({ name: f.name, path: f.path })) });
+        if (id !== fontGridRequestId) return;
+        if (resp.ok) resp.result.tiles.forEach((t) => fontGridImageCache.set(t.name, t.image));
+      }
+      if (id !== fontGridRequestId) return;
+
+      els.genFontGrid.innerHTML = visible.map(renderGridTile).join('');
+      els.genFontGrid.querySelectorAll('.gen-font-tile').forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          const font = visible[i];
+          fontSearch.setValue(font.name);
+          onFontChosen(font.path, font.name);
+        });
+      });
+    }
+    renderFontGrid();
+
+    els.genFontSort.addEventListener('change', () => {
+      fontSort = els.genFontSort.value;
+      renderFontGrid();
+    });
+    container.querySelectorAll('.gen-font-type').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        activeTypeFilters = new Set(
+          Array.from(container.querySelectorAll('.gen-font-type:checked')).map((c) => c.value));
+        renderFontGrid();
+      });
     });
 
     // -- 2. characters (shared component) ------------------------------------
@@ -250,24 +405,36 @@ window.ForzaTabs = window.ForzaTabs || {};
     }
     const characterSelector = await window.ForzaCharacterSelector.create(els.genCharacters, {
       idPrefix: 'gen', onChange: refreshCharsetSummary,
+      onScriptFilter: (script) => {
+        activeScriptFilter = script;
+        updateScriptChip();
+        renderFontGrid();
+      },
     });
 
     // -- 3. output mode -------------------------------------------------------
+    // Card style matches Direct Generator's method cards (direct.js's
+    // renderMethodCards): a plain clickable div per option, no visible radio
+    // dot, selected state shown purely via the orange border/title color.
+    let outputMode = 'json';
     function currentOutput() {
-      return container.querySelector('input[name="genOutput"]:checked')?.value || 'json';
+      return outputMode;
     }
     function renderOutputCards() {
-      const chosen = currentOutput();
       els.genOutputCards.innerHTML = OUTPUT_MODES.map((m) => `
-        <label class="section method-card ${chosen === m.key ? 'active' : ''}"
-               style="margin-bottom:0; cursor:pointer; padding: 10px 14px; display:block; ${chosen === m.key ? 'border-color: var(--accent);' : ''}">
-          <input type="radio" name="genOutput" value="${m.key}" ${chosen === m.key ? 'checked' : ''} style="margin-right:8px;">
-          <span style="font-family: var(--display); font-weight: 600; font-size: 12px; ${chosen === m.key ? 'color: var(--accent);' : ''}">${esc(m.title)}</span>
-          <div class="field-hint" style="margin-top: 4px; margin-left: 22px;">${esc(m.desc)}</div>
-        </label>
+        <div class="section method-card ${outputMode === m.key ? 'active' : ''}" data-key="${m.key}"
+             style="margin-bottom:0; cursor:pointer; padding: 10px 14px; ${outputMode === m.key ? 'border-color: var(--accent);' : ''}">
+          <div style="font-family: var(--display); font-weight: 600; font-size: 12px; ${outputMode === m.key ? 'color: var(--accent);' : ''}">${esc(m.title)}</div>
+          <div class="field-hint" style="margin-top: 4px;">${esc(m.desc)}</div>
+        </div>
       `).join('');
-      container.querySelectorAll('input[name="genOutput"]').forEach((radio) => {
-        radio.addEventListener('change', () => { renderOutputCards(); refreshFilenamePreview(); refreshReferenceWarning(); });
+      els.genOutputCards.querySelectorAll('.method-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          outputMode = card.dataset.key;
+          renderOutputCards();
+          refreshFilenamePreview();
+          refreshReferenceWarning();
+        });
       });
     }
     renderOutputCards();
@@ -570,6 +737,20 @@ window.ForzaTabs = window.ForzaTabs || {};
     });
     els.genHalt.addEventListener('click', () => api.call('generator.halt', {}));
     els.genAbort.addEventListener('click', () => api.call('generator.abort', {}));
+    els.genOpenOutput.addEventListener('click', async () => {
+      const output = currentOutput();
+      const resp = await api.call('generator.open_output_folder', {
+        prefix: els.genPrefix.value, output,
+        out_dir: output === 'modelbin' ? pathFields.modelbin_output_dir : pathFields.output_dir,
+        segments: els.genSegments.value,
+        compute_backend: container.querySelector('input[name="genBackend"]:checked').value,
+      });
+      if (resp.ok && !resp.result.opened) {
+        els.genRunStatus.textContent = `This folder doesn't exist yet: ${resp.result.path}`;
+      } else if (!resp.ok) {
+        els.genRunStatus.textContent = resp.error;
+      }
+    });
     els.genExportKfps.addEventListener('click', async () => {
       const resp = await api.call('generator.export_kfps', {
         prefix: els.genPrefix.value, out_dir: pathFields.output_dir, segments: els.genSegments.value,

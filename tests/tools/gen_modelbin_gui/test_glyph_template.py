@@ -109,6 +109,42 @@ def test_glyph_template_single_mode_generate_writes_expected_files(gui, tmp_path
     assert (pack_dir / 'TEST-SINGLE.svg').exists()
 
 
+def test_glyph_template_single_mode_different_charsets_dont_collide(gui, tmp_path):
+    """Regression test: generating Hiragana then Katakana under the same
+    prefix used to both write <prefix>/<prefix>.svg, so the second run
+    silently overwrote the first. Each non-default charset now gets its own
+    <prefix>-<CHARSET>/ folder."""
+    gui._show_tab('glyph_template')
+    gui.glyph_template_font_var.set(str(LIBERATION_SANS))
+    gui._load_glyph_template_font(LIBERATION_SANS)
+    _wait_for_glyph_template_font(gui)
+
+    gui.glyph_template_mode_var.set('single')
+    gui._on_glyph_template_mode_changed()
+    gui.glyph_template_out_var.set(str(tmp_path))
+    gui.glyph_template_prefix_var.set('PP-MORI')
+
+    gui.glyph_template_charset_var.set('hiragana')
+    gui._start_glyph_template_generate()
+    _wait_for_glyph_template_worker(gui)
+    assert gui.glyph_template_status_var.get() == 'Done.'
+
+    gui.glyph_template_charset_var.set('katakana')
+    gui._start_glyph_template_generate()
+    _wait_for_glyph_template_worker(gui)
+    assert gui.glyph_template_status_var.get() == 'Done.'
+
+    hiragana_svg = tmp_path / 'PP-MORI-HIRAGANA' / 'PP-MORI-HIRAGANA.svg'
+    katakana_svg = tmp_path / 'PP-MORI-KATAKANA' / 'PP-MORI-KATAKANA.svg'
+    assert hiragana_svg.exists()
+    assert katakana_svg.exists()
+    # Not just present -- neither run clobbered the other's actual content.
+    assert hiragana_svg.read_bytes() != katakana_svg.read_bytes()
+    # The bare, unsuffixed prefix folder from the old (buggy) naming should
+    # never get created for a non-default charset.
+    assert not (tmp_path / 'PP-MORI').exists()
+
+
 def test_glyph_template_split_mode_generate_writes_only_checked_blocks(gui, tmp_path):
     gui._show_tab('glyph_template')
     gui.glyph_template_font_var.set(str(LIBERATION_SANS))

@@ -62,7 +62,18 @@ def build_blank_project(template_id: str, chars_per_row: int = DEFAULT_CHARS_PER
     tracing guide instead of a bare label; characters missing from its cmap
     fall back to a label-only cell, logged so it's not a silent gap.
     `text_color` (`#rgb`/`#rrggbb`) is that traced letterform's fill color;
-    ignored when `font_file` is None, since there's no traced text to color."""
+    ignored when `font_file` is None, since there's no traced text to color.
+
+    `template_id` is the base identifier (e.g. --prefix). For the default
+    "basic-latin" charset the template uses it as-is; any other charset gets
+    it appended (e.g. prefix "PP-MORI" + Hiragana becomes "PP-MORI-HIRAGANA"),
+    so running this twice under the same prefix for two different charsets
+    produces two distinct templates instead of the second one silently
+    overwriting the first. Callers building output paths should read the
+    effective id back off the returned template (`template.template_id`)
+    rather than re-deriving it from this argument."""
+    if charset != "basic-latin":
+        template_id = f"{template_id}-{charset.upper()}"
     categorized = categorized_for_charset(charset)
     template = build_template(categorized, template_id, chars_per_row=chars_per_row)
     if font_file is not None:
@@ -83,7 +94,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--prefix", required=True, help="Template/pack identifier, e.g. MY-HANDMADE-FONT")
     ap.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR),
-                     help=f"Where to write <prefix>_template.json and <prefix>_blank.fabric-project.json "
+                     help=f"Root directory; writes to <out-dir>/<prefix>/ for the default basic-latin "
+                          f"charset, or <out-dir>/<prefix>-<CHARSET>/ for any other charset "
                           f"(default: {DEFAULT_OUT_DIR})")
     ap.add_argument("--chars-per-row", type=int, default=DEFAULT_CHARS_PER_ROW,
                      help=f"Glyphs per grid row (default: {DEFAULT_CHARS_PER_ROW})")
@@ -108,13 +120,16 @@ def main():
         print(exc)
         sys.exit(1)
 
-    out_dir = Path(args.out_dir) / args.prefix
     template, project = build_blank_project(args.prefix, args.chars_per_row, args.charset, args.font_file,
                                              text_color=args.text_color)
 
-    template_path = out_dir / f"{args.prefix}_template.json"
-    project_path = out_dir / f"{args.prefix}_blank.fabric-project.json"
-    svg_path = out_dir / f"{args.prefix}.svg"
+    # Use the template's own (possibly charset-suffixed) id for every output
+    # path, not args.prefix directly -- see build_blank_project's docstring.
+    effective_id = template.template_id
+    out_dir = Path(args.out_dir) / effective_id
+    template_path = out_dir / f"{effective_id}_template.json"
+    project_path = out_dir / f"{effective_id}_blank.fabric-project.json"
+    svg_path = out_dir / f"{effective_id}.svg"
     save_template(template, template_path)
     save_project(project, project_path)
     # Same SVG already embedded in the project's editor_source_overlay,

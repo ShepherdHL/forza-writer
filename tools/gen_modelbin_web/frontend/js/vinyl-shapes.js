@@ -31,7 +31,9 @@ window.ForzaVinylShapes = (function () {
         <select class="path-input vs-preset" style="max-width: 220px;"></select>
         <button type="button" class="btn vs-apply">Apply preset</button>
         <button type="button" class="btn vs-restore">Restore Recommended Defaults</button>
+        <button type="button" class="btn vs-egg-toggle" style="margin-left: auto;" hidden>&#9656;</button>
       </div>
+      <div class="vs-egg-panel" hidden></div>
       <div class="gen-shape-grid vs-grid"></div>
       <div class="field-hint">Click a tile to allow/disallow it. Click the star badge on an allowed tile to mark it preferred.</div>
       <div class="path-field" style="margin: 10px 0 8px;">
@@ -42,19 +44,57 @@ window.ForzaVinylShapes = (function () {
         <input type="checkbox" class="vs-exact-cover" checked>
         <label>Allow exact rectangle/stencil cover for blocky glyphs</label>
       </div>
+      <div class="checkbox-row">
+        <input type="checkbox" class="vs-font-reuse">
+        <label>Reuse an existing in-game letter when one matches closely</label>
+      </div>
+      <div class="field-hint" style="margin: -4px 0 6px;">
+        Checks each glyph against 5 of FH6's 11 built-in fonts with a confirmed real-world match
+        (Arial Bold, Brush Script MT, Haettenschweiler, Rockwell Bold, Century Gothic Bold). If one
+        already looks close enough, that single existing letter replaces the whole primitive
+        composition for just that glyph -- most won't match anything and are unaffected. Off by
+        default: this changes which letterform gets drawn, not just how it's built.
+      </div>
       <div class="field-hint vs-validation" style="margin-top: 6px;"></div>
     `;
     const presetSelect = container.querySelector('.vs-preset');
     const fallbackSelect = container.querySelector('.vs-fallback');
     const exactCover = container.querySelector('.vs-exact-cover');
+    const fontReuse = container.querySelector('.vs-font-reuse');
     const gridEl = container.querySelector('.vs-grid');
     const validationEl = container.querySelector('.vs-validation');
+    const eggToggle = container.querySelector('.vs-egg-toggle');
+    const eggPanel = container.querySelector('.vs-egg-panel');
 
     let catalog = [];
     let presets = {};
     let presetLabels = {};
+    let eggImages = [];
+    let eggVisible = false;
     let policy = null;
     const shapeState = {};
+
+    // Tucked-away easter egg, only relevant to the "Ellipses Only" preset --
+    // see GeneratorTabMixin._sync_easter_egg_visibility in the Tkinter app,
+    // which this mirrors. Hidden entirely if no images came back (nothing
+    // dropped into assets/ yet), and hidden whenever the active policy isn't
+    // exactly the "Ellipses Only" preset, collapsing the open panel first.
+    function closeEggPanel() {
+      eggVisible = false;
+      eggPanel.hidden = true;
+      eggToggle.innerHTML = '&#9656;';
+    }
+    function syncEasterEgg(p) {
+      if (!eggImages.length) return;  // stays hidden forever; toggle was never shown
+      const isEllipsesOnly = presetNameFor(p) === presetLabels['ellipses_only'];
+      eggToggle.hidden = !isEllipsesOnly;
+      if (!isEllipsesOnly && eggVisible) closeEggPanel();
+    }
+    eggToggle.addEventListener('click', () => {
+      eggVisible = !eggVisible;
+      eggPanel.hidden = !eggVisible;
+      eggToggle.innerHTML = eggVisible ? '&#9662;' : '&#9656;';
+    });
 
     function expandAllowed(list) { return list.length ? list : catalog.map((s) => s.id); }
     function syncShapeStateFromPolicy(p) {
@@ -81,12 +121,14 @@ window.ForzaVinylShapes = (function () {
         preferred_shapes: preferred,
         fallback: fallbackSelect.value,
         allow_exact_cover: exactCover.checked,
+        allow_font_reuse: fontReuse.checked,
       };
     }
     function normPolicy(p) {
       return JSON.stringify({
         allowed: [...expandAllowed(p.allowed_shapes)].sort(), preferred: [...p.preferred_shapes].sort(),
-        fallback: p.fallback, allow_exact_cover: p.allow_exact_cover, max_layers: p.max_layers,
+        fallback: p.fallback, allow_exact_cover: p.allow_exact_cover, allow_font_reuse: p.allow_font_reuse,
+        max_layers: p.max_layers,
         quality_target: p.quality_target, min_gain: p.min_gain, overshoot_penalty: p.overshoot_penalty,
         preference_bonus: p.preference_bonus,
       });
@@ -113,6 +155,7 @@ window.ForzaVinylShapes = (function () {
         if (!resp.result.allows_exact_cover) summary += '. Exact rectangle/stencil cover unavailable -- every glyph goes through the shape search.';
         validationEl.textContent = summary + '.';
       }
+      syncEasterEgg(policy);
       onChange(policy, valid);
     }
     function onTileClick(e, shapeId) {
@@ -131,6 +174,7 @@ window.ForzaVinylShapes = (function () {
       redrawAllTiles();
       fallbackSelect.value = policy.fallback;
       exactCover.checked = policy.allow_exact_cover;
+      fontReuse.checked = policy.allow_font_reuse;
       refreshValidation();
     }
 
@@ -143,6 +187,10 @@ window.ForzaVinylShapes = (function () {
     presetLabels = defResp.result.preset_labels;
     const fallbackLabels = defResp.result.fallback_labels;
     const recommended = defResp.result.recommended_preset;
+    eggImages = defResp.result.easter_egg_images || [];
+    if (eggImages.length) {
+      eggPanel.innerHTML = eggImages.map((src) => `<img src="${esc(src)}" alt="">`).join('');
+    }
 
     presetSelect.innerHTML = Object.entries(presetLabels)
       .map(([key, label]) => `<option value="${esc(key)}" ${key === recommended ? 'selected' : ''}>${esc(label)}</option>`).join('');
@@ -164,6 +212,7 @@ window.ForzaVinylShapes = (function () {
     });
     fallbackSelect.addEventListener('change', refreshValidation);
     exactCover.addEventListener('change', refreshValidation);
+    fontReuse.addEventListener('change', refreshValidation);
 
     applyPolicy(defResp.result.policy);
 

@@ -361,6 +361,7 @@ class SettingsTabMixin:
                                     'generation_preferred_shapes': blob['preferred_shapes'],
                                     'generation_fallback': blob['fallback'],
                                     'generation_allow_exact_cover': blob['allow_exact_cover'],
+                                    'generation_allow_font_reuse': blob['allow_font_reuse'],
                                     'image_save_source': bool(self.image_save_source_var.get()),
                                     'image_save_debug': bool(self.image_save_debug_var.get()),
                                     'image_debug_mode': self._image_debug_mode()})

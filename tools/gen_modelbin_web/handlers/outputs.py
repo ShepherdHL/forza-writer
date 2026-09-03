@@ -20,6 +20,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
+import gui_settings  # noqa: E402
 import gui_theme  # noqa: E402
 from forza_writer.charset import CATEGORY_ORDER  # noqa: E402
 
@@ -116,7 +117,9 @@ def register(api, window) -> None:
         if not path.exists():
             raise ValueError(f'File not found: {path}')
         p = gui_theme.palette()
-        image = file_preview.render_file_preview(path, PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
+        vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
+        image = file_preview.render_file_preview(path, PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
+                                                   vinyls_dir=vinyls_dir)
         stats = _preview_stats_text(path)
         return {'preview_image': _image_to_data_uri(image), **stats}
 

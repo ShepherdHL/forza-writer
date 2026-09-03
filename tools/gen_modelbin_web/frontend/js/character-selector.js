@@ -27,6 +27,12 @@ window.ForzaCharacterSelector = (function () {
     const api = window.pywebview.api;
     const prefix = options.idPrefix || 'cs';
     const onChange = options.onChange || (() => {});
+    // Fired with a script name when "Select only <Script>" is clicked, so
+    // an owning tab can filter its font browser down to fonts that
+    // actually support that script. Not fired by anything else (unchecking
+    // boxes, "Use only this text") -- the font filter is a separate,
+    // independently-clearable piece of state on the owning tab's side.
+    const onScriptFilter = options.onScriptFilter || (() => {});
     const id = (name) => `${prefix}_${name}`;
 
     container.innerHTML = `
@@ -140,6 +146,7 @@ window.ForzaCharacterSelector = (function () {
             .forEach((cb) => { cb.checked = true; });
           setEnabled(true);
           onChange();
+          onScriptFilter(btn.dataset.script);
         });
       });
     }

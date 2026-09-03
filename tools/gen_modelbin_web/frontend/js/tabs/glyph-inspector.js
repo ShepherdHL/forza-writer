@@ -223,26 +223,24 @@ window.ForzaTabs = window.ForzaTabs || {};
         <div class="field-hint" id="giFontSuggestion" style="display:none; margin-top: 6px;"></div>
       </div>
 
-      <div class="gi-content" style="grid-template-columns: 1fr 420px;">
-        <div>
-          <div class="section">
-            <div class="section-title">2. Glyphs</div>
-            <input type="text" class="path-input" id="giSearch" placeholder="Character, U+codepoint, Unicode name, or glyph name" style="width:100%; margin-bottom:8px;">
-            <div class="field-hint" id="giGridStatus" style="margin-bottom:8px;">Select a font to inspect its glyphs.</div>
-            <div class="gi-tile-scroll" id="giGrid"></div>
-          </div>
-        </div>
+      <div class="section">
+        <div class="section-title">2. Glyphs</div>
+        <input type="text" class="path-input" id="giSearch" placeholder="Character, U+codepoint, Unicode name, or glyph name" style="width:100%; margin-bottom:8px;">
+        <div class="field-hint" id="giGridStatus" style="margin-bottom:8px;">Select a font to inspect its glyphs.</div>
+        <div class="gi-tile-scroll" id="giGrid"></div>
+      </div>
 
-        <div>
-          <div class="section">
-            <div class="section-title">Selected Glyph</div>
-            <div class="radio-group" id="giModeGroup" style="margin-bottom:8px;">
+      <div class="section">
+        <div class="section-title">Selected Glyph</div>
+        <div class="gi-detail-row">
+          <div class="gi-detail-controls">
+            <div class="radio-group" id="giModeGroup" style="flex-direction:column; align-items:flex-start; gap:6px;">
               <label><input type="radio" name="giMode" value="reference" checked> Reference</label>
               <label><input type="radio" name="giMode" value="generated"> Generated</label>
               <label><input type="radio" name="giMode" value="compare"> Compare</label>
             </div>
 
-            <div id="giCompareRow" style="display:none; margin-bottom:8px;">
+            <div id="giCompareRow" style="display:none; margin-top:10px;">
               <div class="gi-target-toggle" role="group" aria-label="Compare target source" style="margin-bottom:6px;">
                 <button type="button" id="giTargetOutline" aria-pressed="true">Font Outline</button>
                 <button type="button" id="giTargetHandmade" aria-pressed="false">Hand-made File</button>
@@ -250,33 +248,35 @@ window.ForzaTabs = window.ForzaTabs || {};
               <button type="button" class="btn" id="giLoadHandmade" style="width:100%;">Load hand-made file…</button>
               <div class="field-hint" id="giHandmadePath" style="display:none; margin-top:4px; font-family: var(--mono);"></div>
             </div>
+          </div>
 
-            <div class="gi-diff-panel" id="giDiffPanel" style="margin-bottom:8px;">
-              <div class="gi-diff-empty">Select a glyph on the left.</div>
-            </div>
+          <div class="gi-diff-panel gi-diff-panel-compact" id="giDiffPanel">
+            <div class="gi-diff-empty">Select a glyph on the left.</div>
+          </div>
 
-            <div id="giCompareExtras" style="display:none;">
+          <div class="gi-meta-grid" id="giMeta">${metaHtml(null)}</div>
+
+          <div id="giCompareExtras" class="gi-compare-extras-row" style="display:none;">
+            <div class="gi-compare-readout-col">
               <div class="gi-readout" id="giReadout"></div>
-              <div class="gi-filmstrip" id="giFilmstrip" style="margin-top:10px;"></div>
-              <div class="gi-dotnav" id="giDotnav" role="tablist" aria-label="Metric pages" style="margin-top:6px;"></div>
+              <div class="gi-filmstrip" id="giFilmstrip"></div>
+              <div class="gi-dotnav" id="giDotnav" role="tablist" aria-label="Metric pages"></div>
               <div class="gi-prompt">Press <b>◀ ▶</b> or click a card to change metric</div>
-              <div class="gi-ledger" aria-label="All metrics for this glyph" style="margin-top:10px;">
-                <div class="gi-ledger-head"><span>Metric</span><span>Score · Δ</span></div>
-                <div id="giLedgerRows"></div>
-                <div class="gi-ledger-hatch"></div>
-                <div class="gi-ledger-total"><span class="name">Overall Match</span><span class="score" id="giLedgerTotalScore">– / 4</span></div>
-                <div class="gi-ledger-hatch"></div>
-                <div class="gi-verdict-row">
-                  <span class="name">Verdict</span>
-                  <span class="gi-verdict-badge" id="giVerdictBadge">–</span>
-                </div>
+            </div>
+            <div class="gi-ledger" aria-label="All metrics for this glyph">
+              <div class="gi-ledger-head"><span>Metric</span><span>Score · Δ</span></div>
+              <div id="giLedgerRows"></div>
+              <div class="gi-ledger-hatch"></div>
+              <div class="gi-ledger-total"><span class="name">Overall Match</span><span class="score" id="giLedgerTotalScore">– / 4</span></div>
+              <div class="gi-ledger-hatch"></div>
+              <div class="gi-verdict-row">
+                <span class="name">Verdict</span>
+                <span class="gi-verdict-badge" id="giVerdictBadge">–</span>
               </div>
             </div>
-
-            <div id="giMeta" style="margin-top:10px;">${metaHtml(null)}</div>
-            <div class="gi-status" id="giStatus" style="margin-top:8px;"></div>
           </div>
         </div>
+        <div class="gi-status" id="giStatus" style="margin-top:8px;"></div>
       </div>
     `;
 

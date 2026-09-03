@@ -142,3 +142,38 @@ def char_to_resource(char: str, font: int = 1) -> tuple[str, int] | None:
     if char in SYMBOL_MAP:
         return (f"Lower_Letters_{font}", SYMBOL_MAP[char])
     return None
+
+
+_DIGIT_MAP_REV = {index: char for char, index in DIGIT_MAP.items()}
+_UPPER_SYMBOL_MAP_REV = {index: char for char, index in UPPER_SYMBOL_MAP.items()}
+# SYMBOL_MAP has two chars sharing index 31 (æ/Æ) -- reversal picks whichever
+# wins the dict comprehension's last-write, which is fine here: this is only
+# used to re-render a placed shape's *silhouette* for preview/verification,
+# where æ and Æ trace close enough to be indistinguishable at that purpose.
+_SYMBOL_MAP_REV = {index: char for char, index in SYMBOL_MAP.items()}
+
+
+def resource_to_char(family: str, index: int) -> str | None:
+    """Inverse of `char_to_resource`: given an `Upper_Letters_N`/
+    `Lower_Letters_N` family and slot index, return the character that maps
+    to it, or None if the family isn't a letters family or the index is
+    unused. Used to re-render an already-placed whole-glyph shape (see
+    forza_writer.font_reuse) for preview/quality-gate purposes, where the
+    shape dict itself only carries the resolved (family, index), not the
+    original character.
+    """
+    if family.startswith("Upper_Letters_"):
+        if 1 <= index <= len(UPPER):
+            return UPPER[index - 1]
+        if index in _DIGIT_MAP_REV:
+            return _DIGIT_MAP_REV[index]
+        if index in _UPPER_SYMBOL_MAP_REV:
+            return _UPPER_SYMBOL_MAP_REV[index]
+        return None
+    if family.startswith("Lower_Letters_"):
+        if 1 <= index <= len(LOWER):
+            return LOWER[index - 1]
+        if index in _SYMBOL_MAP_REV:
+            return _SYMBOL_MAP_REV[index]
+        return None
+    return None

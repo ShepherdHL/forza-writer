@@ -279,26 +279,28 @@ def test_back_button_disabled_with_empty_history(gui):
 
 
 def test_back_from_a_single_template_franchise_returns_to_a_different_view(gui):
-    # GTA has exactly one shipped template, so its group row is never a real
-    # choice among options -- selecting it doesn't get its own history stop
-    # (see _on_plates_row_selected). Before that fix, Back from here
-    # restored the *identical* one-row list (only the detail panel
-    # cleared), which read as "Back does nothing" -- this is that bug
-    # report, reproduced directly.
+    # Phasmophobia has exactly one shipped template (GTA used to be this
+    # test's example too, until it grew a 12-template family -- see
+    # _on_plates_row_selected: a group row is never a real choice among
+    # options when the pool it resolves to has exactly one template, so
+    # selecting it doesn't get its own history stop). Before that fix,
+    # Back from a single-template franchise restored the *identical*
+    # one-row list (only the detail panel cleared), which read as "Back
+    # does nothing" -- this is that bug report, reproduced directly.
     tree = gui.plates_template_tree
     gui._set_plates_library("fictional")
-    tree.selection_set("group:GTA")
+    tree.selection_set("group:PHAS")
     gui.root.update()
-    assert tuple(tree.get_children()) == ("gta-sa-passenger-fictional",)
-    tree.selection_set("gta-sa-passenger-fictional")
+    assert tuple(tree.get_children()) == ("phasmophobia-ghd-van-fictional",)
+    tree.selection_set("phasmophobia-ghd-van-fictional")
     gui.root.update()
-    assert gui._plates_template.template_id == "gta-sa-passenger-fictional"
+    assert gui._plates_template.template_id == "phasmophobia-ghd-van-fictional"
 
     gui._plates_go_back()
     assert gui._plates_template is None
     # Back must land somewhere visibly different from the one-row list the
     # user was just looking at -- the full franchise list, not the same
-    # single GTA row with nothing selected.
+    # single PHAS row with nothing selected.
     assert set(tree.get_children()) == {
         "group:CP2077", "group:DL", "group:GTA", "group:HALO", "group:MEDGE", "group:NFS", "group:PHAS", "group:SR"}
     assert gui._plates_breadcrumb == []

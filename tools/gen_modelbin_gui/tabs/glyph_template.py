@@ -58,10 +58,8 @@ class GlyphTemplateTabMixin:
 
         ttk.Label(
             content,
-            text="Generate a KFPS-importable glyph template for a font: a labeled grid, one cell per "
-                 "character, with the font's own letterforms embedded as a tracing guide. Open the "
-                 "exported project in Kloudy's Fabric Editor, draw over each glyph, group each glyph's "
-                 "shapes, then run import_glyph_template.py to turn it into a fontpack.",
+            text="Generate an labeled uniform grid for your selected font, in the form of an SVG Template."
+                 "This can be used in the KFPS Fabric Editor, or used as a tracing guide in the game.",
             style='Intro.TLabel', wraplength=gui_theme.WRAP_WIDE, justify='left',
         ).pack(fill='x', **gui_theme.PAGE_INTRO_PAD)
 
@@ -86,8 +84,8 @@ class GlyphTemplateTabMixin:
         ttk.Label(
             font_frame,
             text="The font file is embedded directly into the generated SVG/project as a tracing guide "
-                 "(nothing fetched or scraped from anywhere). Only use a font you actually hold a "
-                 "license for.",
+                 "(nothing fetched or scraped from anywhere). " \
+                 "Only use a font you actually hold a license for.",
             style='Warn.TLabel', wraplength=gui_theme.WRAP_WIDE, justify='left',
         ).pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
 
@@ -183,9 +181,11 @@ class GlyphTemplateTabMixin:
             side='left', padx=2)
         ttk.Label(
             out_frame,
-            text='A separate folder from Fontpacks Output Directory -- these are blank tracing '
-                 'templates, not finished fontpacks. Single mode writes <folder>/<prefix>/; Split '
-                 'mode writes one <folder>/<prefix>/<prefix>-<BLOCK>/ per checked block.',
+            text='A separate folder from Fontpacks Output Directory. These are blank tracing '
+                 'templates, not finished fontpacks. Single mode writes <folder>/<prefix>/ for the '
+                 'default basic-latin charset, or <folder>/<prefix>-<CHARSET>/ for any other charset '
+                 '(so generating Hiragana then Katakana under the same prefix stays separate). Split '
+                 'mode writes one <folder>/<prefix>-<BLOCK>/ per checked block.',
             style='Hint.TLabel', wraplength=gui_theme.WRAP_WIDE, justify='left',
         ).pack(fill='x', **gui_theme.ROW_PAD_BOTTOM)
 
@@ -410,10 +410,16 @@ class GlyphTemplateTabMixin:
                 try:
                     template, project = gen_glyph_template.build_blank_project(
                         prefix, chars_per_row, charset, font_path, log=post_log, text_color=text_color)
-                    pack_dir = out_dir / prefix
-                    save_template(template, pack_dir / f'{prefix}_template.json')
-                    save_project(project, pack_dir / f'{prefix}_blank.fabric-project.json')
-                    svg_path = pack_dir / f'{prefix}.svg'
+                    # Use the template's own (possibly charset-suffixed) id, not
+                    # prefix directly -- see build_blank_project's docstring.
+                    # Without this, generating e.g. Hiragana then Katakana under
+                    # the same prefix silently overwrote the first SVG/project,
+                    # since both would otherwise land at <prefix>/<prefix>.svg.
+                    effective_id = template.template_id
+                    pack_dir = out_dir / effective_id
+                    save_template(template, pack_dir / f'{effective_id}_template.json')
+                    save_project(project, pack_dir / f'{effective_id}_blank.fabric-project.json')
+                    svg_path = pack_dir / f'{effective_id}.svg'
                     svg_path.parent.mkdir(parents=True, exist_ok=True)
                     svg_path.write_text(project['editor_source_overlay']['svg_text'], encoding='utf-8')
                     self.msg_queue.put((

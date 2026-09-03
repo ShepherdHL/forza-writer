@@ -1537,6 +1537,12 @@ class ShellMixin:
                                        color_mode=color_mode, solid_color=solid_color,
                                        high_contrast_seed=high_contrast_seed,
                                        **variation_kwargs)
+            # build_fontpack may have renamed pack_dir (appending the total
+            # shape count) after this function's own pack_dir_for call
+            # above computed it -- recover the actual directory it wrote to
+            # rather than operating on a path that no longer exists.
+            if manifest.get('pack_dir_name'):
+                pack_dir = pack_dir.parent / manifest['pack_dir_name']
             if self._abort_requested:
                 removed = 0
                 for rel in manifest.get('files_written', []):

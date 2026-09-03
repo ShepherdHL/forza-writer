@@ -867,8 +867,8 @@ def fit_glyph_with_strategy(char: str, font_path: Path, curve_segments: int = 8,
                              high_contrast_seed: int | None = None) -> tuple[list[dict], str]:
     """Like `fit_glyph`, but also returns which strategy was used
     (`"rect_decompose"` / `"stencil"` / `"stencil_search"` /
-    `"primitive_search"`), for callers that want to record it, e.g.
-    gen_fontpack.py's manifest.
+    `"primitive_search"` / `"font_reuse"`), for callers that want to record
+    it, e.g. gen_fontpack.py's manifest.
 
     Pass a `GenerationStats` to collect per-glyph diagnostics (shape counts by
     type, candidates tested/rejected, achieved IoU, whether a fallback fired,
@@ -876,7 +876,10 @@ def fit_glyph_with_strategy(char: str, font_path: Path, curve_segments: int = 8,
 
     `solid_color`/`high_contrast_seed` pass straight through to
     `placements_to_shapes` -- see its docstring for how they interact
-    (`high_contrast_seed`, when given, wins).
+    (`high_contrast_seed`, when given, wins). Neither applies when
+    `policy.allow_font_reuse` finds a match: a reused in-game letterform is
+    drawn exactly as that font already colors and shapes it, not recolored
+    or recomposed to match this run's settings.
     """
     from gen_modelbin import extract_contours, normalize_to_128
 
@@ -884,6 +887,22 @@ def fit_glyph_with_strategy(char: str, font_path: Path, curve_segments: int = 8,
         stats.start()
     contours, upm = extract_contours(char, font_path, curve_segments)
     contours_norm = normalize_to_128(contours, upm)
+
+    active_policy = policy or DEFAULT_POLICY
+    if active_policy.allow_font_reuse:
+        from forza_writer.font_reuse import best_reuse_candidate
+        reuse = best_reuse_candidate(char, contours_norm, resolution, glyph_size)
+        if reuse is not None:
+            font_number, shape, iou = reuse
+            if stats is not None:
+                stats.strategy = "font_reuse"
+                stats.shapes_placed = 1
+                stats.layers_used = 1
+                stats.by_shape = {f"font_reuse_{font_number}": 1}
+                stats.iou = iou
+                stats.finish()
+            return [shape], "font_reuse"
+
     placements, strategy = fit_placements(contours_norm, resolution, max_layers, quality_target,
                                            mask_mode, compute_backend, policy=policy, stats=stats)
     if stats is not None:
