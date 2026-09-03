@@ -33,8 +33,8 @@ from ..imaging import image_to_data_uri  # noqa: E402
 
 _FONT_FILE_TYPES = ('Fonts (*.ttf;*.otf;*.ttc)',)
 # The first four TEMPLATE_UNICODE_BLOCKS entries are exactly "Basic Latin"
-# split into uppercase/lowercase/digits/punctuation -- see
-# tools/gen_modelbin_gui/tabs/glyph_template.py's own comment on this.
+# split into uppercase/lowercase/digits/punctuation, matching the reference
+# Pangram Pangram "Glyphs set overview" layout.
 _BASIC_LATIN_BLOCK_NAMES = frozenset(name for name, _ranges in TEMPLATE_UNICODE_BLOCKS[:4])
 
 

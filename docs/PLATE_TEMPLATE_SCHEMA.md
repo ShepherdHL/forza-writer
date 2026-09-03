@@ -195,7 +195,7 @@ see [[project_forza_writer_plate_generator]] memory / the commit that added
 it for why building out the actual specialty templates was explicitly
 scoped out.
 
-`tools/gen_modelbin_gui/tabs/plates.py`'s `PLATE_CATEGORIES` dict is the
+`tools/gen_modelbin_web/handlers/plates.py`'s `PLATE_CATEGORIES` dict is the
 display-name registry the browser and search use to resolve a template's
 `plate_type` into a readable label:
 

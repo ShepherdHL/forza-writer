@@ -1,10 +1,4 @@
-"""Glyph Template tab (web handler): font loading and generation.
-
-Mirrors tests/tools/gen_modelbin_gui/test_glyph_template.py's coverage of
-the Tkinter tab, since this is an independent Python implementation of the
-same feature (see handlers/glyph_template.py's own docstring) -- a fix in
-one doesn't automatically apply to the other.
-"""
+"""Glyph Template tab (web handler): font loading and generation."""
 import time
 from pathlib import Path
 

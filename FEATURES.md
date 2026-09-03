@@ -6,38 +6,26 @@ Full tab-by-tab GUI walkthrough and generation-algorithm internals. See
 
 ## Visual identity
 
-The window defaults to a softened **Charcoal** dark palette with **Balanced**
-spacing (`tools/gui_theme/`). Settings also offers the cooler **Slate**
-palette, the bold black/orange **Eurocorp** palette and
-Compact/Balanced/Spacious density profiles. Charcoal and Slate retain the
-Syndicate (2012)-inspired corporate-HUD look with a modern Vercel-style dark
-interface's refined spacing and flat tonal surfaces, a matching dark Windows
-title bar, procedurally-drawn checkbox/radio glyphs in place of the OS's
-stock indicators and letter-spaced small-caps section/nav labels, with a
-restrained orange accent reserved for live/selected state only (the
-sidebar's active-tab indicator, the primary action button, a checked
-checkbox/radio) rather than spread across the interface. Eurocorp
-deliberately breaks that restraint instead: a solid-orange selected sidebar
-row with dark text and a procedurally-drawn geometric-line backdrop in the
-sidebar evoking Syndicate's own menu screens. See
+The window runs the bold black/orange **Eurocorp** palette: a literal
+homage to Syndicate (2012)'s corporate-HUD identity, true black surfaces,
+warm white text, and a saturated amber accent used broadly rather than
+restrained to live/selected state alone — a solid-orange selected sidebar
+row with dark text, and a procedurally-generated, continuously-drifting
+geometric-line backdrop behind the sidebar evoking Syndicate's own menu
+screens. Two more palettes, **Charcoal** and **Slate**, are fully defined
+(`tools/theme_palettes/`) and already have generated CSS, but aren't yet
+wired into a selector in Settings — see
 [docs/GUI_THEME_SYSTEM.md](docs/GUI_THEME_SYSTEM.md) for the full palette
-contract and design rationale. Its functional small/desktop icon
-(`assets/icon.ico`, built by `tools/build_icon.py`) is the compact
-orange-and-white two-dot mark. The full "FW" braille cells live in
-`assets/icon.png` for larger brand surfaces, while `assets/wordmark-ja.png`
-is the Japanese/English title treatment. `gui_theme/` also doubles as the
-GUI's full design system: a spacing scale, wraplength tiers and semantic
-label styles (Intro/Hint/Warn/Danger/Success) every tab is built from, so
-status text (a found-vs-missing path, a build that partially failed, a batch
-that errored out) is colored by what actually happened rather than reading
-the same muted gray regardless of outcome.
+contract and design rationale, including that status.
 
-Every tab owns exactly one primary vertical scrollbar for its own content,
-auto-hidden (`gui_theme.AutoHideScrollbar`) whenever that tab's content
-already fits without it. A handful of panels scroll independently instead:
-the font list, the font grid view, the Log and Outputs' Fontpacks/Glyphs
-lists, each with its own scrollbar that won't fight the page scroll
-underneath it when you hover over it.
+The window's taskbar/title-bar icon (`assets/icon-web.ico`) is a compact
+orange-and-white two-dot mark; the sidebar's own "FW" braille-cell mark
+renders in more detail at its larger size. `assets/wordmark-ja.png` is the
+Japanese/English title treatment used in this README. `theme_palettes`'
+generated tokens also drive the app's full design system (spacing scale,
+label styles) so status text — a found-vs-missing path, a build that
+partially failed, a batch that errored out — is colored by what actually
+happened rather than reading the same muted gray regardless of outcome.
 
 Forza Writer's GUI and generation features do **not** require Administrator
 rights. If the GUI is launched elevated, its startup log says that it can be

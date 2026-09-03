@@ -505,8 +505,8 @@ def resolve_requested_chars(font_path: Path, chars: str | None, scripts: list[st
                             categories: list[str] | None, all_han: bool) -> set[str] | None:
     """Build the `--chars`/`--script`/`--category`/`--all-han` character set.
 
-    Mirrors the GUI's Characters section (`gen_modelbin_gui._selected_chars`):
-    additive across every flag given, bounded/curated per-script sets from
+    Mirrors the GUI's Characters section: additive across every flag given,
+    bounded/curated per-script sets from
     `forza_writer/alphabets.py` rather than a script's full Unicode block, and
     full Han coverage only via the explicit, unbounded `--all-han` opt-in.
     Returns None (meaning "the font's entire cmap", this tool's long-standing

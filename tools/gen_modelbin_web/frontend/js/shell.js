@@ -62,7 +62,13 @@
   let currentTabUnmount = null;
   let mountToken = 0;
 
-  function showTab(tabId) {
+  // opts carries a one-shot payload into the next tab's mount(container,
+  // opts) -- e.g. Generator's "Send selected font to Advanced Generator"
+  // passing { fontPath } across the tab switch. Not persisted anywhere;
+  // a tab that wants it later has to ask again (advanced.py's
+  // get_current_generator_font), same as Tkinter's own live-object-graph
+  // reads only ever reflect "right now."
+  function showTab(tabId, opts) {
     if (currentTabUnmount) { currentTabUnmount(); currentTabUnmount = null; }
     const myToken = ++mountToken; // guards an async mount() against a rapid switch-away
 
@@ -84,7 +90,7 @@
       if (rule) rule.style.display = 'none';
       // mount() may be sync (returns an unmount fn or null) or async
       // (returns a Promise of one) -- Settings' fetch-heavy mount is async.
-      const result = tabModule(content);
+      const result = tabModule(content, opts);
       if (result && typeof result.then === 'function') {
         result.then((unmount) => {
           if (myToken === mountToken) currentTabUnmount = unmount || null;
@@ -220,4 +226,6 @@
     showTab(tabs[0].id);
     wireLogPanel();
   });
+
+  window.ForzaShell = { showTab };
 })();

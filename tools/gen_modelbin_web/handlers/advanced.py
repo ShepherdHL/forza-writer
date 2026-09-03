@@ -1,5 +1,5 @@
 """Advanced Generator tab: variable-font axis/instance selection and
-generation. Mirrors tools/gen_modelbin_gui/tabs/advanced.py.
+generation.
 
 Shares its Characters and Vinyl Shapes UI logic with Generator via the
 frontend's js/character-selector.js and js/vinyl-shapes.js components
@@ -12,10 +12,14 @@ its own at all and silently reads Generator's live Tk variables; the web
 app has no such single shared object, so each generating tab gets its own
 instance of the same two components instead of literally sharing state.
 
-Deliberately out of scope, matching Tkinter's own Advanced Generator tab:
-per-glyph Configurator overrides, and the "Use current from Generator"
-cross-tab shortcut (Generator's selected font isn't exposed globally in
-the web app's per-tab-independent architecture).
+"Use current from Generator" (state.current_font, pushed by
+generator.set_current_font whenever Generator's own selection changes) and
+"Open per-glyph overrides for this instance" (open_instance_overrides,
+below) close the two cross-tab gaps Tkinter's single object graph got for
+free; see generator.py's set_current_font and configurator.py's module
+docstring (its handlers already take font_path as a plain argument, so an
+instantiated instance's temp file path scopes overrides correctly with no
+Configurator-side change needed).
 """
 from __future__ import annotations
 
@@ -30,7 +34,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 sys.path.insert(0, str(_REPO_ROOT))
 
 import font_preview  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from gen_fontpack import sanitize_prefix  # noqa: E402
 from forza_writer.charset import charset_from_font  # noqa: E402
 from forza_writer.variable_fonts import inspect_variable_font, instantiate_font, variation_slug  # noqa: E402
@@ -54,7 +58,7 @@ def _instance_coordinates(info) -> dict[str, dict[str, float]]:
     return coords
 
 
-def register(api, window, run_state: dict) -> None:
+def register(api, window, run_state: dict, state=None) -> None:
     run = run_state
 
     def browse_font(_payload: dict) -> dict:
@@ -62,6 +66,20 @@ def register(api, window, run_state: dict) -> None:
         if not chosen:
             return {'cancelled': True}
         return {'path': chosen[0]}
+
+    def get_current_generator_font(_payload: dict) -> dict:
+        return {'font_path': str(state.current_font) if state is not None and state.current_font else None}
+
+    def open_instance_overrides(payload: dict) -> dict:
+        # Instantiates the exact selected instance to a real static font
+        # file and hands back its path, so the Generator-embedded
+        # Configurator can scope per-glyph overrides to this instance
+        # specifically -- a Thin and a Bold instance never share a repair,
+        # since each coordinate combination instantiates to its own file.
+        font_path = Path(payload['font_path'])
+        coordinates = payload.get('coordinates') or {}
+        instance_path = instantiate_font(font_path, coordinates)
+        return {'instance_path': str(instance_path), 'slug': variation_slug(coordinates)}
 
     def inspect_font(payload: dict) -> dict:
         font_path = Path(payload['font_path'])
@@ -93,7 +111,7 @@ def register(api, window, run_state: dict) -> None:
         font_path = Path(payload['font_path'])
         coordinates = payload.get('coordinates') or {}
         text = payload.get('text') or font_path.stem
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         instance_path = instantiate_font(font_path, coordinates)
         image = font_preview.render_font_text(instance_path, text, _PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
         return {
@@ -141,6 +159,8 @@ def register(api, window, run_state: dict) -> None:
         return result
 
     api.register('advanced.browse_font', browse_font)
+    api.register('advanced.get_current_generator_font', get_current_generator_font)
+    api.register('advanced.open_instance_overrides', open_instance_overrides)
     api.register('advanced.inspect_font', inspect_font)
     api.register('advanced.preview', preview)
     api.register('advanced.workload_summary', workload_summary)

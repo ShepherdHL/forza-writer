@@ -1,8 +1,6 @@
 """Output tab: browse previously-generated fontpacks and their glyphs, or
-preview any .json/.modelbin file directly. Mirrors
-tools/gen_modelbin_gui/tabs/outputs.py's manifest-scanning and preview
-logic (shared with Generator's/Composer's own preview panels) against the
-real backend.
+preview any .json/.modelbin file directly. Its manifest-scanning and
+preview logic is shared with Generator's/Composer's own preview panels.
 """
 from __future__ import annotations
 
@@ -21,7 +19,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from forza_writer.charset import CATEGORY_ORDER  # noqa: E402
 
 PREVIEW_SIZE = (280, 280)
@@ -116,7 +114,7 @@ def register(api, window) -> None:
         path = Path(payload['path'])
         if not path.exists():
             raise ValueError(f'File not found: {path}')
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
         image = file_preview.render_file_preview(path, PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
                                                    vinyls_dir=vinyls_dir)

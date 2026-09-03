@@ -18,7 +18,7 @@ window.ForzaTabs = window.ForzaTabs || {};
     ));
   }
 
-  async function mount(container) {
+  async function mount(container, opts) {
     container.innerHTML = `
       <h2 class="page-heading">Direct Generator</h2>
       <div class="intro-text">
@@ -202,6 +202,10 @@ window.ForzaTabs = window.ForzaTabs || {};
       if (resp.result.accuracy_text) text += ` Trace accuracy: ${resp.result.accuracy_text}.`;
       statusEl.textContent = text;
     });
+
+    // Generator's "Send selected font to Direct Generator" -- transfers
+    // the font without touching whatever text/options are already here.
+    if (opts && opts.fontPath) container.querySelector('#dgFont').value = opts.fontPath;
 
     return () => { colorPicker.destroy(); };
   }

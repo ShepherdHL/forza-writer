@@ -11,10 +11,9 @@ What each character actually *draws as* is a separate, optional choice:
 `PlateInstance.placeholder_font` via `renderer.py`) swaps a character's
 plain box for one of FH6's 11 native in-game vinyl fonts (see
 `forza_writer.shapes.char_to_resource`) -- real, final letterform meshes
-the in-game Vinyl Editor already has (the same shapes
-`tools/gen_modelbin_gui/tabs/forza_font_text.py`'s tab uses), not
-generated/traced/fitted for this feature, so it costs nothing extra to
-resolve. A character with no shape in the chosen Forza font (coverage is
+the in-game Vinyl Editor already has (the same shapes the Forza Font Text
+tab uses), not generated/traced/fitted for this feature, so it costs
+nothing extra to resolve. A character with no shape in the chosen Forza font (coverage is
 letters/digits/limited punctuation, not full Unicode -- see
 `FORZA_FONTS_REFERENCE.md`) falls back to a plain box for that one
 character. `placeholder_font=None` (the default) keeps every character a

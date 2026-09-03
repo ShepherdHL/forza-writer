@@ -1,14 +1,12 @@
-"""Entry point for the pywebview-based Forza Writer shell.
+"""Entry point for Forza Writer's pywebview-based shell -- the app's only
+GUI. Builds the window chrome (sidebar nav, animated backdrop,
+collapsible/detachable Log panel), wires every tab's handlers, and starts
+the WebView2-backed window. See theme_export.py, api.py, events.py,
+state.py, and handlers/ for one module per tab.
 
-Phase 0: a fully-chromed, empty-tab-content shell (sidebar nav, animated
-backdrop, collapsible/detachable Log panel) proving the pywebview
-architecture end to end before any real tab logic is ported. See
-tools/gen_modelbin_web/theme_export.py, api.py, events.py, state.py.
-
-Runs as a separate, parallel entry point alongside the existing Tkinter
-app (tools/gen_modelbin_gui.py, launched by Forza Writer.bat) -- nothing
-that already works changes until a tab's web replacement reaches full
-parity with its Tkinter original.
+Runs entirely as a local desktop app: pywebview loads index.html from disk
+and talks to Python over its own in-process JS-API bridge -- no HTTP
+server, no network socket.
 """
 import sys
 import threading
@@ -42,10 +40,9 @@ from gen_modelbin_web.handlers import plates as plates_handlers  # noqa: E402
 from gen_modelbin_web.handlers import configurator as configurator_handlers  # noqa: E402
 
 FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
-# The web app's own icon -- a simple two-dot mark (white, then orange),
-# distinct from the Tkinter app's assets/icon.ico so the two windows are
-# visually distinguishable in the taskbar/Alt-Tab. Deliberately plain
-# rather than a detailed braille-dot grid: at the 16-24px sizes Windows
+# The app's icon -- a simple two-dot mark (white, then orange).
+# Deliberately plain rather than a detailed braille-dot grid: at the
+# 16-24px sizes Windows
 # actually renders a title-bar/taskbar icon at, fine detail just reads as
 # noise -- two bold dots hold up. Sets both the title-bar icon (top-left
 # corner) and the taskbar icon -- pywebview draws both from this one file
@@ -84,10 +81,10 @@ def main() -> None:
     )
     api._window = window
     # Generator and Advanced Generator share one batch-runner lock (only one
-    # fontpack build at a time across the whole app), mirroring Tkinter's
-    # single self.worker on shell.py. Settings also needs to see it, so
-    # Clean generated data can refuse to run while a batch is writing --
-    # created up front so every handler that needs it gets the one instance.
+    # fontpack build at a time across the whole app). Settings also needs
+    # to see it, so Clean generated data can refuse to run while a batch
+    # is writing -- created up front so every handler that needs it gets
+    # the one instance.
     generation_run_state = batch_runner.new_run_state()
     fonts_handlers.register(api, window)
     glyph_inspector_handlers.register(api, window)
@@ -101,8 +98,8 @@ def main() -> None:
     composer_handlers.register(api, window)
     direct_handlers.register(api, window)
     layer_effects_handlers.register(api, window)
-    generator_handlers.register(api, window, generation_run_state)
-    advanced_handlers.register(api, window, generation_run_state)
+    generator_handlers.register(api, window, generation_run_state, state)
+    advanced_handlers.register(api, window, generation_run_state, state)
     plates_handlers.register(api, window)
     configurator_handlers.register(api, window)
 

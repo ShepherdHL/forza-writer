@@ -1,15 +1,14 @@
 """Shared color-picker persistence: presets, and the saved/recent color
-library every tab's picker instance shares (tools/gen_modelbin_gui/
-color_picker_widget.py's ColorPickerWidget, `_LIVE_INSTANCES` cross-instance
-sync). The picker's own rendering/interaction math (SB square, hue strip,
-RGB<->HSL/HSB conversion) is reimplemented directly in
-frontend/js/color-picker.js rather than round-tripped through this handler
-on every drag pixel -- it's the same standard, well-defined HSV math
-forza_colors.py itself documents as "just colorsys.hsv_to_rgb" under a
-different unit convention, so duplicating the *formula* carries no drift
-risk the way duplicating *state* would. What must stay server-side is
-anything persisted: the saved/recent library and settings_key self-drive
-colors, both via gui_settings, the single source of truth.
+library every tab's picker instance shares. The picker's own
+rendering/interaction math (SB square, hue strip, RGB<->HSL/HSB conversion)
+is reimplemented directly in frontend/js/color-picker.js rather than
+round-tripped through this handler on every drag pixel -- it's the same
+standard, well-defined HSV math forza_colors.py itself documents as "just
+colorsys.hsv_to_rgb" under a different unit convention, so duplicating the
+*formula* carries no drift risk the way duplicating *state* would. What must
+stay server-side is anything persisted: the saved/recent library and
+settings_key self-drive colors, both via gui_settings, the single source of
+truth.
 """
 from __future__ import annotations
 
@@ -19,7 +18,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import gui_settings  # noqa: E402
-from gen_modelbin_gui.color_picker_widget import _BASIC_PRESET_COLORS  # noqa: E402
+
+RGBA = tuple[int, int, int, int]
+
+# (color, name) -- a swatch alone never appears without its name alongside it,
+# in this preset row or in Saved/Recent below.
+_BASIC_PRESET_COLORS: list[tuple[RGBA, str]] = [
+    ((242, 243, 245, 255), 'Off White'), ((114, 118, 125, 255), 'Steel Gray'),
+    ((23, 24, 26, 255), 'Jet Black'), ((226, 69, 60, 255), 'Red'),
+    ((236, 138, 46, 255), 'Orange'), ((240, 201, 58, 255), 'Yellow'),
+    ((95, 168, 90, 255), 'Green'), ((63, 127, 209, 255), 'Blue'),
+    ((75, 79, 176, 255), 'Indigo'), ((138, 79, 176, 255), 'Purple'),
+    ((255, 95, 162, 255), 'Pink'), ((32, 196, 180, 255), 'Teal'),
+]
 
 
 def _rgba_to_hex(rgba) -> str:

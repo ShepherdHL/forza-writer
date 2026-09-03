@@ -1,4 +1,4 @@
-"""English strings for tools/gen_modelbin_gui/state.py."""
+"""English strings for tools/gen_modelbin_web/state.py."""
 
 STRINGS: dict[str, str] = {
     'state.tab.forza_font_text': 'Forza Font Text',

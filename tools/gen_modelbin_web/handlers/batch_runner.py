@@ -1,12 +1,9 @@
 """Shared fontpack batch-generation runner, used by both the Generator and
-Advanced Generator handlers -- mirrors tools/gen_modelbin_gui/shell.py's
-_start_generation/_run_batch/_generation_diagnostics_lines, which Tkinter's
-own Generator and Advanced Generator tabs both delegate to for exactly the
-same reason: one shared engine, one shared "only one batch at a time"
-worker lock. `app.py` creates a single `new_run_state()` dict and passes it
-to both handler modules' `register()` so that invariant holds here too --
-starting a batch from either tab while the other's is still running raises,
-same as Tkinter's `if self.worker and self.worker.is_alive()` guard.
+Advanced Generator handlers: one shared engine, one shared "only one batch
+at a time" worker lock. `app.py` creates a single `new_run_state()` dict
+and passes it to both handler modules' `register()` so that invariant
+holds -- starting a batch from either tab while the other's is still
+running raises.
 """
 from __future__ import annotations
 
@@ -27,7 +24,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 import file_preview  # noqa: E402
 import glyph_overrides as glyph_overrides_store  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from gen_fontpack import OUTPUT_MODES, build_fontpack, pack_dir_for, sanitize_prefix  # noqa: E402
 from forza_writer import alphabets  # noqa: E402
 from forza_writer.charset import charset_from_font, is_han_char  # noqa: E402
@@ -93,9 +90,8 @@ def selected_chars(payload: dict, font_path: Path | None) -> set[str] | None:
 
 
 def generation_diagnostics_lines(manifest: dict) -> list[str]:
-    """Ported verbatim from GeneratorShellMixin._generation_diagnostics_lines
-    (tools/gen_modelbin_gui/shell.py) -- pure aggregation over the manifest
-    dict, no Tkinter dependency."""
+    """Pure aggregation over a completed batch's manifest dict into the
+    Log panel's human-readable summary lines."""
     entries = [entry.get('artifacts', {}).get('json', {}).get('diagnostics')
                for category in manifest.get('categories', {}).values()
                for entry in category]
@@ -131,12 +127,10 @@ def generation_diagnostics_lines(manifest: dict) -> list[str]:
 
 
 def resolve_overrides_for_generation(font_path: Path) -> tuple[dict | None, dict | None]:
-    """Ported verbatim from GeneratorShellMixin._resolve_overrides_for_generation
-    (tools/gen_modelbin_gui/shell.py): split font_path's saved per-glyph
-    overrides into build_fontpack's mask_overrides/manual_assignments
-    kwargs. Always reloads from disk rather than trusting any in-memory
-    Configurator state -- every edit there saves immediately, so disk is
-    the source of truth.
+    """Splits font_path's saved per-glyph overrides into build_fontpack's
+    mask_overrides/manual_assignments kwargs. Always reloads from disk
+    rather than trusting any in-memory Configurator state -- every edit
+    there saves immediately, so disk is the source of truth.
 
     Only called for a plain (non-variation) font_path here. Tkinter's own
     Advanced Generator additionally resolves overrides against a
@@ -229,7 +223,7 @@ def start(window, run: dict, payload: dict, *, source_label: str, variation: dic
         file_path = pack_dir / artifact['file']
         if not file_path.exists():
             return
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         image = file_preview.render_file_preview(file_path, LIVE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
                                                   vinyls_dir=vinyls_dir)
         quality = artifact.get('quality')

@@ -1,7 +1,6 @@
 """Forza Font Text tab: lay out text with one of FH6's 11 native in-game
-vinyl fonts (forza_writer.layout.layout_forza_text). Mirrors
-tools/gen_modelbin_gui/tabs/forza_font_text.py's pipeline against the real
-backend, including reusing its exact "unsupported character" detection.
+vinyl fonts (forza_writer.layout.layout_forza_text), including
+"unsupported character" detection.
 """
 from __future__ import annotations
 
@@ -18,7 +17,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from gen_forza_fonts_reference import FONT_IDENTIFICATION  # noqa: E402
 from forza_writer.export import save as save_composed_json, to_json as composed_to_json  # noqa: E402
 from forza_writer.fabric_project import save as save_project, to_fabric_project  # noqa: E402
@@ -74,7 +73,7 @@ def register(api, window) -> None:
         unsupported = sorted({c for c in text if c not in ('\n', '\r', ' ') and not char_to_resource(c, font)})
         total_chars = sum(1 for c in text if c not in ('\n', '\r', ' '))
 
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         image = file_preview.render_forza_text_preview(
             lines, set(unsupported), size=PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
 

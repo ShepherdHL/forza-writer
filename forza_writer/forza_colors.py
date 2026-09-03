@@ -159,11 +159,9 @@ def sb_square_array(hue: float, size: int):
     the pixel data behind a standard HSB picker's saturation/brightness
     square. Vectorized `colorsys.hsv_to_rgb` (hue is constant across the
     square, so only the sector selection happens once; S/V vary per pixel).
-    Pulled out of `tools/gen_modelbin_gui/tabs/color_picker.py::
-    ColorPickerMixin`, which now delegates here, so any other picker UI
-    (e.g. the Layer Effects tab's per-layer color picker) can render the
-    identical square without re-deriving this math or importing a Tk mixin
-    for a pure numpy computation."""
+    Lives here, not in any one picker UI, so every color picker (Layer
+    Effects' per-layer picker included) renders the identical square from
+    one shared, UI-independent computation."""
     import numpy as np
 
     s = np.linspace(0.0, 1.0, size)

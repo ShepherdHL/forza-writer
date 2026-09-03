@@ -69,10 +69,9 @@ def api(window) -> JSApi:
 
 @pytest.fixture
 def isolated_settings(tmp_path, monkeypatch):
-    # Same pattern as tests/tools/gen_modelbin_gui/test_color_picker_widget.py's
-    # own isolated_settings fixture -- handlers that read/write gui_settings
-    # (color_picker.py's saved/recent library, settings.py) must not touch
-    # the real settings.json on the machine running the tests.
+    # Handlers that read/write gui_settings (color_picker.py's saved/recent
+    # library, settings.py) must not touch the real settings.json on the
+    # machine running the tests.
     path = tmp_path / 'settings.json'
     monkeypatch.setattr(gui_settings, 'SETTINGS_PATH', path)
     monkeypatch.setattr(gui_settings, 'SETTINGS_DIR', path.parent)

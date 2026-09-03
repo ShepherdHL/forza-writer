@@ -1,12 +1,6 @@
-"""Glyph Inspector's Compare mode: real forza_writer.glyph_quality data
-over a js_api call, proving the Phase 0 architecture (call registry +
-background worker + push_event) end to end before Phase 2 repeats the
-recipe for the other 12 tabs.
-
-Mirrors tools/gen_modelbin_gui/tabs/glyph_inspector.py's Compare pipeline
-(font load -> background fit -> compare_masks/diff_overlay_image) but
-talks to the real backend directly rather than through the Tkinter tab,
-per the migration plan's "forza_writer stays UI-agnostic" principle.
+"""Glyph Inspector tab: font loading, and its Compare mode's pipeline
+(background fit -> compare_masks/diff_overlay_image via forza_writer.
+glyph_quality), talking to the real backend directly.
 """
 from __future__ import annotations
 
@@ -28,10 +22,8 @@ import file_preview  # noqa: E402
 import font_preview  # noqa: E402
 import glyph_reference_preview  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from gen_modelbin import extract_contours, normalize_to_128  # noqa: E402
-from gen_modelbin_gui.state import (  # noqa: E402
-    FONTS_DIR_SYSTEM, GLYPH_CATEGORY_TILE_CAP, GLYPH_PREVIEW_SIZE, GLYPH_TILE_SIZE, enumerate_installed_fonts)
 from forza_writer import glyph_quality  # noqa: E402
 from forza_writer.compute_backend import resolve_backend  # noqa: E402
 from forza_writer.font_info import glyph_geometry, load_font_info  # noqa: E402
@@ -40,6 +32,8 @@ from forza_writer.primitive_fit import fit_glyph_with_strategy, rasterize_contou
 
 from ..events import push_event  # noqa: E402
 from ..imaging import image_to_data_uri as _image_to_data_uri  # noqa: E402
+from ..state import (  # noqa: E402
+    FONTS_DIR_SYSTEM, GLYPH_CATEGORY_TILE_CAP, GLYPH_PREVIEW_SIZE, GLYPH_TILE_SIZE, enumerate_installed_fonts)
 
 _FONT_FILE_TYPES = ('Fonts (*.ttf;*.otf;*.ttc)',)
 _SHAPE_FILE_TYPES = ('Shape JSON (*.json)',)
@@ -171,7 +165,7 @@ def register(api, window) -> None:
         font_path = loaded_font['path']
         if font_path is None:
             raise ValueError('Load a font first.')
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         tiles = [
             _image_to_data_uri(font_preview.render_glyph_tile(font_path, char, GLYPH_TILE_SIZE,
                                                                 bg=p['entry_bg'], fg=p['fg']))
@@ -199,7 +193,7 @@ def register(api, window) -> None:
     def get_reference(payload: dict) -> dict:
         glyph = _glyph_by_char(payload['char'])
         info = loaded_font['info']
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         image = glyph_reference_preview.render_glyph_reference(
             loaded_font['path'], glyph.char, GLYPH_PREVIEW_SIZE,
             units_per_em=info.metrics.units_per_em, ascender=info.metrics.ascender,
@@ -234,7 +228,7 @@ def register(api, window) -> None:
                     shapes, strategy = cached
                     backend = resolve_backend(backend_choice)
 
-                p = gui_theme.palette()
+                p = theme_palettes.palette()
                 vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
                 image = file_preview.render_json_preview(shapes, GLYPH_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
                                                           vinyls_dir=vinyls_dir)

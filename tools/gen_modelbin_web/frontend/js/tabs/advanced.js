@@ -1,5 +1,5 @@
 // Advanced Generator tab: variable-font axis/instance selection and
-// generation. Mirrors tools/gen_modelbin_gui/tabs/advanced.py.
+// generation.
 //
 // Characters and Vinyl Shapes reuse the same shared components Generator
 // uses (js/character-selector.js, js/vinyl-shapes.js) -- see
@@ -26,7 +26,7 @@ window.ForzaTabs = window.ForzaTabs || {};
     ));
   }
 
-  async function mount(container) {
+  async function mount(container, opts) {
     container.innerHTML = `
       <h2 class="page-heading">Advanced Generator</h2>
       <div class="intro-text">
@@ -41,6 +41,7 @@ window.ForzaTabs = window.ForzaTabs || {};
         <div class="path-field" style="margin-bottom: 8px;">
           <input type="text" class="path-input" id="advFont" placeholder="Font path">
           <button type="button" class="btn" id="advBrowseFont">Browse…</button>
+          <button type="button" class="btn" id="advUseGeneratorFont">Use current from Generator</button>
         </div>
         <div class="field-hint" id="advFontStatus">Choose a variable .ttf/.otf font. Static fonts are identified clearly.</div>
       </div>
@@ -53,6 +54,10 @@ window.ForzaTabs = window.ForzaTabs || {};
           <span class="field-hint">Regular is preferred when the font provides it.</span>
         </div>
         <div id="advAxesBody"></div>
+        <div class="path-field" style="margin-top: 8px; margin-bottom: 0;">
+          <button type="button" class="btn" id="advOpenOverrides">Open per-glyph overrides for this instance</button>
+          <span class="field-hint">Instantiates this exact instance, then opens Generator's Configurator scoped to it.</span>
+        </div>
       </div>
 
       <div class="section">
@@ -133,6 +138,25 @@ window.ForzaTabs = window.ForzaTabs || {};
       if (resp.ok && !resp.result.cancelled) { els.advFont.value = resp.result.path; loadFont(resp.result.path); }
     });
     els.advFont.addEventListener('change', () => { if (els.advFont.value.trim()) loadFont(els.advFont.value.trim()); });
+    els.advUseGeneratorFont.addEventListener('click', async () => {
+      const resp = await api.call('advanced.get_current_generator_font', {});
+      if (!resp.ok || !resp.result.font_path) {
+        els.advFontStatus.textContent = 'No font selected on the Generator tab yet.';
+        return;
+      }
+      els.advFont.value = resp.result.font_path;
+      loadFont(resp.result.font_path);
+    });
+    els.advOpenOverrides.addEventListener('click', async () => {
+      if (!fontPath || !info || !info.is_variable) { els.advFontStatus.textContent = 'Choose a variable font first.'; return; }
+      const resp = await api.call('advanced.open_instance_overrides', { font_path: fontPath, coordinates: axisValues });
+      if (!resp.ok) { els.advFontStatus.textContent = resp.error; return; }
+      window.ForzaShell.showTab('generator', {
+        fontPath: resp.result.instance_path,
+        prefix: `${els.advPrefix.value}-${resp.result.slug}`,
+        openConfigurator: true,
+      });
+    });
 
     async function loadFont(path) {
       const resp = await api.call('advanced.inspect_font', { font_path: path });
@@ -313,6 +337,10 @@ window.ForzaTabs = window.ForzaTabs || {};
       if (generation !== pendingGeneration) return;
       setRunning(false);
     });
+
+    // Generator's "Send selected font to Advanced Generator" landed here
+    // with a font already picked -- load it the same way Browse… would.
+    if (opts && opts.fontPath) { els.advFont.value = opts.fontPath; loadFont(opts.fontPath); }
 
     return () => { offDone(); colorPicker.destroy(); };
   }

@@ -1,20 +1,16 @@
 """Generator tab: font selection, character selection, output mode, vinyl
-shape policy, and the main batch-generation run. Mirrors
-tools/gen_modelbin_gui/tabs/generator.py; the actual batch worker is shared
-with Advanced Generator via batch_runner.py (see that module's docstring),
-mirroring tools/gen_modelbin_gui/shell.py's shared _start_generation/
-_run_batch that both Tkinter tabs delegate to.
+shape policy, and the main batch-generation run. The actual batch worker
+is shared with Advanced Generator via batch_runner.py (see that module's
+docstring).
 
-Two deliberate scope simplifications for this first web pass (both
-call-out-able, non-functionality-losing UI simplifications, not engine
-changes):
+Two deliberate UI choices:
   - Non-Latin alphabet groups are all shown at once rather than gated
-    behind the (deferred) font-browser's script tabs. Every checkbox and
-    the "Select only <script>" shortcut are present and behave exactly as
-    in Tkinter -- additive, not exclusive.
+    behind a script tab bar. Every checkbox and the "Select only <script>"
+    shortcut are additive, not exclusive.
   - Per-glyph Configurator overrides (mask_overrides/manual_assignments)
-    are out of scope here, same as Tkinter's own Generator tab which only
-    ever calls _start_generation with overrides resolved automatically.
+    are resolved automatically from whatever's saved on disk for the
+    selected font -- this handler's own `start()` never sets them
+    directly; see batch_runner.resolve_overrides_for_generation.
 """
 from __future__ import annotations
 
@@ -31,7 +27,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 sys.path.insert(0, str(_REPO_ROOT))
 
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 import vinyl_tiles  # noqa: E402
 from gen_fontpack import find_pack_dir, glyph_filename, sanitize_prefix  # noqa: E402
 from gen_fabric_project import build_fabric_project  # noqa: E402
@@ -49,10 +45,9 @@ from . import batch_runner  # noqa: E402
 
 _FONT_FILE_TYPES = ('Fonts (*.ttf;*.otf;*.ttc)', 'All files (*.*)')
 
-# Mirrors tools/gen_modelbin_gui/state.py's EASTER_EGG_IMAGES: the same two
-# files, same narrative order, one shared source of truth in assets/ rather
-# than the web app keeping its own copies. Missing files are skipped, not an
-# error, so the frontend's toggle just stays hidden until they're dropped in.
+# Read straight from assets/ rather than keeping a separate copy. Missing
+# files are skipped, not an error, so the frontend's toggle just stays
+# hidden until they're dropped in.
 _EASTER_EGG_IMAGE_NAMES = ('lance_deepcirclelore.png', 'lance_optimalcircles.png')
 
 
@@ -101,7 +96,7 @@ _SCRIPT_REGIONS = {
 }
 
 
-def register(api, window, run_state: dict) -> None:
+def register(api, window, run_state: dict, state=None) -> None:
     run = run_state
 
     def browse_font(_payload: dict) -> dict:
@@ -109,6 +104,15 @@ def register(api, window, run_state: dict) -> None:
         if not chosen:
             return {'cancelled': True}
         return {'path': chosen[0]}
+
+    def set_current_font(payload: dict) -> dict:
+        # Backs Advanced Generator's "Use current from Generator" pull --
+        # the web app has no single shared object graph the way Tkinter's
+        # tabs do, so Generator pushes its own selection here whenever it
+        # changes and Advanced fetches it on demand instead.
+        if state is not None:
+            state.current_font = payload.get('font_path') or None
+        return {'ok': True}
 
     def pick_out_dir(payload: dict) -> dict:
         chosen = window.create_file_dialog(webview.FileDialog.FOLDER, directory=payload.get('initial', ''))
@@ -121,9 +125,8 @@ def register(api, window, run_state: dict) -> None:
         result = {
             'lowercase_warning': '', 'variation_status': '', 'total_supported': 0,
             # is_variable/instance_count/defaults: structured form of
-            # variation_status's prose, for _confirm_variable_font's dialog --
-            # mirrors Tkinter's _confirm_variable_font_generation (shell.py),
-            # which blocks generating a variable font's raw, un-instantiated
+            # variation_status's prose, for a confirmation dialog that
+            # blocks generating a variable font's raw, un-instantiated
             # outlines without the user explicitly choosing to.
             'is_variable': False, 'instance_count': 0, 'defaults': '',
         }
@@ -221,7 +224,7 @@ def register(api, window, run_state: dict) -> None:
 
     def render_shape_tile(payload: dict) -> dict:
         shape = PRIMITIVE_CATALOG[payload['shape_id']]
-        image = vinyl_tiles.render_tile(shape, payload['state'], gui_theme.palette())
+        image = vinyl_tiles.render_tile(shape, payload['state'], theme_palettes.palette())
         return {'image': batch_runner.image_to_data_uri(image)}
 
     def get_policy_defaults(_payload: dict) -> dict:
@@ -254,8 +257,7 @@ def register(api, window, run_state: dict) -> None:
         return {'problems': problems, 'allows_exact_cover': policy.allow_exact_cover}
 
     def open_output_folder(payload: dict) -> dict:
-        """Mirrors Tkinter's GeneratorTabMixin._open_output_folder.
-        find_pack_dir (not pack_dir_for) accounts for build_fontpack's
+        """find_pack_dir (not pack_dir_for) accounts for build_fontpack's
         layer-count folder suffix, falling back to the root output dir when
         nothing's been generated under this exact profile (backend + curve
         smoothness) yet."""
@@ -298,6 +300,7 @@ def register(api, window, run_state: dict) -> None:
         return batch_runner.start(window, run, payload, source_label='Generator')
 
     api.register('generator.browse_font', browse_font)
+    api.register('generator.set_current_font', set_current_font)
     api.register('generator.pick_out_dir', pick_out_dir)
     api.register('generator.font_info', font_info)
     api.register('generator.get_alphabets', get_alphabets)

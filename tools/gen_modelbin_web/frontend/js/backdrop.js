@@ -1,9 +1,7 @@
-// Procedurally generated, continuously-drifting node network, ported
-// verbatim from the "Glyph Audit" mockup -- the browser-side counterpart
-// to gui_theme/backdrops/eurocorp.py's own generator (nearest-neighbor
-// mesh + accent diagonals + hexagon/chevron motifs), now truly animated
-// via requestAnimationFrame instead of a flip-book of baked PIL frames.
-// Motion is slow, continuous drift -- never a flash or an opacity pulse.
+// Procedurally generated, continuously-drifting node network (nearest-
+// neighbor mesh + accent diagonals + hexagon/chevron motifs), animated
+// via requestAnimationFrame. Motion is slow, continuous drift -- never a
+// flash or an opacity pulse.
 (function () {
   function mulberry32(seed) {
     return function () {

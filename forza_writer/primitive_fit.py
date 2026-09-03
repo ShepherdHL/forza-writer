@@ -67,8 +67,7 @@ MaskMode = Literal["auto", "force", "never"]
 # extract_contours/normalize_to_128 live in tools/gen_modelbin.py (a script,
 # not a package) rather than in forza_writer, so the glyph geometry pipeline
 # has exactly one implementation shared by both the .modelbin and primitive
-# -fit paths. Same sys.path bridge tools/gen_modelbin_gui.py and
-# tools/gen_fontpack.py already use.
+# -fit paths. Same sys.path bridge tools/gen_fontpack.py already uses.
 _TOOLS_DIR = str(Path(__file__).resolve().parent.parent / "tools")
 if _TOOLS_DIR not in sys.path:
     sys.path.insert(0, _TOOLS_DIR)

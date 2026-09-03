@@ -1,7 +1,6 @@
 """Configurator: per-glyph mask-mode overrides for a font, embedded as a
-collapsible sub-section of the Generator tab (matching Tkinter's own
-_build_configurator_workspace -- this is not a separate top-level tab).
-Mirrors tools/gen_modelbin_gui/tabs/configurator.py.
+collapsible sub-section of the Generator tab -- not a separate top-level
+tab.
 
 Reviews the *whole* font's glyph set (every character it has a glyph for),
 independent of Generator's own character-selection checkboxes -- an
@@ -11,15 +10,12 @@ path alone at generation time (see batch_runner.resolve_overrides_for_
 generation), not filtered by whatever happened to be checked when they
 were set.
 
-One deliberate, non-functionality-losing simplification: Tkinter inserts
-tree rows in small batches via root.after to keep the Tk widget tree
-responsive while populating a large CJK font's thousands of rows -- a
-real Tk-widget-creation cost, not a computation cost. A browser renders a
-few thousand DOM rows from one innerHTML assignment fast enough that this
-isn't needed here. The *actual* per-glyph computation
-(inspect_glyph_geometry) still runs as a real background thread with
-progress events, same as Tkinter's own scan_worker -- that cost is real
-computation, not a UI artifact, and stays async here too.
+A browser renders a few thousand DOM rows from one innerHTML assignment
+fast enough that populating a large CJK font's glyph table needs no
+special batching. The *actual* per-glyph computation
+(inspect_glyph_geometry) is the real cost here, not row rendering, so it
+still runs as a background thread with progress events (see start_scan
+below) rather than blocking the request that kicks it off.
 """
 from __future__ import annotations
 
@@ -40,7 +36,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 import file_preview  # noqa: E402
 import glyph_overrides as glyph_overrides_store  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from forza_writer.charset import CATEGORY_ORDER, charset_from_font  # noqa: E402
 from forza_writer.compute_backend import resolve_backend  # noqa: E402
 from forza_writer.primitive_fit import (  # noqa: E402
@@ -117,7 +113,7 @@ def register(api, window) -> None:
         segments = max(1, int(payload.get('segments', 8)))
         compute_backend = payload.get('compute_backend', 'auto')
         compute_forced = bool(payload.get('compute_forced', False))
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
 
         overrides = glyph_overrides_store.load_overrides_for_font(font_path)

@@ -93,9 +93,9 @@ def build_fabric_project(fontpack_dir: Path, name: str | None = None,
     if missing:
         log(f"  {len(missing)} glyph(s) skipped (no json artifact): {''.join(missing)}")
 
-    # Configurator-built packs (tools/gen_modelbin_gui.py) may have no
-    # associated font at all: font_file is optional there, so the
-    # reference-SVG overlay below just gets skipped rather than raising.
+    # Configurator-built packs may have no associated font at all:
+    # font_file is optional there, so the reference-SVG overlay below just
+    # gets skipped rather than raising.
     font_path = Path(manifest["font_file"]) if manifest.get("font_file") else None
     overlay = None
     if font_path is not None and font_path.exists():

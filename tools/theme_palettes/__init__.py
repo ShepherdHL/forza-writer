@@ -56,3 +56,24 @@ for _slug, _module in _REGISTRY:
     DISPLAY_FONT_FAMILY[_slug] = getattr(_module, "DISPLAY_FONT_FAMILY", None)
 
 del _slug, _module, _palette, _missing, _extra
+
+# The active selection. Read by the web app's handlers via palette(),
+# currently always the default (Eurocorp is fixed in the UI today --
+# nothing calls set_palette() yet). Selectable Charcoal/Slate themes are
+# a planned follow-up.
+CURRENT_PALETTE = "charcoal"
+PALETTE: dict[str, str] = dict(PALETTES[CURRENT_PALETTE])
+
+
+def set_palette(palette_name: str) -> None:
+    """Select the named palette and update PALETTE in place."""
+    global CURRENT_PALETTE
+    if palette_name not in PALETTES:
+        palette_name = "charcoal"
+    CURRENT_PALETTE = palette_name
+    PALETTE.clear()
+    PALETTE.update(PALETTES[palette_name])
+
+
+def palette() -> dict[str, str]:
+    return PALETTE

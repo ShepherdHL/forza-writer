@@ -1,4 +1,4 @@
-"""English strings for tools/gen_modelbin_gui/tabs/plates.py.
+"""English strings for tools/gen_modelbin_web/handlers/plates.py.
 
 'state.tab.plates' lives here rather than in i18n/en/state.py: every
 per-module catalog merges into one global STRINGS dict regardless of which

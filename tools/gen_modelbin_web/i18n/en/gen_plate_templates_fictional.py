@@ -1,8 +1,8 @@
 """English strings for tools/gen_plate_templates_fictional.py: each fictional
 game-plate template's display_name_key, each of their fields' label_key, and
 each field's FieldValidation.format_hint_key. See
-tools/gen_modelbin_gui/i18n/en/gen_plate_templates.py's module docstring for
-why templates reference keys here rather than literal English text.
+gen_plate_templates.py (in this same directory) for why templates
+reference keys here rather than literal English text.
 """
 
 STRINGS: dict[str, str] = {

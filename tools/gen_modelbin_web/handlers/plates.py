@@ -1,24 +1,17 @@
 """License Plates tab: browse a plate standard, fill in its fields, watch a
-live preview, and generate ordinary Forza Writer shapes from it. Mirrors
-tools/gen_modelbin_gui/tabs/plates.py -- the library taxonomy, drill-down
-browser resolution, and every backend call (forza_writer.plates.*,
-plate_config_store, fabric_project, export) are the same logic/calls that
-file makes; only the presentation is reimplemented here.
+live preview, and generate ordinary Forza Writer shapes from it. The
+library taxonomy, drill-down browser resolution (`_resolve_browser_state`
+below), and every backend call (forza_writer.plates.*, plate_config_store,
+fabric_project, export) live here directly.
 
-English UI strings are hardcoded directly (pulled verbatim from
-tools/gen_modelbin_gui/i18n/en/plates.py) rather than routed through that
-package's t() -- the same choice every other web handler has made, to keep
-this app free of a Tkinter-side i18n dependency (see api.py's own docstring
-on staying Tkinter-free).
+Template-driven UI strings (a template's display name, a field's label, a
+format hint) are resolved dynamically through this app's own i18n package
+(tools/gen_modelbin_web/i18n) via t(key), since the key to look up isn't
+known until a template/field is loaded from data.
 
-Two deliberate scope simplifications, both call-out-able and
-non-functionality-losing:
-  - The saved-configs UI is a flat dropdown + Load/Save/Delete, not
-    Tkinter's nested cascade menu -- same three operations, fewer clicks
-    dressing them up.
-  - Plate Details opens as a modal-free readout in the shared Log panel,
-    exactly like Tkinter's own _show_plates_details already does (this one
-    isn't a simplification at all, just noting the precedent carries over).
+The saved-configs UI is a flat dropdown + Load/Save/Delete (three
+operations, no nested menu). Plate Details opens as a modal-free readout
+in the shared Log panel.
 """
 from __future__ import annotations
 
@@ -38,7 +31,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 import plate_config_store  # noqa: E402
 from gen_forza_fonts_reference import FONT_IDENTIFICATION  # noqa: E402
 from forza_writer.export import save as save_json, to_json as plate_to_json  # noqa: E402
@@ -51,8 +44,8 @@ from forza_writer.plates.template import FieldRole, PlateTemplate  # noqa: E402
 from forza_writer.plates.validation import is_valid_for_generation, validate_instance  # noqa: E402
 
 from ..events import push_event  # noqa: E402
-from gen_modelbin_gui.i18n import t  # noqa: E402
-from gen_modelbin_gui.state import PLATES_PREVIEW_SIZE  # noqa: E402
+from ..i18n import t  # noqa: E402
+from ..state import PLATES_PREVIEW_SIZE  # noqa: E402
 
 _PLATES_OUTPUT_DIR = _REPO_ROOT / 'data' / 'plates'
 
@@ -174,9 +167,28 @@ def _pool_for_library(templates: list[PlateTemplate], library: str) -> list[Plat
 
 def _resolve_browser_state(templates: list[PlateTemplate], library: str, search: str | None,
                             breadcrumb: list[tuple[int, str]]):
-    """Ported verbatim from PlatesTabMixin._plates_resolve_browser_state --
-    see that method's docstring in tools/gen_modelbin_gui/tabs/plates.py for
-    the full algorithm explanation. Returns (pool, trail, distinct)."""
+    """Drills the library's templates down through `_GROUP_LEVELS`'
+    grouping functions (e.g. category, then sub-category), one level at a
+    time, stopping at the first level with more than one distinct value
+    left to choose from.
+
+    A search string skips grouping entirely and filters the whole pool by
+    match instead. Otherwise, for each level in order: if `breadcrumb`
+    already picked a key there, filter to it and record an explicit trail
+    entry, then continue to the next level. Otherwise compute the distinct
+    keys the current pool actually has at that level -- a level with only
+    one distinct value auto-skips itself (filter to it, record a
+    non-explicit trail entry, continue) rather than making the user pick
+    among one option; a level with more than one stops the walk and
+    returns immediately so the caller can render a picker for it.
+
+    Returns `(pool, trail, distinct)`: `pool` is the templates surviving
+    every filter so far, `trail` is the breadcrumb of levels resolved
+    (explicitly or auto-skipped) as `(level_index, key, label, explicit)`
+    tuples, and `distinct` is `{key: (label, count)}` for the level still
+    awaiting a pick, or `None` once every level is resolved (fully drilled
+    down, or overridden by search).
+    """
     pool = _pool_for_library(templates, library)
     if search:
         pool = [tpl for tpl in pool if _plate_matches_search(tpl, search)]
@@ -280,7 +292,7 @@ def register(api, window) -> None:
         # real character count/spacing, just not the real letterforms.
         settings = gui_settings.load_settings()
         vinyls_dir = file_preview.kfps_vinyls_dir(settings.get('kfps_executable', ''))
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         fonts = []
         for f in _PLACEHOLDER_FONT_CHOICES:
             entry = {'value': f, 'label': _placeholder_font_label(f)}
@@ -378,7 +390,7 @@ def register(api, window) -> None:
         vinyls_dir = file_preview.kfps_vinyls_dir(settings.get('kfps_executable', ''))
 
         shapes, _root, warnings = render_plate(template, instance)
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         image = file_preview.render_composed_preview(shapes, size, bg=p['canvas_bg'], fg=p['fg'], vinyls_dir=vinyls_dir)
         font_not_shown = bool(instance.placeholder_font) and vinyls_dir is None
         return {

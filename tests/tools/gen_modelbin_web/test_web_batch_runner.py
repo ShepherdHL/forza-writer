@@ -98,11 +98,9 @@ def test_selected_chars_symbols_ignored_without_a_font_path():
 
 
 def test_selected_chars_symbols_excludes_uncased_letters_and_private_use(monkeypatch):
-    # Mirrors tests/tools/gen_modelbin_gui/test_generator.py's
-    # test_symbols_selection_does_not_include_uncased_letters: charset_from_font
-    # buckets uncased letters (Han, Hangul, ...) and private-use glyphs into
-    # "Symbols" too, so the symbols flag must filter down to true Unicode
-    # Symbol-category characters only.
+    # charset_from_font buckets uncased letters (Han, Hangul, ...) and
+    # private-use glyphs into "Symbols" too, so the symbols flag must
+    # filter down to true Unicode Symbol-category characters only.
     monkeypatch.setattr(batch_runner, 'charset_from_font', lambda _p: ({
         'Uppercase': [], 'Lowercase': [], 'Letters': ['中', '한'], 'Numbers': [],
         'Punctuation': [], 'Symbols': ['$', '']}, []))

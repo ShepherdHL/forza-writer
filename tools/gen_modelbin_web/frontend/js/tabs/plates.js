@@ -1,10 +1,8 @@
 // License Plates tab: browse a plate standard, fill in its fields, watch a
-// live preview, and generate ordinary Forza Writer shapes from it. Mirrors
-// tools/gen_modelbin_gui/tabs/plates.py -- the drill-down browser
-// resolution (auto-skipping a grouping level with only one distinct
-// value), breadcrumb, and Back history-stack are all ported behaviorally;
-// see handlers/plates.py's module docstring for the (small, called-out)
-// UI simplifications.
+// live preview, and generate ordinary Forza Writer shapes from it. The
+// drill-down browser resolution (auto-skipping a grouping level with only
+// one distinct value), breadcrumb, and Back history-stack live here; see
+// handlers/plates.py's module docstring for the backend side.
 window.ForzaTabs = window.ForzaTabs || {};
 
 (function () {

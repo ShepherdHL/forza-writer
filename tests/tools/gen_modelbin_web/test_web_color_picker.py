@@ -8,7 +8,7 @@ import pytest
 
 import gui_settings
 from gen_modelbin_web.handlers import color_picker as color_picker_handlers
-from gen_modelbin_gui.color_picker_widget import _BASIC_PRESET_COLORS
+from gen_modelbin_web.handlers.color_picker import _BASIC_PRESET_COLORS
 
 
 @pytest.fixture(autouse=True)
@@ -17,7 +17,7 @@ def _register(api, window):
     return api
 
 
-def test_get_presets_mirrors_the_tkinter_widgets_basic_presets(api, isolated_settings):
+def test_get_presets_returns_the_basic_preset_colors(api, isolated_settings):
     resp = api.call('color_picker.get_presets')
     assert resp['result']['presets'] == [
         {'rgba': list(color), 'name': name} for color, name in _BASIC_PRESET_COLORS]

@@ -80,12 +80,12 @@ DEFAULT_SETTINGS = {
     # just its header row visible; detached shows the same content in a
     # separate Toplevel window instead of the docked panel. Detaching
     # always implies not-collapsed (a collapsed-and-detached combination
-    # isn't a meaningful UI state -- see shell.py's _toggle_log_detached),
-    # so these two are validated together, not independently.
+    # isn't a meaningful UI state), so these two are validated together,
+    # not independently.
     "log_collapsed": False,
     "log_detached": False,
-    # Shared color-picker state (tools/gen_modelbin_gui/color_picker_widget.py),
-    # used identically by every tab's picker. saved_colors/recent_colors are
+    # Shared color-picker state, used identically by every tab's picker.
+    # saved_colors/recent_colors are
     # one shared library visible from every tab; color_ascii_art/
     # color_forza_font_text are each that *one* tab's own last-picked color,
     # kept separate because those two tabs each own a single current color
@@ -101,9 +101,9 @@ DEFAULT_SETTINGS = {
     "color_direct": [255, 255, 255, 255],
 }
 
-# Deliberately duplicated from gui_theme.PALETTES' keys rather than
+# Deliberately duplicated from theme_palettes.PALETTES' keys rather than
 # imported — this module loads before the rest of the app and stays free
-# of gui_theme's tkinter/PIL import weight. A test cross-checks the two
+# of any dependency on a UI-adjacent module. A test cross-checks the two
 # sets stay in agreement, the same discipline KFPS uses for its own
 # Python/QML supporter-flag duplication (see docs/GUI_THEME_SYSTEM.md).
 VALID_PALETTES = {"charcoal", "slate", "eurocorp"}

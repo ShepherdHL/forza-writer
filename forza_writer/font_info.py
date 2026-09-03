@@ -25,10 +25,10 @@ from fontTools.ttLib import TTFont
 
 from forza_writer.unicode_blocks import BLOCKS, block_for_codepoint
 
-# tools/gen_modelbin.py, alongside the gen_modelbin_gui package -- same
-# sys.path dance forza_writer/text_compose.py already does to reach it, for
-# the same reason: glyph_geometry() below reuses its contour extraction
-# rather than re-deriving glyph outlines a second way.
+# tools/gen_modelbin.py -- same sys.path dance forza_writer/text_compose.py
+# already does to reach it, for the same reason: glyph_geometry() below
+# reuses its contour extraction rather than re-deriving glyph outlines a
+# second way.
 _TOOLS_DIR = str(Path(__file__).resolve().parent.parent / "tools")
 if _TOOLS_DIR not in sys.path:
     sys.path.insert(0, _TOOLS_DIR)

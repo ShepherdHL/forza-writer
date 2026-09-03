@@ -2,11 +2,7 @@
 // Unicode block, searchable), then inspect one at large scale in one of
 // three modes -- Reference (the font's own outline + metric guides),
 // Generated (the real generation pipeline's output), or Compare (diff
-// Generated against a target, with the ring-gauge/pill/filmstrip/ledger
-// from the original Phase 0 pass). Mirrors
-// tools/gen_modelbin_gui/tabs/glyph_inspector.py's full feature set --
-// this used to be Compare-mode-only, a stopgap after the initial
-// architecture-proving pass never got its promised follow-up.
+// Generated against a target, with a metrics ledger/filmstrip readout).
 window.ForzaTabs = window.ForzaTabs || {};
 
 (function () {
@@ -28,11 +24,10 @@ window.ForzaTabs = window.ForzaTabs || {};
   const METRIC_LABELS = { iou: 'IoU', boundary_f1: 'Boundary F1', components: 'Components', holes: 'Holes' };
 
   // A category this large stops offering "Show N more" -- narrow with
-  // search to reach the rest instead. Mirrors gen_modelbin_gui/state.py's
-  // GLYPH_CATEGORY_HARD_CAP (that module isn't importable here without
-  // pulling in tkinter transitively, so the constant is kept in sync by
-  // hand -- the backend's own category_tile_cap in the load-font response
-  // is the one value that actually has to match).
+  // search to reach the rest instead. Kept in sync by hand with the
+  // backend's own category_tile_cap in the load-font response, the one
+  // value that actually has to match (JS has no way to import a Python
+  // constant directly).
   const GLYPH_CATEGORY_HARD_CAP = 1000;
   const GLYPH_CATEGORY_EXPAND_STEP = 200;
 

@@ -1,6 +1,6 @@
 // Layer Effects tab: build a Layered Glyph Effect (inset/outset/translate/
 // scale/rotate/boolean layers derived from one source glyph) and preview
-// it against sample text. Mirrors tools/gen_modelbin_gui/tabs/layer_effects.py.
+// it against sample text.
 //
 // The whole LayerStack lives here as a plain JS object -- add/duplicate/
 // delete/reorder/edit all happen client-side, since EffectLayer/LayerStack

@@ -1,7 +1,6 @@
 """ASCII Art tab: place pasted ASCII art on a fixed grid using one of FH6's
-11 native in-game vinyl fonts. Mirrors tools/gen_modelbin_gui/tabs/
-ascii_art.py's pipeline (normalize_block -> scan_unsupported ->
-layout_ascii_grid) against the real backend.
+11 native in-game vinyl fonts. Runs the real backend pipeline
+(normalize_block -> scan_unsupported -> layout_ascii_grid) directly.
 """
 from __future__ import annotations
 
@@ -18,7 +17,7 @@ sys.path.insert(0, str(_TOOLS_DIR))
 sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from forza_writer.ascii_grid import (  # noqa: E402
     layout_ascii_grid, normalize_block, scan_unsupported, supported_chars)
 from forza_writer.export import save as save_composed_json, to_json as composed_to_json  # noqa: E402
@@ -58,7 +57,7 @@ def register(api, window) -> None:
         total_cells = sum(len(r) for r in rows)
         blank_cells = total_cells - len(shapes)
 
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         image = file_preview.render_ascii_grid_preview(
             rows, supported, remap, size=PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'])
 

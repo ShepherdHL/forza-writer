@@ -1,6 +1,6 @@
 """Direct Generator tab: generate one complete .json design straight from
-text or an image, with no fontpack step. Mirrors tools/gen_modelbin_gui/
-tabs/direct.py's generate_direct() pipeline against the real backend.
+text or an image, with no fontpack step. Runs the real generate_direct()
+pipeline directly against the backend.
 
 Unlike Advanced Generator, this tab has no real dependency on Generator's
 own charset/prefix/segments state -- everything it needs (compute backend,
@@ -23,12 +23,13 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
-from gen_modelbin_gui.state import direct_output_filename  # noqa: E402
+import theme_palettes  # noqa: E402
 from forza_writer import image_debug  # noqa: E402
 from forza_writer.compute_backend import resolve_backend  # noqa: E402
 from forza_writer.direct_generate import generate_direct  # noqa: E402
 from forza_writer.export import save as save_composed_json, to_json as composed_to_json  # noqa: E402
+
+from ..state import direct_output_filename  # noqa: E402
 
 COMPOSE_PREVIEW_SIZE = (640, 200)
 _FONT_FILE_TYPES = ('OpenType fonts (*.ttf;*.otf)',)
@@ -112,7 +113,7 @@ def register(api, window) -> None:
         state['source_image'] = str(image_path) if method == 'image' else None
         state['suggested_name'] = default_name
 
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
         image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
                                                        vinyls_dir=vinyls_dir)

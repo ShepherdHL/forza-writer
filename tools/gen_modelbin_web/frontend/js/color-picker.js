@@ -1,13 +1,11 @@
-// Shared color-picker component -- the web counterpart to
-// tools/gen_modelbin_gui/color_picker_widget.py's ColorPickerWidget.
-// Two drive modes, matching the Python widget exactly:
+// Shared color-picker component, used by every tab that lets the user
+// choose a color. Two drive modes:
 //   - self-drive (settingsKey set): the widget owns one color, persisted
 //     under that key via color_picker.get/set_setting_color.
 //   - external-drive (getColor/onChange set): the owner is the source of
 //     truth; the widget just reflects getColor() and calls onChange(rgba).
 // Saved/recent colors are a single shared library (not per-instance) --
-// every live instance on the page is notified when any other one changes
-// it, mirroring the Python widget's _LIVE_INSTANCES broadcast.
+// every live instance on the page is notified when any other one changes it.
 window.ForzaColorPicker = (function () {
   const SB_SIZE = 130;
 

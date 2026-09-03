@@ -60,8 +60,8 @@ sibling area to Composer/Layer Effects, not an extension of either.
 > user-requested: (1) `PlateInstance.placeholder_font` (1-11) swaps every
 > character's plain box for one of FH6's native in-game fonts -- real,
 > final letterform meshes (`forza_writer.shapes.char_to_resource`, the
-> same shapes `tools/gen_modelbin_gui/tabs/forza_font_text.py`'s tab
-> already uses), not generated/traced, so it costs nothing extra;
+> same shapes the Forza Font Text tab already uses), not
+> generated/traced, so it costs nothing extra;
 > `None` (default) keeps plain boxes. The generated file always uses the
 > real choice. (2) Plates now writes to a dedicated `data/plates/` (see
 > `_PLATES_OUTPUT_DIR` in `tabs/plates.py`), not a subfolder of the shared
@@ -164,7 +164,7 @@ tools/
     gen_plate_templates_fictional.py  builds the fictional game-plate templates (GTA/NFS/SR/HALO/CP2077)
     gen_plate_blanks.py         builds the blank-plate library from the current templates
 
-tools/gen_modelbin_gui/tabs/plates.py   the GUI tab
+tools/gen_modelbin_web/handlers/plates.py   the GUI tab's backend handler
 ```
 
 ## Glyph sourcing: size & spacing only, never artwork

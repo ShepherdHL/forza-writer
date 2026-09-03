@@ -3,7 +3,7 @@ depends on but can't bundle: a Forza Horizon 6 install (for the reference
 vinyl modelbin -- see README.md's "Required asset" section) and KFPS (for
 the Plates tab's "Send to KFPS" button, see gui_settings.DEFAULT_SETTINGS'
 kfps_executable). Windows-only, like the rest of this project's
-system-integration code (gen_modelbin_gui/state.py's font registry reads).
+system-integration code (gen_modelbin_web/state.py's font registry reads).
 
 Every lookup here is advisory, not authoritative: a miss just leaves the
 Settings tab's existing manual Browse flow in place, nothing breaks. The

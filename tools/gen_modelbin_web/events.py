@@ -1,13 +1,11 @@
 """Push events from Python straight into the page.
 
-Replaces the Tkinter shell's `_poll_queue` (a queue.Queue polled every
-100ms via root.after) entirely -- pywebview's window.evaluate_js is
-callable from any thread, so a worker thread can push an event the
-moment it has one instead of a poller picking it up later. The frontend
-registers per-tag listeners on window.__forzaEvents (see
+pywebview's window.evaluate_js is callable from any thread, so a worker
+thread can push an event the moment it has one, no polling involved. The
+frontend registers per-tag listeners on window.__forzaEvents (see
 frontend/js/events.js); each listener does its own `generation`
-staleness check, the same role the queue's (tag, generation, ...) tuple
-comparison plays today (e.g. tabs/glyph_inspector.py's stale-result guard).
+staleness check against a request it made, so a stale background result
+arriving after a newer one was already started gets ignored.
 """
 from __future__ import annotations
 

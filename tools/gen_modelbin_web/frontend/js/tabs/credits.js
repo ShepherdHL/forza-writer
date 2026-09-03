@@ -1,6 +1,4 @@
-// Credits tab: static attribution content fetched from the real
-// CREDITS_SECTIONS data (tools/gen_modelbin_gui/tabs/credits.py) via
-// credits.get_sections, not a hand-duplicated copy.
+// Credits tab: static attribution content fetched via credits.get_sections.
 window.ForzaTabs = window.ForzaTabs || {};
 
 (function () {

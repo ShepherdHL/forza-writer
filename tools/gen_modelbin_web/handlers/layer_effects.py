@@ -1,17 +1,16 @@
 """Layer Effects tab: build a Layered Glyph Effect (inset/outset/translate/
 scale/rotate/boolean layers derived from one source glyph, each
-independently colored and ordered) and preview it against sample text.
-Mirrors tools/gen_modelbin_gui/tabs/layer_effects.py against the same
-forza_writer.layered_effects engine.
+independently colored and ordered) and preview it against sample text,
+against the real forza_writer.layered_effects engine.
 
 The entire LayerStack lives as a plain JS object in the frontend (add /
 duplicate / delete / reorder / edit all happen client-side) since
 EffectLayer/LayerStack round-trip to JSON losslessly via to_dict()/
 from_dict(). The backend only ever sees a stack when it actually has to
 resolve geometry or render a preview -- there is no server-side session
-tab object the way the Tkinter mixin has one.
+object holding it between requests.
 
-Three update tiers, matching the Tkinter tab exactly:
+Three update tiers:
   - regenerate(): full compose_layered_text() re-run. Needed whenever a
     layer's geometry-affecting fields change (operation/source/amount/
     offset/scale/rotation/boolean_operand), a layer is added/removed/
@@ -40,13 +39,14 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 import layer_effect_presets_store  # noqa: E402
-from gen_modelbin_gui.state import LAYER_EFFECTS_PREVIEW_SIZE  # noqa: E402
 from forza_writer import layer_presets  # noqa: E402
 from forza_writer import layered_effects  # noqa: E402
 from forza_writer.layered_effects import LayerStack  # noqa: E402
 from forza_writer.layered_effects_text import compose_layered_text  # noqa: E402
+
+from ..state import LAYER_EFFECTS_PREVIEW_SIZE  # noqa: E402
 from forza_writer.primitive_fit import fit_glyph  # noqa: E402
 from forza_writer.text_compose import compose_shape_map  # noqa: E402
 
@@ -104,7 +104,7 @@ def register(api, window) -> None:
         return {'deleted': deleted, 'saved': layer_effect_presets_store.list_presets()}
 
     def _render(shapes) -> str:
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
         image = file_preview.render_composed_preview(
             shapes, LAYER_EFFECTS_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'], vinyls_dir=vinyls_dir)

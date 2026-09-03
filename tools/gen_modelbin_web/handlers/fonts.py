@@ -17,12 +17,12 @@ sys.path.insert(0, str(_TOOLS_DIR))
 sys.path.insert(0, str(_REPO_ROOT))
 
 import font_preview  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from forza_writer.charset import charset_from_font  # noqa: E402
 from forza_writer.script_detect import detect_font_scripts  # noqa: E402
-from gen_modelbin_gui.state import GRID_TILE_SIZE, enumerate_installed_fonts  # noqa: E402
 
 from ..events import push_event  # noqa: E402
+from ..state import GRID_TILE_SIZE, enumerate_installed_fonts  # noqa: E402
 
 
 def _image_to_data_uri(image) -> str:
@@ -50,16 +50,15 @@ def register(api, window) -> None:
                            for name, path in enumerate_installed_fonts().items()]}
 
     def render_grid_tiles(payload: dict) -> dict:
-        # Rasterizes each font's own name set in its own typeface, same as
-        # Tkinter's Grid font-browser view (tabs/generator.py's
-        # _populate_font_grid -> font_preview.render_font_name). Opens the
-        # font file directly via PIL rather than relying on the browser's
+        # Rasterizes each font's own name set in its own typeface
+        # (font_preview.render_font_name). Opens the font file directly
+        # via PIL rather than relying on the browser's
         # OS-level font-family matching, so a registry display name that
         # doesn't resolve as a CSS font-family (not uncommon for style-
         # linked faces like "Arial Bold") still renders correctly.
         # font_preview.render_font_name caches by (path, name, size, bg,
         # fg), so repeat requests for the same font/theme are free.
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         tiles = [
             {'name': item['name'],
              'image': _image_to_data_uri(font_preview.render_font_name(

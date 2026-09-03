@@ -9,11 +9,11 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 import vinyl_tiles  # noqa: E402
 from forza_writer.primitive_shapes import PRIMITIVE_CATALOG  # noqa: E402
 
-PALETTE = gui_theme.PALETTES["charcoal"]
+PALETTE = theme_palettes.PALETTES["charcoal"]
 SQUARE = PRIMITIVE_CATALOG["square"]
 
 
@@ -115,17 +115,17 @@ def test_badge_hit_area_stays_inside_the_tile():
 
 # --- theming -------------------------------------------------------------
 
-@pytest.mark.parametrize("palette_name", sorted(gui_theme.PALETTES))
+@pytest.mark.parametrize("palette_name", sorted(theme_palettes.PALETTES))
 def test_tiles_render_under_every_palette(palette_name):
-    tile = vinyl_tiles.render_tile(SQUARE, "on", gui_theme.PALETTES[palette_name])
+    tile = vinyl_tiles.render_tile(SQUARE, "on", theme_palettes.PALETTES[palette_name])
     assert tile.size == (vinyl_tiles.TILE_W, vinyl_tiles.TILE_H)
 
 
 def test_switching_palette_changes_the_rendered_tile():
     # Tiles bake palette colours into a bitmap, which is why the GUI has to
     # repaint them on a theme change rather than restyling a widget.
-    charcoal = vinyl_tiles.render_tile(SQUARE, "on", gui_theme.PALETTES["charcoal"])
-    slate = vinyl_tiles.render_tile(SQUARE, "on", gui_theme.PALETTES["slate"])
+    charcoal = vinyl_tiles.render_tile(SQUARE, "on", theme_palettes.PALETTES["charcoal"])
+    slate = vinyl_tiles.render_tile(SQUARE, "on", theme_palettes.PALETTES["slate"])
     assert charcoal.tobytes() != slate.tobytes()
 
 
@@ -146,33 +146,8 @@ def test_short_names_are_left_alone():
     font = vinyl_tiles._font(11)
     assert vinyl_tiles._fit_caption(draw, "Circle", font, vinyl_tiles.TILE_W - 10) == "Circle"
 
-
-# --- responsive column count --------------------------------------------
-
-def _columns_for_width(width: int) -> int:
-    """Mirror of the GUI's helper, exercised without constructing a window."""
-    from gen_modelbin_gui.tabs.generator import GeneratorTabMixin
-    return GeneratorTabMixin._shape_tile_columns_for_width(width)
-
-
-def test_a_wider_window_packs_more_tiles_per_row():
-    # The bug this replaced: weighted grid columns kept six tiles per row and
-    # spread the spare width into gaps, so maximizing made the grid emptier
-    # rather than denser.
-    assert _columns_for_width(1740) > _columns_for_width(926) > _columns_for_width(500)
-
-
-def test_column_count_never_drops_below_one():
-    # A zero would divide by zero when placing tiles.
-    for width in (0, 1, 40, vinyl_tiles.TILE_W - 1):
-        assert _columns_for_width(width) >= 1
-
-
-def test_column_count_never_exceeds_the_catalog():
-    assert _columns_for_width(100_000) == len(PRIMITIVE_CATALOG)
-
-
-def test_tiles_actually_fit_the_width_they_are_claimed_to_fit():
-    span = vinyl_tiles.TILE_W + 6
-    for width in (300, 500, 926, 1200, 1740):
-        assert _columns_for_width(width) * span <= width
+# Responsive shape-tile column count was a Tk-only concern (the Generator
+# tab's own tile-grid layout math). The web app's equivalent grid uses
+# native CSS (`grid-template-columns: repeat(auto-fit, minmax(...))`,
+# tools/gen_modelbin_web/frontend/css/tabs/generator.css) and needs no
+# Python-side column computation at all.

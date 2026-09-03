@@ -1,6 +1,6 @@
 """Slate — the cooler alternative to Charcoal, retaining the blue-gray
 character of the earlier "Eurocorp II" retune. See
-`gui_theme/palettes/__init__.py` for the token contract every palette here
+`theme_palettes/__init__.py` for the token contract every palette here
 must satisfy, and `docs/GUI_THEME_SYSTEM.md` for the full design system.
 """
 

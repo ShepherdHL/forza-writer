@@ -1,8 +1,7 @@
 """Settings tab: output/reference paths, palette/density, compute backend,
-generated-data cleanup. Mirrors tools/gen_modelbin_gui/tabs/settings.py's
-behavior (same gui_settings keys, same update_settings-not-save_settings
-persistence semantics, same double-confirmation before deleting anything)
-against the real backend, not a re-implementation.
+generated-data cleanup -- the real gui_settings keys, update_settings-not-
+save_settings persistence semantics, and double-confirmation before
+deleting anything, against the real backend, not a re-implementation.
 """
 from __future__ import annotations
 
@@ -20,7 +19,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 import game_locator  # noqa: E402
 import generated_data_cleanup  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from forza_writer.compute_backend import resolve_backend  # noqa: E402
 from forza_writer.image_debug import DEBUG_LABELS as IMAGE_DEBUG_LABELS  # noqa: E402
 
@@ -51,9 +50,9 @@ def register(api, window, run_state: dict | None = None) -> None:
         settings = gui_settings.load_settings()
         return {
             'palettes': [
-                {'id': slug, 'label': gui_theme.DISPLAY_NAMES[slug],
-                 'description': gui_theme.DESCRIPTIONS.get(slug, '')}
-                for slug in gui_theme.PALETTE_ORDER
+                {'id': slug, 'label': theme_palettes.DISPLAY_NAMES[slug],
+                 'description': theme_palettes.DESCRIPTIONS.get(slug, '')}
+                for slug in theme_palettes.PALETTE_ORDER
             ],
             'densities': [
                 {'id': 'compact', 'label': 'Compact'},
@@ -66,9 +65,8 @@ def register(api, window, run_state: dict | None = None) -> None:
     def set_density(payload: dict) -> dict:
         # Palette is locked to Eurocorp in the web app for now (see
         # frontend/js/shell.js) and deliberately not settable from here --
-        # this never touches the shared 'palette' key the Tkinter app also
-        # reads, so a change made in the web app can't surprise the
-        # Tkinter app's own next launch.
+        # this never touches the shared 'palette' key, left untouched for
+        # a future palette selector to manage.
         gui_settings.update_settings({'density': payload['density']})
         return {'ok': True}
 
@@ -187,8 +185,7 @@ def register(api, window, run_state: dict | None = None) -> None:
 
     def clean_generated_data(payload: dict) -> dict:
         # Confirmation happens on the JS side (two sequential native
-        # confirm() prompts, mirroring the Tkinter tab's own double
-        # messagebox.askyesno) -- by the time this handler runs, the user
+        # confirm() prompts) -- by the time this handler runs, the user
         # has already confirmed. This function performs the deletion, it
         # does not ask permission for it.
         if run_state is not None and batch_runner.is_running(run_state):

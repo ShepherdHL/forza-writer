@@ -1,18 +1,7 @@
 # Dependencies needed to run this repo's own test suite. Not required to
 # run Forza Writer itself -- see requirements.txt for that.
 #
-# pytest-xdist distributes tests across separate OS processes (-n auto,
-# see pytest.ini's addopts). This isn't just a speed optimization: the
-# gen_modelbin_gui test package builds and destroys hundreds of full
-# GeneratorGUI instances, and each one leaks a small, fixed number of
-# native Windows GDI handles that neither Python's garbage collector nor
-# even destroying the whole Tk interpreter can reclaim (a real, longstanding
-# Tcl/Tk-level issue on Windows, not something fixable from here -- see
-# https://github.com/python/cpython/issues/124364). Run serially in one
-# process, the accumulated total now exceeds Windows' ~10,000-handle
-# per-process quota partway through and hard-crashes the interpreter.
-# Separate worker processes each get their own fresh quota, which sidesteps
-# the problem entirely rather than trying to outrun it with fixture-scope
-# tuning.
+# pytest-xdist distributes tests across separate OS processes (see
+# pytest.ini's addopts), which is purely a speed optimization here.
 pytest>=8.0
 pytest-xdist>=3.5

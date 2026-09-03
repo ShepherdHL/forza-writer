@@ -1,7 +1,6 @@
 // Generator tab: font selection, character selection, output mode, vinyl
-// shape policy, and the main batch-generation run. Mirrors
-// tools/gen_modelbin_gui/tabs/generator.py + the shared batch runner on
-// tools/gen_modelbin_gui/shell.py.
+// shape policy, and the main batch-generation run. The actual batch worker
+// is shared with Advanced Generator via handlers/batch_runner.py.
 //
 // Character selection and vinyl-shape policy are shared components
 // (js/character-selector.js, js/vinyl-shapes.js) also used by Advanced
@@ -39,7 +38,7 @@ window.ForzaTabs = window.ForzaTabs || {};
     ));
   }
 
-  async function mount(container) {
+  async function mount(container, opts) {
     container.innerHTML = `
       <h2 class="page-heading">Generator</h2>
       <div class="intro-text">
@@ -73,6 +72,10 @@ window.ForzaTabs = window.ForzaTabs || {};
         <div class="field-hint" id="genLowercaseWarning" style="color: var(--warn);"></div>
         <div class="field-hint" id="genLargeFontWarning" style="color: var(--warn);"></div>
         <div class="field-hint" id="genVariationStatus"></div>
+        <div class="path-field" style="margin-bottom: 0; margin-top: 6px;">
+          <button type="button" class="btn" id="genSendToAdvanced">Send selected font to Advanced Generator</button>
+          <button type="button" class="btn" id="genSendToDirect">Send selected font to Direct Generator</button>
+        </div>
       </div>
 
       <div class="section">
@@ -244,6 +247,7 @@ window.ForzaTabs = window.ForzaTabs || {};
     function onFontChosen(path, suggestedName) {
       fontPath = path;
       els.genFontPath.textContent = path;
+      api.call('generator.set_current_font', { font_path: path });
       if (!prefixEdited) {
         const stem = (suggestedName || path.split(/[\\/]/).pop().replace(/\.[^.]+$/, ''));
         els.genPrefix.value = stem.toUpperCase().replace(/\s+/g, '-').replace(/[^A-Z0-9_-]/g, '') || 'CUSTOM';
@@ -265,6 +269,14 @@ window.ForzaTabs = window.ForzaTabs || {};
     els.genBrowseFont.addEventListener('click', async () => {
       const resp = await api.call('generator.browse_font', {});
       if (resp.ok && !resp.result.cancelled) { fontSearch.setValue(resp.result.path.split(/[\\/]/).pop()); onFontChosen(resp.result.path); }
+    });
+    els.genSendToAdvanced.addEventListener('click', () => {
+      if (!fontPath) { els.genVariationStatus.textContent = 'Select a font first.'; return; }
+      window.ForzaShell.showTab('advanced', { fontPath });
+    });
+    els.genSendToDirect.addEventListener('click', () => {
+      if (!fontPath) { els.genVariationStatus.textContent = 'Select a font first.'; return; }
+      window.ForzaShell.showTab('direct', { fontPath });
     });
 
     // Visual "Grid" font browser: every installed font rendered in its own
@@ -775,6 +787,18 @@ window.ForzaTabs = window.ForzaTabs || {};
     refreshBackendStatus();
     refreshReferenceWarning();
     refreshCharsetSummary();
+
+    // A tab switch carrying a font (Advanced Generator's "Open per-glyph
+    // overrides for this instance" sends the instantiated instance path
+    // plus a variation-slugged prefix and asks to land straight in the
+    // Configurator workspace already scoped to it) -- see shell.js's
+    // showTab(tabId, opts) and handlers/advanced.py's open_instance_overrides.
+    if (opts && opts.fontPath) {
+      fontSearch.setValue(opts.fontPath.split(/[\\/]/).pop());
+      onFontChosen(opts.fontPath);
+      if (opts.prefix) { els.genPrefix.value = opts.prefix; prefixEdited = true; refreshFilenamePreview(); }
+      if (opts.openConfigurator) cfgSetOpen(true);
+    }
 
     return () => { offGlyph(); offDone(); offScanProgress(); offScanDone(); colorPicker.destroy(); };
   }

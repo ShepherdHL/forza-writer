@@ -1,9 +1,8 @@
 psutil>=5.9
 
-# pywebview-based UI (tools/gen_modelbin_web/), migrating off Tkinter one
-# tab at a time -- see the migration plan. Embeds the OS's WebView2
-# (Chromium) runtime already present on most Windows 10/11 installs;
-# tools/gen_modelbin_gui/ (Tkinter) remains the primary app until parity.
+# pywebview-based UI (tools/gen_modelbin_web/), Forza Writer's only GUI.
+# Embeds the OS's WebView2 (Chromium) runtime already present on most
+# Windows 10/11 installs. Runs as a local desktop app -- no network server.
 pywebview>=6.0
 
 # Font/mesh generation (tools/gen_modelbin.py, tools/gen_fontpack.py,

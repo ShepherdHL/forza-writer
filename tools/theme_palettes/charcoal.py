@@ -2,7 +2,7 @@
 by modern desktop tools such as Discord, fused with Syndicate (2012)'s
 futuristic-corporate HUD restraint (a single warm accent reserved for
 live/selected state) and a Vercel-style flat tonal elevation model. See
-`gui_theme/palettes/__init__.py` for the token contract every palette here
+`theme_palettes/__init__.py` for the token contract every palette here
 must satisfy, and `docs/GUI_THEME_SYSTEM.md` for the full design system.
 """
 
@@ -11,7 +11,7 @@ DESCRIPTION = "The default softer neutral theme."
 
 # Whether the active nav row in the sidebar takes a full solid-accent fill
 # (Eurocorp) or the restrained left-edge indicator strip every other
-# palette here uses — see gui_theme/palettes/eurocorp.py.
+# palette here uses — see theme_palettes/eurocorp.py.
 SOLID_SELECTED_ROW = False
 
 PALETTE = {

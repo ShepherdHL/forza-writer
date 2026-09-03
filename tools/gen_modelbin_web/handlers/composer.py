@@ -1,8 +1,8 @@
 """Composer tab: compose multi-line vinyl text from an already-generated
 fontpack's glyphs, with real per-glyph spacing/baseline and per-line color
 fills, or a Layered Glyph Effect applied per-character instead of the
-fontpack's own flat glyphs. Mirrors tools/gen_modelbin_gui/tabs/composer.py's
-compose_text/compose_layered_text pipelines against the real backend.
+fontpack's own flat glyphs. Runs the real compose_text/compose_layered_text
+pipelines directly against the backend.
 
 The Layered Glyph Effect path reuses layer_effects.py's own
 apply_preset/get_presets handlers directly (registered under a different
@@ -28,7 +28,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 import file_preview  # noqa: E402
 import gui_settings  # noqa: E402
-import gui_theme  # noqa: E402
+import theme_palettes  # noqa: E402
 from forza_writer.export import save as save_composed_json, to_json as composed_to_json  # noqa: E402
 from forza_writer.forza_colors import hex_to_rgb  # noqa: E402
 from forza_writer import manufacturer_colors  # noqa: E402
@@ -83,7 +83,7 @@ def register(api, window) -> None:
             size_scale=size_scale, line_spacing=line_spacing, style=style)
 
         composed_shapes['shapes'] = shapes
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
         image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
                                                        vinyls_dir=vinyls_dir)
@@ -116,11 +116,10 @@ def register(api, window) -> None:
         stack = LayerStack.from_dict(payload['stack'])
         # fills=() deliberately skips the per-line color pass: each layer
         # already carries its own color, and letting a line-fill overwrite
-        # every shape with one color would erase that distinction -- see
-        # Tkinter's _compose_layer_effect_style docstring. One side effect:
-        # underline/strikethrough need a single resolved line color to draw
-        # their bar shape, so they render nothing while this is enabled,
-        # same as there.
+        # every shape with one color would erase that distinction. One
+        # side effect: underline/strikethrough need a single resolved
+        # line color to draw their bar shape, so they render nothing
+        # while this is enabled.
         style = TextStyle(
             bold=payload['bold'], italic=payload['italic'],
             underline=payload['underline'], strikethrough=payload['strikethrough'],
@@ -131,7 +130,7 @@ def register(api, window) -> None:
             size_scale=size_scale, line_spacing=line_spacing, style=style)
 
         composed_shapes['shapes'] = shapes
-        p = gui_theme.palette()
+        p = theme_palettes.palette()
         vinyls_dir = file_preview.kfps_vinyls_dir(gui_settings.load_settings().get('kfps_executable', ''))
         image = file_preview.render_composed_preview(shapes, COMPOSE_PREVIEW_SIZE, bg=p['canvas_bg'], fg=p['fg'],
                                                        vinyls_dir=vinyls_dir)
