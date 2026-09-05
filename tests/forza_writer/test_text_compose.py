@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from gen_modelbin import extract_contours  # noqa: E402
-from gen_fontpack import build_fontpack, pack_dir_for  # noqa: E402
+from gen_fontpack import build_fontpack, find_pack_dir  # noqa: E402
 from forza_writer.compute_backend import resolve_backend  # noqa: E402
 from forza_writer.text_compose import _glyph_layout_metrics, compose_text  # noqa: E402
 from forza_writer.text_style import LineFill, TextStyle  # noqa: E402
@@ -23,7 +23,11 @@ def small_pack(tmp_path_factory):
     build_fontpack(AMARILLO_FONT, out_dir, "TCTEST", output="json",
                     chars={"A", "B", "M", ".", "T", "g"}, log=lambda *_: None)
     backend = resolve_backend("auto")
-    return pack_dir_for(out_dir, "TCTEST", "json", 8, backend.resolved)
+    # build_fontpack renames a json/json_legacy pack's directory to include
+    # a layer-count suffix once generation finishes -- find_pack_dir
+    # accounts for that, pack_dir_for alone would point at a path that no
+    # longer exists (see pack_dir_for's own docstring).
+    return find_pack_dir(out_dir, "TCTEST", "json", 8, backend.resolved)
 
 
 @requires_font

@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "tools"))
 from gen_fontpack import (  # noqa: E402
-    build_fontpack, generation_profile_id, glyph_filename, pack_dir_for,
+    build_fontpack, find_pack_dir, generation_profile_id, glyph_filename, pack_dir_for,
     resolve_requested_chars)
 
 # No font ships in this repo (same policy as the reference .modelbin, see
@@ -205,7 +205,7 @@ def test_manifest_flags_experimental_when_stencil_is_used(tmp_path, monkeypatch)
     assert "modelbin" not in upper_a["artifacts"]
     import gen_fontpack
     backend = gen_fontpack.resolve_backend("auto")
-    json_path = pack_dir_for(tmp_path, "TESTFONT", "json", 8, backend.resolved) / upper_a["artifacts"]["json"]["file"]
+    json_path = find_pack_dir(tmp_path, "TESTFONT", "json", 8, backend.resolved) / upper_a["artifacts"]["json"]["file"]
     assert json_path.exists()
 
 
@@ -280,7 +280,7 @@ def test_files_written_tracks_every_artifact_this_run(tmp_path):
     assert all(path.endswith((".json", "_diff.png")) for path in manifest["files_written"])
     import gen_fontpack
     backend = gen_fontpack.resolve_backend("auto")
-    pack_dir = pack_dir_for(tmp_path, "FILESTEST", "json", 8, backend.resolved)
+    pack_dir = find_pack_dir(tmp_path, "FILESTEST", "json", 8, backend.resolved)
     for rel in manifest["files_written"]:
         assert (pack_dir / rel).exists()
 
@@ -299,7 +299,7 @@ def test_json_legacy_output_uses_legacy_primitive_strategy(tmp_path):
     # both json strategies.
     assert manifest["summary"]["json"]["generated"] == 1
     assert manifest["summary"]["json"]["failed"] == 0
-    json_path = pack_dir_for(tmp_path, "LEGACYTEST", "json_legacy", 8, "cpu") / entry["artifacts"]["json"]["file"]
+    json_path = find_pack_dir(tmp_path, "LEGACYTEST", "json_legacy", 8, "cpu") / entry["artifacts"]["json"]["file"]
     assert json_path.exists()
 
 
@@ -364,7 +364,7 @@ def test_manual_assignment_copies_source_shapes_verbatim_with_manual_strategy(tm
     import json
     import gen_fontpack
     backend = gen_fontpack.resolve_backend("auto")
-    out_path = pack_dir_for(tmp_path / "out", "MANUALTEST", "json", 8, backend.resolved) / artifact["file"]
+    out_path = find_pack_dir(tmp_path / "out", "MANUALTEST", "json", 8, backend.resolved) / artifact["file"]
     written = json.loads(out_path.read_text(encoding="utf-8"))
     source_shapes = json.loads(source.read_text(encoding="utf-8"))["shapes"]
     assert written["shapes"] == source_shapes
@@ -456,8 +456,8 @@ def test_default_should_stop_and_on_glyph_are_safe_noops(tmp_path):
 def _glyph_shapes(tmp_path, manifest, category, char):
     import json as jsonlib
     entry = next(e for e in manifest["categories"][category] if e["char"] == char)
-    pack_dir = pack_dir_for(tmp_path, manifest["prefix"], "json", manifest["curve_segments"],
-                             manifest["generation_profile"]["compute_backend"])
+    pack_dir = find_pack_dir(tmp_path, manifest["prefix"], "json", manifest["curve_segments"],
+                              manifest["generation_profile"]["compute_backend"])
     data = jsonlib.loads((pack_dir / entry["artifacts"]["json"]["file"]).read_text(encoding="utf-8"))
     return data["shapes"]
 
