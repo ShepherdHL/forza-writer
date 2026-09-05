@@ -16,6 +16,8 @@ import time
 from pathlib import Path
 from typing import Callable
 
+import webview
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import gui_settings  # noqa: E402
 
@@ -70,3 +72,35 @@ class JSApi:
         entry = {"ts": time.strftime("%H:%M:%S"), "level": level, "text": text}
         self._state.log_lines.append(entry)
         return entry
+
+    def export_log(self) -> dict:
+        # A quick way to hand off the session's log after an unforeseen
+        # error: writes every line in state.log_lines (not just whatever
+        # happens to be scrolled into view), so it's the same content
+        # get_log() would hand the page on a fresh load. Timestamped
+        # default filename so exporting more than once in a session
+        # doesn't silently overwrite the previous file.
+        #
+        # This is a direct JSApi method, not routed through call()'s
+        # {ok, result}/try-except registry wrapper, so it has to do its own
+        # -- an uncaught exception here (a bad save path, a permissions
+        # error) would otherwise cross the bridge as an unhandled JS
+        # promise rejection with no feedback shown anywhere.
+        if self._window is None:
+            return {"ok": False, "error": "Window not ready yet."}
+        try:
+            chosen = self._window.create_file_dialog(
+                webview.FileDialog.SAVE,
+                save_filename=time.strftime("forza-writer-log-%Y%m%d-%H%M%S.txt"),
+                file_types=("Text files (*.txt)", "All files (*.*)"))
+            if not chosen:
+                return {"cancelled": True}
+            path = chosen if isinstance(chosen, str) else chosen[0]
+            lines = []
+            for entry in self._state.log_lines:
+                prefix = f"{entry['level'].upper()}: " if entry['level'] != 'plain' else ""
+                lines.append(f"[{entry['ts']}] {prefix}{entry['text']}")
+            Path(path).write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+            return {"ok": True, "path": path}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}

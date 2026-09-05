@@ -133,6 +133,36 @@
       logFloat.classList.remove('open');
     });
 
+    // Quick-export: hands the whole session's log (not just what's
+    // scrolled into view) to a plain .txt file via a normal Save dialog,
+    // so a user hitting an unforeseen error can grab it and share it.
+    // export_log() is a direct JSApi method (like get_log()), not routed
+    // through api.call()'s {ok, result} registry wrapper.
+    function flashExportButton(btn, ok) {
+      const original = btn.innerHTML;
+      btn.innerHTML = ok ? '&#10003;' : '&#10007;';
+      btn.disabled = true;
+      setTimeout(() => { btn.innerHTML = original; btn.disabled = false; }, 1400);
+    }
+    [document.getElementById('logExport'), document.getElementById('logExportFloat')].forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        let resp;
+        try {
+          resp = await window.pywebview.api.export_log();
+        } catch (err) {
+          resp = { ok: false, error: String(err) };
+        }
+        if (resp && resp.path) {
+          flashExportButton(btn, true);
+        } else if (resp && resp.ok === false) {
+          flashExportButton(btn, false);
+          appendLine({ ts: new Date().toTimeString().slice(0, 8), level: 'danger',
+                       text: `Log export failed: ${resp.error}` });
+        }
+      });
+    });
+
     // Sticky-to-bottom autoscroll: a line arriving while the user has
     // scrolled up to read earlier output must not yank them back down --
     // only follow the tail when they were already at (or very near) it,

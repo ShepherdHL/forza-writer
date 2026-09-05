@@ -64,6 +64,7 @@ window.ForzaTabs = window.ForzaTabs || {};
         <div class="gen-font-filter-chip" id="genFontScriptChip" style="display:none;"></div>
         <div class="path-field" style="margin-bottom: 8px;">
           <div id="genFontSearch" style="flex:1;"></div>
+          <button type="button" class="btn" id="genRescanFonts" title="Re-scan installed fonts -- only needed if you installed a new font while the app was already running">Rescan Fonts</button>
           <button type="button" class="btn" id="genBrowseFont">Browse on machine…</button>
         </div>
         <div class="field-hint" id="genFontGridStatus"></div>
@@ -270,6 +271,22 @@ window.ForzaTabs = window.ForzaTabs || {};
       const resp = await api.call('generator.browse_font', {});
       if (resp.ok && !resp.result.cancelled) { fontSearch.setValue(resp.result.path.split(/[\\/]/).pop()); onFontChosen(resp.result.path); }
     });
+    els.genRescanFonts.addEventListener('click', async () => {
+      // The app already loads and classifies every installed font
+      // automatically at startup (see handlers/fonts.py's register()) --
+      // this is only needed if a font got installed after that already
+      // ran, so it's a deliberate manual action, not something that
+      // happens on its own.
+      const original = els.genRescanFonts.textContent;
+      els.genRescanFonts.disabled = true;
+      els.genRescanFonts.textContent = 'Rescanning…';
+      await window.ForzaFontSearch.rescan();
+      allFontsPromise = null;
+      fontGridImageCache.clear();
+      await renderFontGrid();
+      els.genRescanFonts.textContent = original;
+      els.genRescanFonts.disabled = false;
+    });
     els.genSendToAdvanced.addEventListener('click', () => {
       if (!fontPath) { els.genVariationStatus.textContent = 'Select a font first.'; return; }
       window.ForzaShell.showTab('advanced', { fontPath });
@@ -280,11 +297,15 @@ window.ForzaTabs = window.ForzaTabs || {};
     });
 
     // Visual "Grid" font browser: every installed font rendered in its own
-    // typeface, mirroring Tkinter's Grid view (tabs/generator.py's
-    // _populate_font_grid). Filters live off the same search box above
-    // (via onQueryChange) instead of a separate List/Grid toggle -- the
-    // text dropdown already covers "list", so this only adds the part that
-    // was actually missing: seeing fonts rendered in their own typeface.
+    // typeface. Filters live off the same search box above (via
+    // onQueryChange) instead of a separate List/Grid toggle -- the text
+    // dropdown already covers "list", so this only adds the part that was
+    // actually missing: seeing fonts rendered in their own typeface.
+    // Unlike Tkinter's old Grid view, this shows every matching font with
+    // no display cap -- the app already classifies and pre-renders every
+    // installed font's tile at startup (handlers/fonts.py), so there's no
+    // per-tile cost left to cap against, and a scrollable grid of a few
+    // hundred small divs is cheap for a browser to lay out.
     //
     // Sort/type-filter toolbar and the script filter (below) both narrow
     // this same grid; the search dropdown above stays a plain by-name
@@ -292,7 +313,6 @@ window.ForzaTabs = window.ForzaTabs || {};
     // component used by several other tabs, so tying its results to
     // Generator-only sort/filter state would be a surprising side effect
     // for those other tabs.
-    const FONT_GRID_CAP = 60;
     let allFontsPromise = null;
     let fontGridQuery = '';
     let fontGridDebounce = null;
@@ -367,10 +387,8 @@ window.ForzaTabs = window.ForzaTabs || {};
           (classification[b.name]?.glyph_count || 0) - (classification[a.name]?.glyph_count || 0));
       }
 
-      const visible = matches.slice(0, FONT_GRID_CAP);
-      const overflow = matches.length - visible.length;
-      els.genFontGridStatus.textContent = overflow > 0
-        ? `${overflow} more — refine your search to see them` : '';
+      const visible = matches;
+      els.genFontGridStatus.textContent = `${visible.length} font${visible.length === 1 ? '' : 's'}`;
       if (visible.length === 0) {
         els.genFontGrid.innerHTML = '<div class="field-hint" style="padding:6px;">No installed fonts match.</div>';
         return;

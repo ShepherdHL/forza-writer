@@ -14,11 +14,13 @@ window.ForzaFontSearch = (function () {
     return fontsCache;
   }
 
-  // Lazily kicks off fonts.classify (script support + glyph count per
-  // installed font, see handlers/fonts.py) and resolves once it's ready.
-  // Shared across every instance on the page, same as ensureFonts above --
-  // whichever tab asks first pays the ~couple-of-seconds one-time cost,
-  // everyone after that (this session) gets it instantly.
+  // Waits on fonts.classify (script support + glyph count per installed
+  // font, see handlers/fonts.py). The backend actually starts that pass
+  // itself the moment the app launches, not on first call here -- this
+  // just asks for the result and, if it isn't ready yet, listens for the
+  // fonts_classified push event rather than polling. Shared across every
+  // instance on the page, same as ensureFonts above: whichever call
+  // resolves first, everyone else on the page shares that same result.
   let classificationPromise = null;
 
   function ensureClassification() {
@@ -36,6 +38,18 @@ window.ForzaFontSearch = (function () {
       });
     });
     return classificationPromise;
+  }
+
+  // Re-scans installed fonts from scratch (registry list, per-file
+  // classification, grid-tile rendering) -- the one deliberately heavier
+  // action left after the automatic startup pass, for a font installed
+  // mid-session. Clears both caches so the next getFonts()/
+  // getClassification() call re-fetches rather than replaying stale data.
+  async function rescan() {
+    fontsCache = null;
+    classificationPromise = null;
+    await window.pywebview.api.call('fonts.rescan', {});
+    return ensureFonts();
   }
 
   function escapeHtml(s) {
@@ -107,5 +121,5 @@ window.ForzaFontSearch = (function () {
     };
   }
 
-  return { create, getFonts: ensureFonts, getClassification: ensureClassification };
+  return { create, getFonts: ensureFonts, getClassification: ensureClassification, rescan };
 })();
